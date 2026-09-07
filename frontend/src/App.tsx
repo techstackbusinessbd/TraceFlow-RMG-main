@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { Plus, Download, Edit2, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Download, Edit2, Eye, LogOut, Lock } from "lucide-react";
 import { PageHeader } from "./components/common/PageHeader";
 import { FilterToolbar } from "./components/common/FilterToolbar";
 import { DataTable, type ColumnDef } from "./components/common/DataTable";
 import { Button } from "./components/common/Button";
 import { Badge } from "./components/common/Badge";
 import { TableActionButton } from "./components/common/TableActionButton";
+import { LoginPage } from "./features/Auth/LoginPage";
+import { useAuthStore } from "./store/authStore";
 
 interface BuyerRow {
   id: string;
@@ -25,9 +27,27 @@ const SAMPLE_BUYERS: BuyerRow[] = [
 ];
 
 export function App() {
+  const { user, isAuthenticated, logout } = useAuthStore();
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => setCurrentPath(window.location.pathname);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateTo = (path: string) => {
+    window.history.pushState({}, "", path);
+    setCurrentPath(path);
+  };
+
+  // If path is /login or user is not logged in, render LoginPage
+  if (currentPath === "/login" || (!isAuthenticated && currentPath !== "/")) {
+    return <LoginPage />;
+  }
 
   const columns: ColumnDef<BuyerRow>[] = [
     {
@@ -95,10 +115,37 @@ export function App() {
             Enterprise Woven Traceability
           </span>
         </div>
-        <div className="flex items-center gap-3 text-xs text-slate-400">
+
+        <div className="flex items-center gap-4 text-xs text-slate-400">
           <span>Active Plant: <strong className="text-white">Ananta Woven Ltd (AWL)</strong></span>
           <span className="h-3 w-px bg-slate-700" />
-          <span>User: <strong className="text-white">System Admin</strong></span>
+          
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span>
+                User: <strong className="text-white">{user.name}</strong> ({user.roles.join(", ")}) | ID: <span className="font-mono text-cyan-300">{user.emp_id}</span>
+              </span>
+              <button
+                onClick={() => {
+                  logout();
+                  navigateTo("/login");
+                }}
+                className="inline-flex items-center gap-1 text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+                title="Sign out"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Logout</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => navigateTo("/login")}
+              className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+            >
+              <Lock className="h-3.5 w-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
       </nav>
 
