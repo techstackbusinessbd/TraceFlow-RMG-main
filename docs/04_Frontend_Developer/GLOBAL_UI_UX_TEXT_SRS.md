@@ -2,10 +2,11 @@
 ## Enterprise RMG ERP / SaaS Application
 
 **Document Type:** Global UI/UX Text Standards / SRS  
-**Version:** 2.0 (Aligned with Enterprise AGENTS.md Architecture)  
+**Version:** 2.1 (Easy Readable & Meaningful Zero-Confusion Standard)  
 **Status:** Approved Standard  
 **Scope:** Entire application  
 **Primary UI Language:** 100% English (All UI labels, buttons, tables, badges, headers, and messages)  
+**Writing Standard:** Easy Readable, Meaningful, Action-Oriented & Zero-Confusion (No cryptic text, no jargon)  
 **Engineering & Documentation Language:** Bengali (Bangla for discussions, plans, and documentation)  
 **Future Localization:** Bangla-ready i18n structure  
 **Audience:** Product Owner, Project Manager, Solution Architect, UI/UX Designer, Frontend Developer, Backend Developer, QA, Technical Writer
