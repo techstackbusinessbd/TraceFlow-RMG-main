@@ -18,6 +18,7 @@
 | `v2.0` | 2026-09-02 | Principal Enterprise Architect | 100% এন্টারপ্রাইজ রূপান্তর: SOC 2/ISO কমপ্লায়েন্স, TOTP 2FA, অফলাইন এজ টোকেন ভ্যালিডেশন, হার্ডওয়্যার টেলিমেট্রি, পার্টিশনড ইমিউটেবল অডিট ট্রেইল, কমপ্লিট PostgreSQL DDL এবং রিকোয়ারমেন্টস ট্রেসেবিলিটি ম্যাট্রিক্স (RTM) সংযোজন। |
 | `v2.1` | 2026-09-02 | RMG Operations & CISO | আরএমজি ফ্যাক্টরি বাস্তবতার সাথে সামঞ্জস্য রেখে ইউজার আইডেন্টিটিতে `emp_id` (Employee ID) ও `username` বাধ্যতামূলক এবং `email` কে সম্পূর্ণ ঐচ্ছিক (Optional / Nullable) ঘোষণা। ট্রিপল আইডেন্টিফায়ার সাপোর্ট। |
 | `v2.2` | 2026-09-02 | Enterprise Governance Lead | টু-টিয়ার ডিলিশন আর্কিটেকচার (Two-Tier Deletion Architecture): সফট ডিলিট (`deleted_at`), ট্র্যাশ/রিস্টোর লাইফসাইকেল এবং **পার্মানেন্ট হার্ড ডিলিট সম্পূর্ণভাবে Super Admin এর একক ক্ষমতায় সীমাবদ্ধকরণ** (`force-delete` policy, production referential integrity check, password re-auth)। |
+| `v2.3` | 2026-09-07 | Enterprise Solution Architect | পারমিশন নেমিং ও ম্যাট্রিক্স আর্কিটেকচার আপগ্রেড: আন্তর্জাতিক ক্লাউড IAM মান অনুযায়ী বাধ্যতামূলক **৪-টিয়ার ডট-নোটেশন স্ট্যান্ডার্ড (`module.submodule.resources.action`)** প্রবর্তন ও স্পেসিফিকেশন এনফোর্সমেন্ট। |
 
 ### ১.২ অনুমোদনকারী ব্যক্তিবর্গ (Sign-Off & Approvals)
 - **Product Owner / Project Sponsor:** Executive Sponsor, RMG Systems
@@ -149,19 +150,37 @@ graph TB
 ### ৫.৩ সাব-মডিউল: হাইব্রিড গ্র্যানুলার RBAC ও ABAC ইঞ্জিন (Authorization Engine)
 
 #### ৫.৩.১ স্পেসিফিকেশন ও বিজনেস লজিক
-- **REQ-RBAC-001: হাইব্রিড পারমিশন মডেল:**
+- **REQ-RBAC-001: হাইব্রিড পারমিশন মডেল ও ৪-টিয়ার ডট-নোটেশন স্ট্যান্ডার্ড (4-Tier Dot Notation Standard):**
   - সিস্টেমটি স্ট্যান্ডার্ড RBAC (Role-Based Access Control) এবং ABAC (Attribute-Based Access Control) এর সমন্বয়ে কাজ করবে।
-  - **RBAC লেয়ার:** প্রতিটি রোলে অ্যাকশন পারমিশন থাকবে (যেমন: `cutting.bundle.split`, `order.po.approve`)।
+  - **বাধ্যতামূলক পারমিশন নেমিং ফরম্যাট:** সমস্ত পারমিশনের `name` ফিল্ড আন্তর্জাতিক এন্টারপ্রাইজ IAM স্ট্যান্ডার্ড অনুযায়ী কঠোরভাবে **৪-টিয়ার ডট-নোটেশন (`module.submodule.resources.action`)** অনুসরণ করবে:
+    $$\text{Syntax: } \mathbf{\langle module\rangle.\langle submodule\rangle.\langle resources\rangle.\langle action\rangle}$$
+    - **Module (`module`):** সংশ্লিষ্ট মূল এন্টারপ্রাইজ ডোমেইন (যেমন: `master_data`, `order`, `cutting`, `sewing`, `qc`, `warehouse`, `system_admin`, `finishing`, `packing`, `export`)।
+    - **Submodule (`submodule`):** মডিউলের অভ্যন্তরীণ সাব-ডোমেইন (যেমন: `buyers`, `merchandising`, `bundling`, `line_tracking`, `end_line`, `users`)।
+    - **Resource (`resources`):** যে সুনির্দিষ্ট ডেটা অবজেক্ট বা স্ক্রিন লক্ষ্য করা হচ্ছে (যেমন: `profile`, `po`, `ticket`, `bundle`, `defect`, `account`, `roll`)।
+    - **Action (`action`):** অনুমোদিত অপারেশন বা মেথড (যেমন: `view`, `create`, `update`, `delete`, `restore`, `force_delete`, `approve`, `reject`, `export`, `scan`, `pin`)।
+  - **বাস্তব উদাহরণ (Standard Real-World Examples):**
+    - `master_data.buyers.profile.view` (বায়ার প্রোফাইল ও তালিকা দর্শন)
+    - `master_data.buyers.profile.create` (নতুন বায়ার তৈরি)
+    - `order.merchandising.po.approve` (বায়ার পিও অনুমোদন)
+    - `cutting.bundling.ticket.generate` (কাটিং মাস্টার ও চাইল্ড টিকিট জেনারেশন)
+    - `sewing.line_tracking.bundle.scan_in` (সুইং লাইনে বান্ডল স্ক্যান-ইন)
+    - `qc.end_line.defect.pin` (ডিজিটাল বডি ম্যাপে ডিফেক্ট পিন অ্যাসাইনমেন্ট)
+    - `system_admin.users.account.force_delete` (সুপার এডমিন কর্তৃক পার্মানেন্ট একাউন্ট পার্জ)
+  - **RBAC লেয়ার:** প্রতিটি রোলে এই ৪-টিয়ার ডট পারমিশনগুলো সরাসরি অ্যাসাইন করা হবে।
   - **ABAC লেয়ার:** ইউজারের ফ্যাক্টরি ইউনিট (Unit 01, Unit 02) এবং ফ্লোর অ্যাসাইনমেন্ট অনুযায়ী ডাটা ফিল্টার হবে (যেমন: Unit 01 এর মার্চেন্ডাইজার Unit 02 এর অর্ডার মডিফাই করতে পারবে না)।
 - **REQ-RBAC-002: ওয়াইল্ডকার্ড পারমিশন ও সুপার অ্যাডমিন ইমিউনিটি:**
   - `Super Admin` রোল সিস্টেমে `*` (All privileges) ওয়াইল্ডকার্ড পাবে। এটি হার্ডকোডেড কার্নেল গেট দিয়ে পরিচালিত হবে যাতে ডাটাবেস এরর হলেও সুপার অ্যাডমিন লকআউট না হয়।
+  - এছাড়া সাবমডিউল বা রিসোর্স লেভেলে ওয়াইল্ডকার্ড সাপোর্ট থাকবে (যেমন: `master_data.buyers.*`, `sewing.*`)।
   - `Super Admin` রোল মুছে ফেলা বা এর স্লাগ পরিবর্তন করা ডাটাবেস লেভেলে নিষিদ্ধ।
 - **REQ-RBAC-003: রিয়েল-টাইম পারমিশন ক্যাশ ইনভ্যালিডেশন (Zero-Delay Permission Sync):**
   - ইউজারের পারমিশন ম্যাট্রিক্স দ্রুত কোয়েরির জন্য Redis হ্যাশ সেটে ক্যাশ থাকবে।
   - অ্যাডমিন যখনই কোনো রোলের পারমিশন পরিবর্তন করবেন, সিস্টেম সাথে সাথে পাব/সাব (Pub/Sub) ইভেন্ট ট্রিগার করে ওই রোলের সকল ইউজারের রেডিজ পারমিশন ক্যাশ ফ্লাশ করে দেবে। ফলে পেজ রিলোড ছাড়াই তাৎক্ষণিকভাবে নতুন প্রিভিলেজ কার্যকর হবে।
 - **REQ-RBAC-004: ফ্রন্টএন্ড ডায়নামিক রেন্ডারিং ও ব্যাকএন্ড গেট এনফোর্সমেন্ট:**
-  - ফ্রন্টএন্ড সাইডবার ও অ্যাকশন বাটনসমূহ ইউজারের পারমিশন অ্যারে (`user.permissions`) অনুযায়ী ডায়নামিকালি দৃশ্যমান বা অদৃশ্য হবে।
-  - ব্যাকএন্ড কন্ট্রোলারের প্রতিটি মেথডে `$this->authorize('permission.slug')` নিশ্চিত করা হবে যাতে ক্লায়েন্ট-সাইড বাইপাস কোনোভাবেই সম্ভব না হয়।
+  - ফ্রন্টএন্ড সাইডবার ও অ্যাকশন বাটনসমূহ ইউজারের পারমিশন অ্যারে (`user.permissions`) অনুযায়ী ডায়নামিকালি দৃশ্যমান বা অদৃশ্য হবে (যেমন: `<HasPermission permission="master_data.buyers.profile.create">`)।
+  - ব্যাকএন্ড কন্ট্রোলারের প্রতিটি মেথডে `$this->authorize('module.submodule.resources.action')` বা রুট লেভেলে `middleware('permission:module.submodule.resources.action')` নিশ্চিত করা হবে যাতে ক্লায়েন্ট-সাইড বাইপাস কোনোভাবেই সম্ভব না হয়।
+- **REQ-RBAC-005: পারমিশন টেবিল এক্সটেনশন ও অ্যাডমিন UI ট্রিম্যাপিং (Dynamic Tree Aggregation):**
+  - `permissions` টেবিলে স্পষ্ট গ্রুপিং ও ফিল্টারিংয়ের সুবিধার্থে ৪টি ডেডিকেটেড কলাম সংরক্ষিত থাকবে: `module_name`, `submodule_name`, `resource_name`, `action_name` এবং স্পাটি স্ট্যান্ডার্ড `name` (যেখানে সম্পূর্ণ ডট-নোটেশন স্ট্রিং সংরক্ষিত থাকবে)।
+  - ব্যাকএন্ড এপিআই পারমিশন ডেটা পাঠাতে ডট নোটেশনের ভিত্তিতে নেস্টেড JSON ট্রি (Tree Hierarchy) রিটার্ন করবে, যা দিয়ে ফ্রন্টএন্ডে অ্যাকর্ডিয়ন-বেসড গ্র্যান্ড রোল কনফিগারেশন চেকলিস্ট তৈরি হবে।
 
 ---
 
@@ -305,6 +324,26 @@ CREATE TABLE roles (
 CREATE INDEX idx_roles_permissions_gin ON roles USING GIN (permissions);
 CREATE INDEX idx_roles_slug ON roles (slug);
 CREATE INDEX idx_roles_deleted_at ON roles (deleted_at);
+
+-- ----------------------------------------------------------------------
+-- 1.1 Table: permissions (Spatie Extended with 4-Tier Dot Notation)
+-- Format: module.submodule.resources.action
+-- ----------------------------------------------------------------------
+CREATE TABLE permissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(120) NOT NULL UNIQUE,          -- e.g. 'master_data.buyers.profile.create'
+    guard_name VARCHAR(50) NOT NULL DEFAULT 'web',
+    module_name VARCHAR(60) NOT NULL,           -- e.g. 'master_data'
+    submodule_name VARCHAR(60) NOT NULL,        -- e.g. 'buyers'
+    resource_name VARCHAR(60) NOT NULL,         -- e.g. 'profile'
+    action_name VARCHAR(60) NOT NULL,           -- e.g. 'create'
+    description VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_permissions_hierarchy ON permissions (module_name, submodule_name, resource_name);
+CREATE INDEX idx_permissions_name ON permissions (name);
 
 -- ----------------------------------------------------------------------
 -- 2. Table: users (Enterprise Identity with emp_id, username & soft-delete)
