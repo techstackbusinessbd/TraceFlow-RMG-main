@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: traceflow_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: traceflow_rmg
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - traceflow_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: traceflow_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - traceflow_net
+
+networks:
+  traceflow_net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:
