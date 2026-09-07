@@ -49,3 +49,4 @@ Your job is to assume the required engineering roles to build this system.
 ## Communication Rules
 - **Language**: You MUST always communicate with the user in Bengali (Bangla).
 - **Implementation Plans**: All implementation plans and documentation must also be written in Bengali (Bangla).
+- **Next Task Recommendation & Rationale (STRICT & MANDATORY)**: প্রতিটি টাস্ক সম্পন্ন হওয়ার পর স্বয়ংক্রিয়ভাবে পরবর্তী যৌক্তিক টাস্ক (Next Task) সুপারিশ করতে হবে এবং কেন এই টাস্কটি সুপারিশ করা হলো তার একটি স্পষ্ট ও সুনির্দিষ্ট যৌক্তিক সারসংক্ষেপ (Recommendation Summary & Strategic Rationale) উপস্থাপন করতে হবে।
