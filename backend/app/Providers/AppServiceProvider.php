@@ -21,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // 1. Super Admin Wildcard Bypass (Backend Architecture Rule)
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
-            return $user->hasRole('Super Admin') ? true : null;
+            return ($user->hasRole('superadmin') || $user->hasRole('Super Admin')) ? true : null;
         });
 
         // 2. DDD Domain Auto-Policy Discovery

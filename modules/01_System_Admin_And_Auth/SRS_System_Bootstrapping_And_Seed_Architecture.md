@@ -114,32 +114,39 @@ return [
 
 ---
 
-## ৪. সিস্টেমের প্রাথমিক ডিফল্ট রোল ও পারমিশন ম্যাপিং (Core Default Roles)
+## ৪. সিস্টেমের প্রাথমিক ডিফল্ট ৩টি কোর রোল (Core Default 3 Roles)
 
-সিস্টেম বুটস্ট্র্যাপের সময় নিচের প্রাথমিক রোলগুলো স্বয়ংক্রিয়ভাবে তৈরি হবে:
+সিস্টেম বুটস্ট্র্যাপের সময় নিচের প্রাথমিক ৩টি রোল স্বয়ংক্রিয়ভাবে তৈরি হবে:
 
-| রোল নাম (`name`) | স্লাগ (`slug`) | পারমিশন স্কোপ (Permission Scope) | ভূমিকা ও বিবরণ |
+| রোল নাম (`name`) | গার্ড (`guard_name`) | পারমিশন স্কোপ (Permission Scope) | ভূমিকা ও বিবরণ |
 |---|---|---|---|
-| **Super Admin** | `super_admin` | `*` (All Privileges via Kernel Gate) | সিস্টেমের সর্বোচ্চ ও একমাত্র একক পার্সোনা যিনি পার্মানেন্ট হার্ড ডিলিট (`force_delete`) করতে পারেন। |
-| **System Admin** | `system_admin` | `system_admin.*`, `master_data.*`, `*.view` | আইটি সিস্টেম ও ইউজার অনবোর্ডিং অ্যাডমিনিস্ট্রেটর (সফট ডিলিট ও ডিভাইস পেয়ারিং)। |
-| **Factory Manager** | `factory_manager` | `master_data.view`, `order.view`, `production.*`, `qc.*`, `export.view` | ফ্যাক্টরি প্ল্যান্ট প্রধান (অল-মডিউল ওভারভিউ ও অপারেশনাল এপ্রুভাল)। |
-| **Merchandiser Head**| `merchandiser_head`| `order.*`, `master_data.buyers.*`, `master_data.styles.*` | অর্ডার এন্ট্রি, কস্টিং, বিওএম এবং বায়ার পিও ম্যানেজমেন্ট। |
-| **Cutting Master** | `cutting_master` | `cutting.*`, `warehouse.fabric.requisition` | ফেব্রিক রিলাক্সেশন চেক, মার্কার নেস্টিং ও বান্ডল টিকিট জেনারেশন। |
-| **Line QC Inspector**| `line_qc_inspector`| `qc.inline.*`, `qc.end_line.defect.pin` | ফ্লোর ট্যাবলেটে ডিজিটাল ডিফেক্ট পিনিং ও ট্রাফিক লাইট স্ট্যাটাস। |
-| **Floor Operator** | `floor_operator` | `sewing.line_tracking.bundle.scan` | হার্ডওয়্যার লকড স্টেশন দিয়ে বারকোড/কিউআর ওয়ান-ক্লিক স্ক্যান। |
+| **`superadmin`** | `web` | `*` (All Privileges via Kernel Gate) | সিস্টেমের সর্বোচ্চ ও একমাত্র একক পার্সোনা যিনি পার্মানেন্ট হার্ড ডিলিট (`force_delete`) করতে পারেন। সম্পূর্ণ আনরেস্ট্রিক্টেড এক্সেস। |
+| **`admin`** | `web` | All except `*.force_delete` | ফ্যাক্টরি প্ল্যান্ট অ্যাডমিনিস্ট্রেটর। ইউজার অনবোর্ডিং, সফট ডিলিট, মাস্টার ডাটা এন্ট্রি ও কনফিগারেশন। |
+| **`standarduser`** | `web` | `*.view`, `*.create`, `*.update` | সাধারণ ফ্যাক্টরি ও ফ্লোর ইউজার। প্রাত্যহিক প্রোডাকশন ও অপারেশনাল কাজ পরিচালনা। |
 
 ---
 
-## ৫. রুট সুপার অ্যাডমিন প্রভিশনিং স্পেসিফিকেশন (Root Admin Provisioning)
+## ৫. সিস্টেম বুটস্ট্র্যাপের প্রাথমিক ৩টি ইউজার (Default 3 System Users)
 
-### ৫.১ সিক্রেট এনভলপ ভ্যারিয়েবলস (`.env`)
+সিস্টেমের প্রাথমিক সেটআপে নিচের ৩টি ডিফল্ট ইউজার তৈরি হবে:
+
+| নং | ইউজারনেম (`username`) | নাম (`name`) | এমপ্লয়ী আইডি (`emp_id`) | অ্যাসাইন্ড রোল (`role`) | প্রাথমিক পাসওয়ার্ড |
+|---|---|---|---|---|---|
+| ১ | **`superadmin`** | Super Administrator | `AWL-ADM-0001` | **`superadmin`** | `SuperAdmin#2026!` |
+| ২ | **`admin`** | Plant Administrator | `AWL-ADM-0002` | **`admin`** | `Admin#2026!` |
+| ৩ | **`standarduser`** | Standard User | `AWL-STD-0003` | **`standarduser`** | `Standard#2026!` |
+
+### ৫.১ সিক্রেট এনভলপ কনফিগারেশন (`.env`)
 ```env
-# System Bootstrap Root Administrator Credentials
-SYSTEM_ROOT_ADMIN_EMP_ID="AWL-ADM-0001"
-SYSTEM_ROOT_ADMIN_USERNAME="superadmin"
-SYSTEM_ROOT_ADMIN_NAME="System Super Administrator"
-SYSTEM_ROOT_ADMIN_EMAIL="superadmin@traceflow-rmg.com"
-SYSTEM_ROOT_ADMIN_PASSWORD="ChangeMeOnFirstLogin#2026!"
+# System Bootstrap Default Accounts
+SYSTEM_SUPERADMIN_USERNAME="superadmin"
+SYSTEM_SUPERADMIN_PASSWORD="SuperAdmin#2026!"
+
+SYSTEM_ADMIN_USERNAME="admin"
+SYSTEM_ADMIN_PASSWORD="Admin#2026!"
+
+SYSTEM_STANDARDUSER_USERNAME="standarduser"
+SYSTEM_STANDARDUSER_PASSWORD="Standard#2026!"
 ```
 
 ### ৫.২ নিরাপত্তা ও ফাস্ট-লগইন বাধ্যবাধকতা

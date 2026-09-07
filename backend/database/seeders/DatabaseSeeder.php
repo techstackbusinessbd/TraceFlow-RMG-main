@@ -44,67 +44,80 @@ class DatabaseSeeder extends Seeder
         }
         $this->command->info("   -> Seeded " . count($permissions) . " permissions.");
 
-        // 3. Seed Core Enterprise Roles
-        $this->command->info('2️⃣ Provisioning Core Enterprise Roles...');
+        // 3. Seed Default 3 Core Enterprise Roles: superadmin, admin, standarduser
+        $this->command->info('2️⃣ Provisioning Default 3 Core Enterprise Roles (superadmin, admin, standarduser)...');
         
-        $superAdminRole = Role::updateOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
-        $systemAdminRole = Role::updateOrCreate(['name' => 'System Admin', 'guard_name' => 'web']);
-        $factoryManagerRole = Role::updateOrCreate(['name' => 'Factory Manager', 'guard_name' => 'web']);
-        $merchandiserRole = Role::updateOrCreate(['name' => 'Merchandiser Head', 'guard_name' => 'web']);
-        $operatorRole = Role::updateOrCreate(['name' => 'Floor Operator', 'guard_name' => 'web']);
+        $superAdminRole = Role::updateOrCreate(['name' => 'superadmin', 'guard_name' => 'web']);
+        $adminRole = Role::updateOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $standardUserRole = Role::updateOrCreate(['name' => 'standarduser', 'guard_name' => 'web']);
 
-        // Assign all non-superadmin permissions to System Admin
-        $systemAdminPerms = Permission::where('name', 'not like', '%.force_delete')->get();
-        $systemAdminRole->syncPermissions($systemAdminPerms);
+        // Assign all non-force_delete permissions to 'admin'
+        $adminPerms = Permission::where('name', 'not like', '%.force_delete')->get();
+        $adminRole->syncPermissions($adminPerms);
 
-        // Assign master data permissions to Merchandiser Head
-        $merchandiserPerms = Permission::where('module_name', 'master_data')->get();
-        $merchandiserRole->syncPermissions($merchandiserPerms);
+        // Assign standard view & create permissions to 'standarduser'
+        $standardPerms = Permission::where('name', 'like', '%.view')
+            ->orWhere('name', 'like', '%.create')
+            ->orWhere('name', 'like', '%.update')
+            ->get();
+        $standardUserRole->syncPermissions($standardPerms);
 
-        $this->command->info('   -> Roles provisioned & mapped successfully.');
+        $this->command->info('   -> 3 Core Roles provisioned & permissions mapped.');
 
-        // 4. Provision Root Super Admin User
-        $this->command->info('3️⃣ Provisioning Root Super Administrator Account...');
+        // 4. Provision Default 3 Users
+        $this->command->info('3️⃣ Provisioning Default 3 Users (superadmin, admin, standard user)...');
         
-        $rootUsername = env('SYSTEM_ROOT_ADMIN_USERNAME', 'superadmin');
-        $rootEmpId = env('SYSTEM_ROOT_ADMIN_EMP_ID', 'AWL-ADM-0001');
-        $rootEmail = env('SYSTEM_ROOT_ADMIN_EMAIL', 'superadmin@traceflow-rmg.com');
-        $rootPassword = env('SYSTEM_ROOT_ADMIN_PASSWORD', 'SuperAdmin#2026!');
-
+        // User 1: Superadmin (Role: superadmin)
         $superAdminUser = User::updateOrCreate(
-            ['username' => $rootUsername],
+            ['username' => 'superadmin'],
             [
-                'emp_id' => $rootEmpId,
-                'name' => 'Root System Administrator',
-                'email' => $rootEmail,
-                'password' => Hash::make($rootPassword),
+                'emp_id' => 'AWL-ADM-0001',
+                'name' => 'Super Administrator',
+                'email' => 'superadmin@traceflow-rmg.com',
+                'password' => Hash::make('SuperAdmin#2026!'),
                 'department' => 'Executive & IT Architecture',
                 'phone' => '+8801700000000',
                 'is_active' => true,
                 'must_change_password' => false,
             ]
         );
+        $superAdminUser->syncRoles([$superAdminRole]);
+        $this->command->info("   -> [1/3] User: superadmin (Role: superadmin | Emp ID: AWL-ADM-0001)");
 
-        $superAdminUser->assignRole($superAdminRole);
-        $this->command->info("   -> Root Super Admin created: {$rootUsername} ({$rootEmpId})");
-
-        // 5. Provision a Sample Factory System Admin for Testing
-        $sysAdminUser = User::updateOrCreate(
-            ['username' => 'sysadmin'],
+        // User 2: Admin (Role: admin)
+        $adminUser = User::updateOrCreate(
+            ['username' => 'admin'],
             [
-                'emp_id' => 'AWL-IT-0002',
-                'name' => 'Factory IT Administrator',
-                'email' => 'it.admin@traceflow-rmg.com',
+                'emp_id' => 'AWL-ADM-0002',
+                'name' => 'Plant Administrator',
+                'email' => 'admin@traceflow-rmg.com',
                 'password' => Hash::make('Admin#2026!'),
-                'department' => 'IT & Systems',
+                'department' => 'Factory Administration',
                 'phone' => '+8801700000001',
                 'is_active' => true,
                 'must_change_password' => false,
             ]
         );
-        $sysAdminUser->assignRole($systemAdminRole);
-        $this->command->info("   -> Factory IT Admin created: sysadmin (AWL-IT-0002)");
+        $adminUser->syncRoles([$adminRole]);
+        $this->command->info("   -> [2/3] User: admin (Role: admin | Emp ID: AWL-ADM-0002)");
 
-        $this->command->info('🎉 TraceFlow RMG — System Bootstrap Seeding Completed Successfully!');
+        // User 3: Standard User (Role: standarduser)
+        $standardUser = User::updateOrCreate(
+            ['username' => 'standarduser'],
+            [
+                'emp_id' => 'AWL-STD-0003',
+                'name' => 'Standard User',
+                'email' => 'standard.user@traceflow-rmg.com',
+                'password' => Hash::make('Standard#2026!'),
+                'department' => 'General Operations',
+                'phone' => '+8801700000002',
+                'is_active' => true,
+                'must_change_password' => false,
+            ]
+        );
+        $standardUser->syncRoles([$standardUserRole]);
+        $this->command->info("   -> [3/3] User: standard user (username: standarduser | Role: standarduser | Emp ID: AWL-STD-0003)");
+
+        $this->command->info('🎉 TraceFlow RMG — System Boot Seeding (3 Roles & 3 Users) Completed Successfully!');
     }
 }
