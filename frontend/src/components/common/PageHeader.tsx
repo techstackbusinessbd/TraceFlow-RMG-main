@@ -1,6 +1,5 @@
 import React from "react";
 import { Badge } from "./Badge";
-import { UI_TOKENS } from "../../config/designTokens";
 
 export interface PageHeaderProps {
   title: string;
@@ -10,9 +9,8 @@ export interface PageHeaderProps {
 }
 
 /**
- * Mandatory Golden List Page Standard: Tier 1 - Sleek Header Row
- * Single-line clean layout, direct concise title, counter badge, action buttons on far right.
- * No redundant giant icons or verbose subtitle paragraphs.
+ * Microsoft Power Automate Fluent 2 Page Header
+ * Clean, lightweight, direct title with subtle pill counter and action buttons.
  */
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
@@ -21,9 +19,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   actions,
 }) => {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-200">
+    <header className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
       <div className="flex items-center gap-3">
-        <h1 className={UI_TOKENS.typography.sizes["2xl"]}>{title}</h1>
+        <h1 className="text-xl font-bold text-slate-900 tracking-tight">{title}</h1>
         {badgeCount !== undefined && (
           <Badge variant="neutral">
             {badgeCount} {badgeLabel || "Items"}

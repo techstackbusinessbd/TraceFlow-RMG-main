@@ -1,5 +1,10 @@
-# API Specification & Schema Details
-**Module:** 08 - QC
+# API Specification & Schema Details (SUPERSEDED)
+**Module:** 08 - QC  
+**Status:** ⚠️ SUPERSEDED by [API_Spec_08_QC.md](file:///g:/ERP/TraceFlow-RMG-main/docs/02_Solution_Architect/API_Spec_08_QC.md)
+
+> [!WARNING]
+> This brief stub is superseded by the V4.0 Single-Piece QC & Defect Logging Specification.
+> Use: 📄 [API_Spec_08_QC.md](file:///g:/ERP/TraceFlow-RMG-main/docs/02_Solution_Architect/API_Spec_08_QC.md)
 
 ### Table: `qc_inspections`
 - `id` UUID PK

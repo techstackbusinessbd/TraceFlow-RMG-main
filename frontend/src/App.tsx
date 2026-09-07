@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
-import { Plus, Download, Edit2, Eye, LogOut, Lock } from "lucide-react";
+import { Plus, Download, Edit2, Eye } from "lucide-react";
 import { PageHeader } from "./components/common/PageHeader";
 import { FilterToolbar } from "./components/common/FilterToolbar";
 import { DataTable, type ColumnDef } from "./components/common/DataTable";
 import { Button } from "./components/common/Button";
 import { Badge } from "./components/common/Badge";
 import { TableActionButton } from "./components/common/TableActionButton";
+import { UI_TOKENS } from "./config/designTokens";
+import { AppLayout } from "./components/layout/AppLayout";
 import { LoginPage } from "./features/Auth/LoginPage";
+import { ExecutiveDashboard } from "./features/Dashboard/ExecutiveDashboard";
+import { UserProfilePage } from "./features/Profile/UserProfilePage";
 import { useAuthStore } from "./store/authStore";
 
 interface BuyerRow {
@@ -27,11 +31,25 @@ const SAMPLE_BUYERS: BuyerRow[] = [
 ];
 
 export function App() {
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { isAuthenticated, canAccessWidget } = useAuthStore();
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
+  const [sortField, setSortField] = useState<string>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  const canViewDashboard = canAccessWidget(
+    ['dashboard.view', 'executive.dashboard.view'],
+    ['superadmin', 'admin', 'executive', 'management']
+  );
+  const canViewMasterBuyers = canAccessWidget(
+    ['master_data.buyers.profile.view'],
+    ['superadmin', 'admin', 'standarduser', 'merchandiser']
+  );
+
+  const defaultLandingPath = canViewDashboard ? "/dashboard" : "/master/buyers";
 
   useEffect(() => {
     const handlePopState = () => setCurrentPath(window.location.pathname);
@@ -39,30 +57,97 @@ export function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  // Redirect to permitted landing if authenticated and at "/" or "/login" or unpermitted "/dashboard"
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (currentPath === "/" || currentPath === "/login") {
+        window.history.replaceState({}, "", defaultLandingPath);
+        setCurrentPath(defaultLandingPath);
+      } else if (currentPath === "/dashboard" && !canViewDashboard && canViewMasterBuyers) {
+        window.history.replaceState({}, "", "/master/buyers");
+        setCurrentPath("/master/buyers");
+      }
+    }
+  }, [isAuthenticated, currentPath, canViewDashboard, canViewMasterBuyers, defaultLandingPath]);
+
+  // If user is not authenticated, strictly render LoginPage
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  // If authenticated user visits /login, immediately push defaultLandingPath
+  if (currentPath === "/login") {
+    window.history.replaceState({}, "", defaultLandingPath);
+  }
+
   const navigateTo = (path: string) => {
     window.history.pushState({}, "", path);
     setCurrentPath(path);
   };
 
-  // If path is /login or user is not logged in, render LoginPage
-  if (currentPath === "/login" || (!isAuthenticated && currentPath !== "/")) {
-    return <LoginPage />;
-  }
+  const handleSelectModule = (moduleId: string) => {
+    if (moduleId === "dashboard") {
+      navigateTo("/dashboard");
+    } else if (moduleId === "master-buyers") {
+      navigateTo("/master/buyers");
+    } else {
+      navigateTo(`/${moduleId}`);
+    }
+  };
+
+  const isDashboard = currentPath === "/dashboard" || currentPath === "/" || currentPath === "/login";
+  const isProfile = currentPath === "/profile";
+
+  // Handle column sort toggle
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  // Filter & Sort Logic
+  const filteredData = SAMPLE_BUYERS.filter((item) => {
+    const matchesSearch =
+      item.code.toLowerCase().includes(search.toLowerCase()) ||
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
+      item.country.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "ALL" || item.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const sortedData = [...filteredData].sort((a, b) => {
+    let valA = a[sortField as keyof BuyerRow];
+    let valB = b[sortField as keyof BuyerRow];
+
+    if (typeof valA === "string" && typeof valB === "string") {
+      return sortDirection === "asc"
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
+    }
+    if (typeof valA === "number" && typeof valB === "number") {
+      return sortDirection === "asc" ? valA - valB : valB - valA;
+    }
+    return 0;
+  });
+
+  const getSortHeaderName = () => {
+    const col = columns.find(c => c.key === sortField);
+    return col ? `${col.header} (${sortDirection.toUpperCase()})` : `Name (${sortDirection.toUpperCase()})`;
+  };
 
   const columns: ColumnDef<BuyerRow>[] = [
     {
       key: "code",
       header: "Buyer Code",
-      render: (item) => (
-        <span className="font-mono text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-          {item.code}
-        </span>
-      ),
+      render: (item) => <Badge variant="code">{item.code}</Badge>,
     },
     {
       key: "name",
       header: "Buyer Name",
-      render: (item) => <span className="font-medium text-slate-900">{item.name}</span>,
+      render: (item) => <span className="font-semibold text-slate-900">{item.name}</span>,
     },
     {
       key: "country",
@@ -89,6 +174,7 @@ export function App() {
       key: "actions",
       header: "Actions",
       align: "right",
+      sortable: false,
       render: () => (
         <div className="flex items-center justify-end gap-1.5">
           <TableActionButton variant="secondary" icon={<Eye className="h-3 w-3" />}>
@@ -102,94 +188,114 @@ export function App() {
     },
   ];
 
+  // Map current module/path to Category
+  const getActiveCategory = (moduleId: string): string | null => {
+    if (["profile", "profile-password", "admin-users", "admin-roles"].includes(moduleId)) return "auth";
+    if (["master-companies", "master-buyers", "master-suppliers", "master-units"].includes(moduleId)) return "governance";
+    if (["inquiries", "styles-costing", "techpacks", "order-pos"].includes(moduleId)) return "merchandising";
+    if (["warehouse-rolls", "roll-grn", "shade-lots", "trims-warehouse"].includes(moduleId)) return "materials";
+    if (["cad-markers", "spreading-tables", "cutting-bundles", "sewing-lines", "hourly-production"].includes(moduleId)) return "shopfloor";
+    if (["qc-inspection", "cutting-qc", "endline-qc"].includes(moduleId)) return "quality";
+    if (["finishing-packing", "export-shipment"].includes(moduleId)) return "shipping";
+    return null;
+  };
+
+  const currentModuleId = isDashboard ? "dashboard" : isProfile ? "profile" : currentPath.replace(/^\//, "").replace("master/buyers", "master-buyers") || "master-buyers";
+  const activeCategory = getActiveCategory(currentModuleId);
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Pinned Top Navigation Bar */}
-      <nav className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between border-b border-slate-800 sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="h-7 w-7 rounded bg-blue-600 flex items-center justify-center font-bold text-sm text-white">
-            TF
-          </div>
-          <span className="font-semibold tracking-wide text-sm">TraceFlow RMG</span>
-          <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">
-            Enterprise Woven Traceability
-          </span>
-        </div>
+    <AppLayout
+      currentModuleId={currentModuleId}
+      hideRail={isDashboard}
+      activeCategory={activeCategory}
+      onProfileClick={() => navigateTo("/profile")}
+      breadcrumbs={
+        isDashboard
+          ? [
+              { label: "Home", href: "/dashboard" },
+              { label: "Executive Dashboard", active: true },
+            ]
+          : isProfile
+          ? [
+              { label: "Home", href: "/dashboard" },
+              { label: "Security & Accounts", href: "/profile" },
+              { label: "User Profile", active: true },
+            ]
+          : [
+              { label: "Home", href: "/dashboard" },
+              { label: "Master Data", href: "/master/buyers" },
+              { label: "Buyer Directory", active: true },
+            ]
+      }
+      onSelectModule={handleSelectModule}
+    >
+      {isDashboard ? (
+        <ExecutiveDashboard />
+      ) : isProfile ? (
+        <UserProfilePage />
+      ) : (
+        <>
+          {/* Tier 1: Power Automate Sleek Header Row */}
+          <PageHeader
+            title="Buyer Directory"
+            badgeCount={sortedData.length}
+            badgeLabel="Registered Buyers"
+            actions={
+              <>
+                <Button variant="secondary" icon={<Download className="h-3.5 w-3.5" />}>
+                  Export List
+                </Button>
+                <Button variant="primary" icon={<Plus className="h-3.5 w-3.5" />}>
+                  Create Buyer
+                </Button>
+              </>
+            }
+          />
 
-        <div className="flex items-center gap-4 text-xs text-slate-400">
-          <span>Active Plant: <strong className="text-white">Ananta Woven Ltd (AWL)</strong></span>
-          <span className="h-3 w-px bg-slate-700" />
-          
-          {user ? (
-            <div className="flex items-center gap-3">
-              <span>
-                User: <strong className="text-white">{user.name}</strong> ({user.roles.join(", ")}) | ID: <span className="font-mono text-cyan-300">{user.emp_id}</span>
-              </span>
-              <button
-                onClick={() => {
-                  logout();
-                  navigateTo("/login");
-                }}
-                className="inline-flex items-center gap-1 text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
-                title="Sign out"
+          {/* Tier 2: Unified Modern Filter Toolbar */}
+          <FilterToolbar
+            searchValue={search}
+            onSearchChange={setSearch}
+            pageSize={pageSize}
+            onPageSizeChange={setPageSize}
+            activeSortLabel={getSortHeaderName()}
+            searchPlaceholder="Search buyers by code, name, or country..."
+            onFilterSubmit={() => {}}
+            onReset={() => {
+              setSearch("");
+              setStatusFilter("ALL");
+              setSortField("name");
+              setSortDirection("asc");
+            }}
+            filterInputs={
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className={`${UI_TOKENS.input.select} py-1.5 text-xs`}
               >
-                <LogOut className="h-3.5 w-3.5" />
-                <span>Logout</span>
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => navigateTo("/login")}
-              className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
-            >
-              <Lock className="h-3.5 w-3.5" />
-              <span>Sign In</span>
-            </button>
-          )}
-        </div>
-      </nav>
+                <option value="ALL">All Statuses</option>
+                <option value="Active">Active Only</option>
+                <option value="Inactive">Inactive Only</option>
+              </select>
+            }
+          />
 
-      {/* Main Page Content (3-Tier Golden List Architecture Demo) */}
-      <main className="max-w-7xl mx-auto px-6 py-6">
-        {/* Tier 1: Sleek Header Row */}
-        <PageHeader
-          title="Buyer Directory"
-          badgeCount={SAMPLE_BUYERS.length}
-          badgeLabel="Registered Buyers"
-          actions={
-            <>
-              <Button variant="secondary" icon={<Download className="h-4 w-4" />}>
-                Export List
-              </Button>
-              <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
-                Create Buyer
-              </Button>
-            </>
-          }
-        />
-
-        {/* Tier 2: Unified Filter Toolbar */}
-        <FilterToolbar
-          searchValue={search}
-          onSearchChange={setSearch}
-          pageSize={pageSize}
-          onPageSizeChange={setPageSize}
-          activeSortLabel="Buyer Name (ASC)"
-          searchPlaceholder="Search buyers by code, name, or country..."
-        />
-
-        {/* Tier 3: Enterprise DataTable Shell */}
-        <DataTable
-          columns={columns}
-          data={SAMPLE_BUYERS}
-          totalRecords={SAMPLE_BUYERS.length}
-          currentPage={page}
-          totalPages={1}
-          pageSize={pageSize}
-          onPageChange={setPage}
-        />
-      </main>
-    </div>
+          {/* Tier 3: Enterprise DataTable Shell with Interactive Sorting */}
+          <DataTable
+            columns={columns}
+            data={sortedData}
+            totalRecords={sortedData.length}
+            currentPage={page}
+            totalPages={1}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+          />
+        </>
+      )}
+    </AppLayout>
   );
 }
 

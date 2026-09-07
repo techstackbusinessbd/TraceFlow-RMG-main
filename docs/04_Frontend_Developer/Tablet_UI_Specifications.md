@@ -1,6 +1,10 @@
-# Tablet UI Specifications
-**Role:** Frontend / Android Developer
-**Status:** Approved
+# Tablet UI Specifications (Superseded)
+**Role:** Frontend / Android Developer  
+**Status:** Superseded by [Multi_Device_UI_UX_Dashboard_Spec.md](file:///g:/ERP/TraceFlow-RMG-main/docs/04_Frontend_Developer/Multi_Device_UI_UX_Dashboard_Spec.md)
+
+> [!NOTE]
+> For the comprehensive production specification of floor tablets, scanning ergonomics, and offline SQLite sync, please refer to:
+> 📄 [Multi_Device_UI_UX_Dashboard_Spec.md](file:///g:/ERP/TraceFlow-RMG-main/docs/04_Frontend_Developer/Multi_Device_UI_UX_Dashboard_Spec.md)
 
 ## 1. Factory Floor UI/UX
 - **Dark Theme:** Mandatory to save battery and reduce eye strain in low-light factory floors.

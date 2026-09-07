@@ -1,6 +1,10 @@
-# Product Requirements Document (PRD)
-**Module:** 07 - Sewing & Line Tracking
-**Version:** 3.0 (Enterprise Manual Details)
+# Product Requirements Document (PRD) (SUPERSEDED)
+**Module:** 07 - Sewing & Line Tracking  
+**Status:** ⚠️ SUPERSEDED by [PRD_07_Sewing.md](file:///g:/ERP/TraceFlow-RMG-main/docs/01_Business_Analyst/PRD_07_Sewing.md)
+
+> [!WARNING]
+> This brief stub is superseded by Version 4.1 Single-Piece Tracking Edition.
+> Use: 📄 [PRD_07_Sewing.md](file:///g:/ERP/TraceFlow-RMG-main/docs/01_Business_Analyst/PRD_07_Sewing.md)
 
 ## 1. Executive Summary
 Core of tracing. Operators scan QR codes at the start (Input) and end (Output) of the sewing line.

@@ -1,8 +1,11 @@
-# API Specification & Schema Details
-**Module:** 05 - Cutting & Bundle Ticket
-**Version:** 2.0 (In-depth Enterprise)
-**Author:** Solution Architect
-**Status:** 100% Production Ready
+# API Specification & Schema Details (SUPERSEDED)
+**Module:** 05 - Cutting & Bundle Ticket  
+**Status:** ⚠️ SUPERSEDED by [API_Spec_05_Cutting.md](file:///g:/ERP/TraceFlow-RMG-main/docs/02_Solution_Architect/API_Spec_05_Cutting.md)
+
+> [!WARNING]
+> This early specification (Version 2.0) has been upgraded to **Single-Piece Sub-QR Traceability Architecture (Version 4.1)**.
+> Use the authoritative master file:
+> 📄 [API_Spec_05_Cutting.md](file:///g:/ERP/TraceFlow-RMG-main/docs/02_Solution_Architect/API_Spec_05_Cutting.md)
 
 ## 1. Database Schema Specifications
 

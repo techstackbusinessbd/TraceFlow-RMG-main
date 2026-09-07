@@ -1,4 +1,5 @@
 services:
+  # 1. PostgreSQL Database
   postgres:
     image: postgres:17-alpine
     container_name: traceflow_postgres
@@ -8,12 +9,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: secretpassword
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - traceflow_net
 
+  # 2. Redis Cache & Queue
   redis:
     image: redis:7-alpine
     container_name: traceflow_redis
@@ -23,6 +25,51 @@ services:
       - "6379:6379"
     volumes:
       - redisdata:/data
+    networks:
+      - traceflow_net
+
+  # 3. Backend API Service (Laravel)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: traceflow_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: traceflow_rmg
+      DB_USERNAME: postgres
+      DB_PASSWORD: secretpassword
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - traceflow_net
+
+  # 4. Frontend Web Service (React + Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: traceflow_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - backend
     networks:
       - traceflow_net
 

@@ -6,6 +6,7 @@
 **প্রোডাক্ট ওনার / এক্সিকিউটিভ স্পন্সর রিকোয়ারমেন্ট:**  
 > 1. *"organization setup e sop change hoba company setup hoba like system run howar por superadmin company setup korba group or sisterconcern no need. protita company independent entity hoba eta srs aga thik koro"*  
 > 2. *"company wise data separate hoba like akta company er data onno company access korte gela permission lagba eta srs e update koro"*  
+> 3. *"user j kono registed compay er odhin hoba. but superadmin er company hoba platform owner. boot admin & standard user er company hoba platform test eta srs e update kore naw"*  
 
 ---
 
@@ -15,7 +16,11 @@ TraceFlow-RMG এন্টারপ্রাইজ সিস্টেমে প�
 1. **কোনো Group বা Sister Concern হায়ারার্কি থাকবে না।**
 2. প্রতিটি কোম্পানি হবে একটি সম্পূর্ণ স্বাধীন (Independent) লিগ্যাল ও অপারেশনাল এন্টিটি।
 3. সিস্টেম বুট হওয়ার পর `Super Admin` লগইন করে সরাসরি **Company Setup** সম্পন্ন করবেন।
-4. **কোম্পানিভিত্তিক ডেটা পৃথকীকরণ (Strict Multi-Company Data Isolation):**
+4. **ইউজার ও কোম্পানির অ্যাফিলিয়েশন পলিসি (User & Company Affiliation Rule):**
+   - সাধারণ যেকোনো ইউজার (User) বাধ্যতামূলকভাবে যেকোনো একটি নিবন্ধিত কোম্পানির (Registered Company) অধীন হবে।
+   - **`Super Admin`**-এর কোম্পানি হবে **`Platform Owner`** (সিস্টেমের মূল স্বত্বাধিকারী এন্টিটি)।
+   - সিস্টেমের সাথে প্রি-কনফিগার করা বুট ইউজার **`admin`** এবং **`standarduser`**-এর কোম্পানি হবে **`Platform Test`** (সিস্টেম টেস্টিং ও ভ্যালিডেশন এন্টিটি)।
+5. **কোম্পানিভিত্তিক ডেটা পৃথকীকরণ (Strict Multi-Company Data Isolation):**
    - একটি কোম্পানির ডেটা (অর্ডার, বায়ার কন্ট্রাক্ট, কাটিং, বান্ডেল ট্র্যাকিং, কিউসি ও প্রোডাকশন রিপোর্ট) ডিফল্টভাবে অপর কোনো কোম্পানির ইউজার দেখতে বা পরিবর্তন করতে পারবে না।
    - যদি কোনো ইউজারকে অন্য একটি কোম্পানির ডেটা অ্যাক্সেস করতে হয়, তবে তার জন্য নির্দিষ্ট **Cross-Company Access Permission / Assignment** থাকতে হবে।
    - শুধুমাত্র প্ল্যাটফর্ম `Super Admin` বাইপাস অধিকার নিয়ে সমস্ত কোম্পানির ডেটা কনসোলিডেটেডভাবে নিরীক্ষণ ও অডিট করতে পারবেন।
@@ -29,9 +34,15 @@ TraceFlow-RMG এন্টারপ্রাইজ সিস্টেমে প�
 - কোম্পানি নিজেই টপ-লেভেল লিগ্যাল সত্ত্বা। 
 - ডাটাবেসের সমস্ত অপারেশনাল টেবিল (ফ্যাক্টরি ইউনিট, ফ্লোর, লাইন, বায়ার অ্যাসাইনমেন্ট, অর্ডার, কাটিং প্ল্যান, প্রোডাকশন ট্র্যাকিং) সরাসরি `company_id` দ্বারা পার্টিশন ও আইসোলেট করা থাকবে।
 
-### ২.২ রুল ২: Super Admin Boot & Company Setup Flow
-1. **System Boot:** সিস্টেম ফ্রেশ মাইগ্রেশনের পর ডিফল্ট ৩টি বুট ইউজার তৈরি থাকবে (`superadmin`, `admin`, `user`)।
-2. **First-Step Wizard / Company Setup:** `Super Admin` সিস্টেমে প্রবেশ করে সর্বপ্রথম **Company Profile** তৈরি/কনফিগার করবেন:
+### ২.২ রুল ২: ইউজার-কোম্পানি অ্যাফিলিয়েশন ও বুট সিডিং পলিসি (User Company Affiliation & Boot Seeding Policy)
+1. **রেজিস্টার্ড ইউজারদের কোম্পানির অধীনতা (Mandatory Registered Company Assignment):**
+   - সিস্টেমে তৈরি হওয়া যেকোনো সাধারণ ইউজার (General User / Operator / Manager) অবশ্যই সিস্টেমে নিবন্ধিত যেকোনো একটি অনুমোদিত কোম্পানির (`Registered Company`) অধীনে থাকতে হবে (`users.company_id NOT NULL`)।
+2. **Super Admin — Platform Owner:**
+   - সিস্টেমের রুট অ্যাডমিনিস্ট্রেটর `Super Admin`-এর কোম্পানি হবে **`Platform Owner`** (কোড: `PLT` / `CMP-00`)। এটি সম্পূর্ণ সিস্টেম অডিট, প্ল্যাটফর্ম মনিটরিং এবং যেকোনো কোম্পানির ডেটা গ্লোবালি অ্যাক্সেস করার বিশেষ অধিকার পাবে।
+3. **Boot Admin & Standard User — Platform Test:**
+   - ফ্রেশ ডাটাবেস ইন্সটলেশনে ডিফল্ট বুট ইউজার হিসেবে প্রোভিশন করা **`admin`** এবং **`standarduser`**-এর কোম্পানি হবে **`Platform Test`** (কোড: `TST` / `CMP-TEST`)।
+   - এটি সিস্টেম টেস্টিং, ট্রায়াল রান এবং ফিচার ভ্যালিডেশনের জন্য আইসোলেটেড টেস্ট ডেটাসেট হিসেবে ব্যবহৃত হবে।
+4. **First-Step Wizard / Company Setup:** `Super Admin` সিস্টেমে প্রবেশ করে ক্লায়েন্ট/ফ্যাক্টরির জন্য নতুন **Company Profile** তৈরি/কনফিগার করবেন:
    - **Company Code:** ১০০% সিস্টেম অটো-জেনারেটেড ইউনিক সিকোয়েন্সিয়াল কোড (যেমন: `CMP-01`, `CMP-02`)। ইউজার কোনো ম্যানুয়াল কোড টাইপ করতে পারবে না (`readOnly={true}` with "System Auto" badge)।
    - **Company Short Name (সংক্ষেপ নাম):** ইউজারের দ্বারা নির্ধারিত আলফানিউমেরিক সংক্ষেপ ট্রেড নাম (যেমন: `TFL`, `APEX`, `EGL`)। এটি ইউনিক হবে এবং মাস্টার জব/অর্ডার কোড জেনারেশনে প্রিফিক্স হিসেবে ব্যবহৃত হবে।
    - **Company Full Legal Name:** কোম্পানির পূর্ণ আইনি নাম (যেমন: `TraceFlow Apparels Limited`)।

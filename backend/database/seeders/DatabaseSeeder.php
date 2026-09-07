@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Company;
 use App\Models\User;
 use App\Services\PermissionDiscoveryService;
 use Illuminate\Database\Seeder;
@@ -23,7 +24,37 @@ class DatabaseSeeder extends Seeder
         // 1. Reset cached roles and permissions
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        // 2. Discover & Seed 4-Tier Domain Permissions
+        // 2. Provision Core System Companies (Platform Owner & Platform Test)
+        $this->command->info('🏢 Provisioning System Core Companies (Platform Owner & Platform Test)...');
+        $platformOwnerCompany = Company::updateOrCreate(
+            ['code' => 'PLT'],
+            [
+                'name' => 'Platform Owner',
+                'legal_name' => 'TraceFlow RMG Platform Owner Limited',
+                'tax_id' => 'PLT-BIN-000000001',
+                'email' => 'platform@traceflow-rmg.com',
+                'phone' => '+8801700000000',
+                'address' => 'Central Platform Infrastructure & IT Architecture Headquarters',
+                'is_active' => true,
+            ]
+        );
+        $this->command->info("   -> [1/2] Company: Platform Owner (Code: PLT | ID: {$platformOwnerCompany->id})");
+
+        $platformTestCompany = Company::updateOrCreate(
+            ['code' => 'TST'],
+            [
+                'name' => 'Platform Test',
+                'legal_name' => 'Platform Test Factory Operations',
+                'tax_id' => 'TST-BIN-000000002',
+                'email' => 'test@traceflow-rmg.com',
+                'phone' => '+8801700000001',
+                'address' => 'Sandboxed Test & QA Facility Facility',
+                'is_active' => true,
+            ]
+        );
+        $this->command->info("   -> [2/2] Company: Platform Test (Code: TST | ID: {$platformTestCompany->id})");
+
+        // 3. Discover & Seed 4-Tier Domain Permissions
         $this->command->info('1️⃣ Discovering & Seeding 4-Tier Domain Permissions...');
         $permissions = $discoveryService->getFlattenedPermissions();
 
@@ -44,7 +75,7 @@ class DatabaseSeeder extends Seeder
         }
         $this->command->info("   -> Seeded " . count($permissions) . " permissions.");
 
-        // 3. Seed Default 3 Core Enterprise Roles: superadmin, admin, standarduser
+        // 4. Seed Default 3 Core Enterprise Roles: superadmin, admin, standarduser
         $this->command->info('2️⃣ Provisioning Default 3 Core Enterprise Roles (superadmin, admin, standarduser)...');
         
         $superAdminRole = Role::updateOrCreate(['name' => 'superadmin', 'guard_name' => 'web']);
@@ -64,13 +95,14 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('   -> 3 Core Roles provisioned & permissions mapped.');
 
-        // 4. Provision Default 3 Users
-        $this->command->info('3️⃣ Provisioning Default 3 Users (superadmin, admin, standard user)...');
+        // 5. Provision Default 3 Users with strict company affiliation
+        $this->command->info('3️⃣ Provisioning Default 3 Users (superadmin: Platform Owner, admin & standard user: Platform Test)...');
         
-        // User 1: Superadmin (Role: superadmin)
+        // User 1: Superadmin (Role: superadmin | Company: Platform Owner)
         $superAdminUser = User::updateOrCreate(
             ['username' => 'superadmin'],
             [
+                'company_id' => $platformOwnerCompany->id,
                 'emp_id' => '255776', // Manual factory employee ID
                 'name' => 'Super Administrator',
                 'email' => 'superadmin@traceflow-rmg.com',
@@ -82,12 +114,13 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $superAdminUser->syncRoles([$superAdminRole]);
-        $this->command->info("   -> [1/3] User: superadmin (Role: superadmin | Manual Emp ID: 255776)");
+        $this->command->info("   -> [1/3] User: superadmin (Role: superadmin | Company: Platform Owner | Manual Emp ID: 255776)");
 
-        // User 2: Admin (Role: admin)
+        // User 2: Admin (Role: admin | Company: Platform Test)
         $adminUser = User::updateOrCreate(
             ['username' => 'admin'],
             [
+                'company_id' => $platformTestCompany->id,
                 'emp_id' => '100492', // Manual factory employee ID
                 'name' => 'Plant Administrator',
                 'email' => 'admin@traceflow-rmg.com',
@@ -99,12 +132,13 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $adminUser->syncRoles([$adminRole]);
-        $this->command->info("   -> [2/3] User: admin (Role: admin | Manual Emp ID: 100492)");
+        $this->command->info("   -> [2/3] User: admin (Role: admin | Company: Platform Test | Manual Emp ID: 100492)");
 
-        // User 3: Standard User (Role: standarduser)
+        // User 3: Standard User (Role: standarduser | Company: Platform Test)
         $standardUser = User::updateOrCreate(
             ['username' => 'standarduser'],
             [
+                'company_id' => $platformTestCompany->id,
                 'emp_id' => '883015', // Manual factory employee ID
                 'name' => 'Standard User',
                 'email' => 'standard.user@traceflow-rmg.com',
@@ -116,8 +150,8 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $standardUser->syncRoles([$standardUserRole]);
-        $this->command->info("   -> [3/3] User: standard user (username: standarduser | Role: standarduser | Manual Emp ID: 883015)");
+        $this->command->info("   -> [3/3] User: standard user (username: standarduser | Role: standarduser | Company: Platform Test | Manual Emp ID: 883015)");
 
-        $this->command->info('🎉 TraceFlow RMG — System Boot Seeding (3 Roles & 3 Users) Completed Successfully!');
+        $this->command->info('🎉 TraceFlow RMG — System Boot Seeding (2 Companies, 3 Roles & 3 Users) Completed Successfully!');
     }
 }

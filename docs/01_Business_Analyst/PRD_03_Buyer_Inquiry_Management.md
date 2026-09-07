@@ -29,7 +29,7 @@ Captures new inquiries received from international brands, buying houses, or ret
 #### 3.1.1. Field Level Validations
 | Field Name | Type | Mandatory | Validation Rules | UI Component |
 |---|---|---|---|---|
-| `Inquiry No` | String | Auto (Yes) | Immutable, auto-generated sequentially per year (e.g. `INQ-2026-00001`). | Read-Only Badge |
+| `Inquiry No` | String | Auto (Yes) | Immutable, auto-generated sequentially with Company Short Code prefix per AGENTS.md (e.g. `AWL-INQ-2026-00001`). Manual input strictly prohibited. | Read-Only Badge / Disabled Input |
 | `Buyer ID` | UUID | Yes | Must exist in `buyers` table and be Active. | Searchable Dropdown |
 | `Buyer Brand ID` | UUID | No | Associated brand label of the selected buyer. | Select Dropdown |
 | `Buyer Department ID` | UUID | No | Specific buyer division (e.g. Men's Wear, Kids). | Select Dropdown |

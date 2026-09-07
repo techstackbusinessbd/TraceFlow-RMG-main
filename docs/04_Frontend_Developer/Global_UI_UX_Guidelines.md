@@ -15,12 +15,14 @@ This document ensures a consistent, accessible, and fast UI across all 12 module
 
 ## 2. Global Design System (TailwindCSS)
 
-### 2.1. Color Palette
-We will use a strict, limited color palette to reduce cognitive load.
-- **Primary Brand Color:** Indigo (`bg-indigo-600` for buttons, `text-indigo-900` for headings).
-- **Success (Pass):** Green (`bg-emerald-500`). Used when a QR scan is successful or a piece passes QC.
-- **Error (Reject/Mismatch):** Red (`bg-red-600`). Used for critical errors, rejected pieces, or wrong destination scans.
-- **Warning (Alter):** Yellow/Amber (`bg-amber-500`). Used for garments needing alteration.
+### 2.1. Color Palette (SAP Horizon Precision Standard)
+We will use a strict, limited color palette to reduce cognitive load and maintain enterprise consistency (strictly aligned with `frontend/src/config/designTokens.ts` and `SRS_Theme_SAP_Horizon_Precision.md`).
+- **Primary Brand / Action Color:** Sapphire Blue (`bg-blue-600` / `bg-blue-700` for primary buttons, `text-blue-900` for brand accents). Solid flat colors only. Gradients are strictly prohibited.
+- **Surface Canvas:** Light Slate Canvas (`bg-slate-50`) with pure white (`bg-white`) cards and 1px border (`border-slate-200`).
+- **Navigation Shell:** Enterprise Slate Dark Navy (`bg-slate-900`).
+- **Success (Pass / Complete):** Emerald (`bg-emerald-600` for buttons, `text-emerald-700 bg-emerald-50 border-emerald-200` for badges).
+- **Error / Reject (Fail / Defect):** Red (`bg-red-600` for buttons, `text-red-700 bg-red-50 border-red-200` for badges).
+- **Warning / Alter (Hold / Pending):** Amber (`bg-amber-600` for buttons, `text-amber-700 bg-amber-50 border-amber-200` for badges).
 
 ### 2.2. Typography
 - **Font Family:** `Inter` or `Roboto` (sans-serif) for high legibility on small tablet screens.

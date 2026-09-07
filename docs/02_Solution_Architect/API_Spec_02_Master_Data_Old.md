@@ -1,6 +1,13 @@
-# API Specification & Schema Details
-**Module:** 02 - Master Data
-**Author:** Solution Architect
+# API Specification & Schema Details (SUPERSEDED / OBSOLETE)
+**Module:** 02 - Master Data  
+**Author:** Solution Architect  
+**Status:** ⚠️ SUPERSEDED by [API_Spec_02_Master_Data.md](file:///g:/ERP/TraceFlow-RMG-main/docs/02_Solution_Architect/API_Spec_02_Master_Data.md)
+
+> [!WARNING]
+> This document is obsolete and preserved only for legacy reference.
+> **DO NOT USE FOR DEVELOPMENT.**
+> All active development and database migrations MUST use the authoritative V4.0 specification:
+> 📄 [API_Spec_02_Master_Data.md](file:///g:/ERP/TraceFlow-RMG-main/docs/02_Solution_Architect/API_Spec_02_Master_Data.md)
 
 ## 1. Database Schema Specifications
 

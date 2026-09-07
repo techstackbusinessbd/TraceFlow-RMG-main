@@ -58,6 +58,8 @@ class AuthController extends Controller
             'data' => [
                 'user' => [
                     'id' => $user->id,
+                    'company_id' => $user->company_id,
+                    'company_name' => $user->company?->name,
                     'emp_id' => $user->emp_id,
                     'username' => $user->username,
                     'name' => $user->name,
@@ -77,13 +79,15 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user()->load('company');
 
         return response()->json([
             'status' => 'success',
             'data' => [
                 'user' => [
                     'id' => $user->id,
+                    'company_id' => $user->company_id,
+                    'company_name' => $user->company?->name,
                     'emp_id' => $user->emp_id,
                     'username' => $user->username,
                     'name' => $user->name,
@@ -93,6 +97,73 @@ class AuthController extends Controller
                     'permissions' => $user->getAllPermissions()->pluck('name'),
                 ],
             ],
+        ]);
+    }
+
+    /**
+     * Update Current Authenticated User Profile (PUT /api/v1/auth/profile)
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'department' => ['nullable', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profile updated successfully.',
+            'data' => [
+                'user' => [
+                    'id' => $user->id,
+                    'company_id' => $user->company_id,
+                    'company_name' => $user->company?->name,
+                    'emp_id' => $user->emp_id,
+                    'username' => $user->username,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'department' => $user->department,
+                    'phone' => $user->phone,
+                    'roles' => $user->getRoleNames(),
+                    'permissions' => $user->getAllPermissions()->pluck('name'),
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Change Password (PUT /api/v1/auth/password)
+     */
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if (!\Illuminate\Support\Facades\Hash::check($validated['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Current password does not match our records.'],
+            ]);
+        }
+
+        $user->forceFill([
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+            'password_changed_at' => now(),
+            'must_change_password' => false,
+        ])->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Password updated successfully.',
         ]);
     }
 

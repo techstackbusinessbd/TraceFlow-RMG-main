@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { UI_TOKENS } from "../../config/designTokens";
 
 export interface ColumnDef<T> {
@@ -8,6 +8,7 @@ export interface ColumnDef<T> {
   render?: (item: T, index: number) => React.ReactNode;
   width?: string;
   align?: "left" | "center" | "right";
+  sortable?: boolean;
 }
 
 export interface DataTableProps<T> {
@@ -20,12 +21,15 @@ export interface DataTableProps<T> {
   onPageChange: (page: number) => void;
   isLoading?: boolean;
   emptyMessage?: string;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
+  onSort?: (field: string) => void;
 }
 
 /**
  * Mandatory Golden List Page Standard: Tier 3 - Enterprise DataTable Shell
- * 100% Fixed and immutable table shell, header, alternating row highlights, and footer pagination.
- * Dynamic typed ColumnDef<T>[] accepts domain-specific renderers.
+ * 100% Fixed and immutable table shell, header with interactive column sorting, alternating row highlights, and footer pagination.
+ * Dynamic typed ColumnDef<T>[] accepts domain-specific renderers and sortable headers.
  */
 export function DataTable<T extends { id?: string | number }>({
   columns,
@@ -37,6 +41,9 @@ export function DataTable<T extends { id?: string | number }>({
   onPageChange,
   isLoading = false,
   emptyMessage = "No records found matching criteria.",
+  sortField,
+  sortDirection = "asc",
+  onSort,
 }: DataTableProps<T>) {
   const startRecord = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endRecord = Math.min(currentPage * pageSize, totalRecords);
@@ -47,21 +54,56 @@ export function DataTable<T extends { id?: string | number }>({
         <table className={UI_TOKENS.table.table}>
           <thead className={UI_TOKENS.table.thead}>
             <tr>
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  style={{ width: col.width }}
-                  className={`${UI_TOKENS.table.th} ${
-                    col.align === "center"
-                      ? "text-center"
-                      : col.align === "right"
-                      ? "text-right"
-                      : "text-left"
-                  }`}
-                >
-                  {col.header}
-                </th>
-              ))}
+              {columns.map((col) => {
+                const isCurrentSort = sortField === col.key;
+                const isSortable = col.sortable !== false && col.key !== "actions";
+
+                return (
+                  <th
+                    key={col.key}
+                    style={{ width: col.width }}
+                    onClick={() => isSortable && onSort?.(col.key)}
+                    className={`${UI_TOKENS.table.th} ${
+                      col.align === "center"
+                        ? "text-center"
+                        : col.align === "right"
+                        ? "text-right"
+                        : "text-left"
+                    } ${
+                      isSortable
+                        ? "cursor-pointer select-none hover:bg-slate-100/80 transition-colors group"
+                        : ""
+                    }`}
+                  >
+                    <div
+                      className={`inline-flex items-center gap-1.5 ${
+                        col.align === "center"
+                          ? "justify-center w-full"
+                          : col.align === "right"
+                          ? "justify-end w-full"
+                          : "justify-start"
+                      }`}
+                    >
+                      <span className={isCurrentSort ? "text-[#0066FF] font-bold" : ""}>
+                        {col.header}
+                      </span>
+                      {isSortable && (
+                        <span className="inline-flex shrink-0">
+                          {isCurrentSort ? (
+                            sortDirection === "asc" ? (
+                              <ArrowUp className="w-3 h-3 text-[#0066FF]" />
+                            ) : (
+                              <ArrowDown className="w-3 h-3 text-[#0066FF]" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className={UI_TOKENS.table.tbody}>

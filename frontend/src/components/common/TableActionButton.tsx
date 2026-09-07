@@ -15,9 +15,9 @@ export const TableActionButton: React.FC<TableActionButtonProps> = ({
   ...props
 }) => {
   const variantStyles = {
-    primary: "border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100",
-    secondary: "border-slate-200 text-slate-700 bg-white hover:bg-slate-50",
-    danger: "border-red-200 text-red-700 bg-red-50 hover:bg-red-100",
+    primary: UI_TOKENS.button.tableActionPrimary,
+    secondary: UI_TOKENS.button.tableActionSecondary,
+    danger: UI_TOKENS.button.tableActionDanger,
   };
 
   return (

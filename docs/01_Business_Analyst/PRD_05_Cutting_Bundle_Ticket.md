@@ -1,8 +1,10 @@
-# Product Requirements Document (PRD)
-**Module:** 05 - Cutting & Bundle Ticket
-**Version:** 2.0 (In-depth Enterprise)
-**Author:** AI Business Analyst
-**Status:** 100% Production Ready
+# Product Requirements Document (PRD) (SUPERSEDED)
+**Module:** 05 - Cutting & Bundle Ticket  
+**Status:** ⚠️ SUPERSEDED by [PRD_05_Cutting.md](file:///g:/ERP/TraceFlow-RMG-main/docs/01_Business_Analyst/PRD_05_Cutting.md)
+
+> [!WARNING]
+> Version 2.0 has been upgraded to Single-Piece Sub-QR Traceability Architecture (V4.1).
+> Use: 📄 [PRD_05_Cutting.md](file:///g:/ERP/TraceFlow-RMG-main/docs/01_Business_Analyst/PRD_05_Cutting.md)
 
 ## 1. Executive Summary
 This is where Traceability physically begins. The cutting room cuts fabric based on the IE plan and generates unique QR Codes for every bundle. These QR codes act as the digital passport for the garments.

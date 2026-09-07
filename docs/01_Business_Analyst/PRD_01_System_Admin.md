@@ -1,7 +1,10 @@
-# Product Requirements Document (PRD)
-**Module:** 11 - System Admin & User Management
-**Author:** AI Business Analyst
-**Status:** Approved for Development
+# Product Requirements Document (PRD) (SUPERSEDED)
+**Module:** 01 - System Admin & User Management  
+**Status:** ⚠️ SUPERSEDED by [PRD_01_Auth_Admin.md](file:///g:/ERP/TraceFlow-RMG-main/docs/01_Business_Analyst/PRD_01_Auth_Admin.md)
+
+> [!WARNING]
+> This early draft is superseded by Version 4.0 Detailed Edition.
+> Use: 📄 [PRD_01_Auth_Admin.md](file:///g:/ERP/TraceFlow-RMG-main/docs/01_Business_Analyst/PRD_01_Auth_Admin.md)
 
 ## 1. Module Overview
 যেহেতু আমাদের সিস্টেমে ট্রেসিবিলিটি এবং সিকিউরিটি অত্যন্ত গুরুত্বপূর্ণ, তাই অ্যাডমিন মডিউলটি ঠিক করবে কোন ইউজার কোন পেজ বা অপশন ব্যবহার করতে পারবে। ফ্লোরের ট্যাবলেটগুলোতে কোন প্রোডাকশন লাইন বা প্রসেস সিলেক্ট করা আছে সেটিও এখান থেকে ম্যানেজ করা হবে।

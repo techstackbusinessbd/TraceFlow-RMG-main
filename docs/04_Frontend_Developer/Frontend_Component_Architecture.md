@@ -1,7 +1,10 @@
-# Frontend Component Architecture
-**Role:** Frontend / Android Developer
-**Framework:** React (Web), React Native / Kotlin (Tablet)
-**Status:** Approved
+# Frontend Component Architecture (Reference Summary)
+**Role:** Frontend / Android Developer  
+**Status:** Approved for Implementation  
+**Master Architectural References:**
+- **Navigation & Shell:** [Navigation_Architecture_Strategy.md](file:///g:/ERP/TraceFlow-RMG-main/docs/04_Frontend_Developer/Navigation_Architecture_Strategy.md)
+- **Design Tokens:** [Design_System_Tokens.md](file:///g:/ERP/TraceFlow-RMG-main/docs/04_Frontend_Developer/Design_System_Tokens.md)
+- **Theme SRS:** [SRS_Theme_SAP_Horizon_Precision.md](file:///g:/ERP/TraceFlow-RMG-main/docs/04_Frontend_Developer/SRS_Theme_SAP_Horizon_Precision.md)
 
 ## 1. Directory Structure
 ```text

@@ -66,26 +66,27 @@ Whenever a user performs an action (e.g., Saves a PO, Scans a Carton), they must
 
 ---
 
-## 4. Confirmation Modals (`SweetAlert2` / Custom Dialog)
-Critical actions must NEVER happen with a single click.
+## 4. Destructive Action Confirmations (Non-CRUD Dialogs Only)
+Critical destructive actions must NEVER happen with a single click. Note: All CRUD flows (Create, Details, Edit) MUST be full dedicated pages (modals for CRUD are strictly prohibited per AGENTS.md). Dialogs are reserved exclusively for non-CRUD confirmations and safety alerts.
 
 ### 4.1. The "Are You Sure?" Rule
-If a user clicks a "Delete", "Reject", or "Force Close" button, the system MUST intercept the click and show a Confirmation Modal.
+If a user clicks a "Delete", "Reject Roll", or "Force Close" button, the system MUST intercept the click and show a Confirmation Dialog.
 
 ### 4.2. Implementation
-- **Library:** Use `SweetAlert2` (React version) for quick, beautiful alerts, or Headless UI `<Dialog>`.
-- **Warning Color:** The confirm button on the modal MUST be Red (`bg-red-600`) to indicate a destructive action.
+- **Implementation:** Headless UI `<Dialog>` or lightweight accessible alert primitive.
+- **Warning Color:** The confirm button on the dialog MUST be Red (`UI_TOKENS.button.danger` / `bg-red-600`) to indicate a destructive action.
 - **Example Flow:**
-  1. User clicks "Delete Buyer".
-  2. SweetAlert modal pops up: *"Are you sure you want to delete this buyer? This action cannot be undone."*
-  3. User clicks "Yes, Delete" -> Triggers API call -> Shows Success Toast.
+  1. User clicks "Reject Roll" on inspection screen.
+  2. Confirmation dialog pops up: *"Confirm Roll Rejection for Roll # AWL-RL-0092? This action cannot be undone."*
+  3. User clicks "Confirm Rejection" -> Triggers API call -> Shows Success/Warning Toast.
 
 ---
 
-## 5. Form Validation (`React Hook Form` + `Zod`)
-- Do not use standard React controlled inputs (e.g., `useState` for every field) as it causes excessive re-renders on large forms.
-- Use `React Hook Form` for performance.
-- Use `Zod` (or `Yup`) for schema validation. Error messages must appear directly beneath the input field in red (`text-red-500`).
+## 5. Form Validation (Pure Server-Side Validation Standard - STRICT)
+- **Zero Client-Side Schemas / Zero HTML5 Popups:** Per AGENTS.md, native HTML5 validation (`required`, `pattern`, tooltip bubbles) and client-only validation schemas that conflict with backend business rules are strictly prohibited.
+- **`<form noValidate>`:** All forms MUST include `noValidate` attribute.
+- **Server Feedback (HTTP 422 JSON Problem Details):** Form errors originate strictly from the backend API response.
+- **Visual Error Presentation:** In case of validation failure, the affected input border turns red (`border-red-500`) and the API error message is rendered directly below the input field in crisp red text (`text-xs text-red-600 mt-1`).
 
 ---
 *(End of UI Components Strategy)*

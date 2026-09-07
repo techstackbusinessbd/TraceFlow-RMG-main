@@ -26,7 +26,8 @@ The top-level commercial information of the order.
 #### 3.1.1. Field Level Validations
 | Field Name | Type | Mandatory | Validation Rules | UI Component |
 |---|---|---|---|---|
-| `PO Number` | String | Yes | Min: 3, Max: 100 chars. Must be Unique. | Text Input |
+| `Order Code` | String | Auto (Yes) | Internal traceability code. 100% System Auto-generated with Company Short Code prefix (e.g. `AWL-ORD-2026-0001`). Manual entry strictly prohibited. | Read-Only Badge / Disabled Input |
+| `Buyer PO Number` | String | Yes | Official external Buyer PO Number (e.g., PO-88741). Min: 3, Max: 100 chars. Unique per buyer. | Text Input |
 | `Buyer` | UUID | Yes | Pulled from Master Data (Module 02). | Searchable Dropdown|
 | `Style` | UUID | Yes | Pulled from Master Data. Must belong to the selected Buyer. | Searchable Dropdown|
 | `Total Quantity`| Integer| Yes | Must be > 0. (e.g., 50000) | Number Input |

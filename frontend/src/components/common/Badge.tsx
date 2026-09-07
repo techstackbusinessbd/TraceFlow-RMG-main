@@ -2,7 +2,7 @@ import React from "react";
 import { UI_TOKENS } from "../../config/designTokens";
 
 export interface BadgeProps {
-  variant?: "neutral" | "success" | "warning" | "danger" | "info" | "purple";
+  variant?: "neutral" | "success" | "warning" | "danger" | "info" | "purple" | "code";
   children: React.ReactNode;
   icon?: React.ReactNode;
   className?: string;

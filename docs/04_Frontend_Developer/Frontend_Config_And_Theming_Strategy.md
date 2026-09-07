@@ -38,15 +38,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Map 'primary' to our chosen Indigo shade
+        // Map 'primary' to our chosen SAP Horizon Precision Sapphire Blue
         primary: {
-          DEFAULT: '#4f46e5', // indigo-600
-          hover: '#4338ca',   // indigo-700
-          light: '#e0e7ff',   // indigo-50
+          DEFAULT: '#1d4ed8', // blue-700
+          hover: '#1e40af',   // blue-800
+          light: '#eff6ff',   // blue-50
         },
-        success: '#10b981', // emerald-500
-        danger: '#ef4444',  // red-500
+        success: '#059669', // emerald-600
+        danger: '#dc2626',  // red-600
         surface: '#f8fafc', // slate-50
+        card: '#ffffff',    // pure white
+        navDark: '#0f172a', // slate-900 (SAP Left Rail)
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
@@ -55,7 +57,7 @@ module.exports = {
   }
 }
 ```
-*Usage in React:* `<div className="bg-primary hover:bg-primary-hover text-white font-sans">`
+*Usage in React:* Always consume centralized tokens via `UI_TOKENS` from `src/config/designTokens.ts` (e.g. `<button className={UI_TOKENS.button.primary}>`).
 
 ---
 

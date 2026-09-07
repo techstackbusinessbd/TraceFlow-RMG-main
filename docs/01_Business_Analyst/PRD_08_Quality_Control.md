@@ -1,6 +1,10 @@
-# Product Requirements Document (PRD)
-**Module:** 08 - Quality Control
-**Version:** 3.0 (Enterprise Manual Details)
+# Product Requirements Document (PRD) (SUPERSEDED)
+**Module:** 08 - Quality Control  
+**Status:** ⚠️ SUPERSEDED by [PRD_08_QC.md](file:///g:/ERP/TraceFlow-RMG-main/docs/01_Business_Analyst/PRD_08_QC.md)
+
+> [!WARNING]
+> This brief stub is superseded by Version 4.0 Detailed QC Edition.
+> Use: 📄 [PRD_08_QC.md](file:///g:/ERP/TraceFlow-RMG-main/docs/01_Business_Analyst/PRD_08_QC.md)
 
 ## 1. Executive Summary
 Defect tracking at the end of the sewing line. Logs DHU (Defect Hundred Units).
