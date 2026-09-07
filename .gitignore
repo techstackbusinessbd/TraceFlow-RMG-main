@@ -1,0 +1,33 @@
+# OS & IDE Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment & Sensitive Files
+.env
+.env.backup
+.env.production
+*.key
+
+# Dependencies & Build artifacts (for future Laravel & Node)
+/backend/vendor/
+/backend/node_modules/
+/backend/public/build/
+/backend/public/hot/
+/backend/storage/*.key
+/backend/.phpunit.result.cache
+
+/frontend/node_modules/
+/frontend/dist/
+/frontend/dist-ssr/
+*.local
+
+# Logs and databases
+*.log
+*.sqlite
