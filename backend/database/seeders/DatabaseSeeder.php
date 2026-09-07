@@ -71,7 +71,7 @@ class DatabaseSeeder extends Seeder
         $superAdminUser = User::updateOrCreate(
             ['username' => 'superadmin'],
             [
-                'emp_id' => 'AWL-ADM-0001',
+                'emp_id' => '255776', // Manual factory employee ID
                 'name' => 'Super Administrator',
                 'email' => 'superadmin@traceflow-rmg.com',
                 'password' => Hash::make('SuperAdmin#2026!'),
@@ -82,13 +82,13 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $superAdminUser->syncRoles([$superAdminRole]);
-        $this->command->info("   -> [1/3] User: superadmin (Role: superadmin | Emp ID: AWL-ADM-0001)");
+        $this->command->info("   -> [1/3] User: superadmin (Role: superadmin | Manual Emp ID: 255776)");
 
         // User 2: Admin (Role: admin)
         $adminUser = User::updateOrCreate(
             ['username' => 'admin'],
             [
-                'emp_id' => 'AWL-ADM-0002',
+                'emp_id' => '100492', // Manual factory employee ID
                 'name' => 'Plant Administrator',
                 'email' => 'admin@traceflow-rmg.com',
                 'password' => Hash::make('Admin#2026!'),
@@ -99,13 +99,13 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $adminUser->syncRoles([$adminRole]);
-        $this->command->info("   -> [2/3] User: admin (Role: admin | Emp ID: AWL-ADM-0002)");
+        $this->command->info("   -> [2/3] User: admin (Role: admin | Manual Emp ID: 100492)");
 
         // User 3: Standard User (Role: standarduser)
         $standardUser = User::updateOrCreate(
             ['username' => 'standarduser'],
             [
-                'emp_id' => 'AWL-STD-0003',
+                'emp_id' => '883015', // Manual factory employee ID
                 'name' => 'Standard User',
                 'email' => 'standard.user@traceflow-rmg.com',
                 'password' => Hash::make('Standard#2026!'),
@@ -116,7 +116,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $standardUser->syncRoles([$standardUserRole]);
-        $this->command->info("   -> [3/3] User: standard user (username: standarduser | Role: standarduser | Emp ID: AWL-STD-0003)");
+        $this->command->info("   -> [3/3] User: standard user (username: standarduser | Role: standarduser | Manual Emp ID: 883015)");
 
         $this->command->info('🎉 TraceFlow RMG — System Boot Seeding (3 Roles & 3 Users) Completed Successfully!');
     }

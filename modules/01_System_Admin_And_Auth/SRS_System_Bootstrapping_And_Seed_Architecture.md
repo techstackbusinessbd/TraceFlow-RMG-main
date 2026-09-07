@@ -130,11 +130,11 @@ return [
 
 সিস্টেমের প্রাথমিক সেটআপে নিচের ৩টি ডিফল্ট ইউজার তৈরি হবে:
 
-| নং | ইউজারনেম (`username`) | নাম (`name`) | এমপ্লয়ী আইডি (`emp_id`) | অ্যাসাইন্ড রোল (`role`) | প্রাথমিক পাসওয়ার্ড |
+| নং | ইউজারনেম (`username`) | নাম (`name`) | এমপ্লয়ী আইডি (`emp_id`) [ম্যানুয়াল ইনপুট] | অ্যাসাইন্ড রোল (`role`) | প্রাথমিক পাসওয়ার্ড |
 |---|---|---|---|---|---|
-| ১ | **`superadmin`** | Super Administrator | `AWL-ADM-0001` | **`superadmin`** | `SuperAdmin#2026!` |
-| ২ | **`admin`** | Plant Administrator | `AWL-ADM-0002` | **`admin`** | `Admin#2026!` |
-| ৩ | **`standarduser`** | Standard User | `AWL-STD-0003` | **`standarduser`** | `Standard#2026!` |
+| ১ | **`superadmin`** | Super Administrator | `255776` | **`superadmin`** | `SuperAdmin#2026!` |
+| ২ | **`admin`** | Plant Administrator | `100492` | **`admin`** | `Admin#2026!` |
+| ৩ | **`standarduser`** | Standard User | `883015` | **`standarduser`** | `Standard#2026!` |
 
 ### ৫.১ সিক্রেট এনভলপ কনফিগারেশন (`.env`)
 ```env
