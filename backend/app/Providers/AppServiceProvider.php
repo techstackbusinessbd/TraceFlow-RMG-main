@@ -19,6 +19,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // 1. Super Admin Wildcard Bypass (Backend Architecture Rule)
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            return $user->hasRole('Super Admin') ? true : null;
+        });
+
+        // 2. DDD Domain Auto-Policy Discovery
+        \Illuminate\Support\Facades\Gate::guessPolicyNamesUsing(function (string $modelClass) {
+            return str_replace('\\Models\\', '\\Policies\\', $modelClass) . 'Policy';
+        });
     }
 }

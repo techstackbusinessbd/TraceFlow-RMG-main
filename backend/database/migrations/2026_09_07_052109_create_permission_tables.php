@@ -25,11 +25,20 @@ return new class extends Migration
          */
         Schema::create($tableNames['permissions'], static function (Blueprint $table) {
             $table->id(); // permission id
-            $table->string('name');
-            $table->string('guard_name');
+            $table->string('name', 120); // 4-tier format: module.submodule.resources.action
+            $table->string('guard_name', 50)->default('web');
+            
+            // Enterprise 4-Tier Dot-Notation Hierarchy Columns
+            $table->string('module_name', 60);
+            $table->string('submodule_name', 60);
+            $table->string('resource_name', 60);
+            $table->string('action_name', 60);
+            $table->string('description', 255)->nullable();
+            
             $table->timestamps();
 
             $table->unique(['name', 'guard_name']);
+            $table->index(['module_name', 'submodule_name', 'resource_name'], 'idx_perm_hierarchy');
         });
 
         /**

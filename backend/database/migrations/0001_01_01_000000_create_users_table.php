@@ -13,12 +13,22 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->string('emp_id', 50)->unique();              // Mandatory Factory Employee ID (e.g. AWL-EMP-0001)
+            $table->string('username', 60)->unique();            // Mandatory Login Username
+            $table->string('name', 120);                         // Full Name
+            $table->string('email', 150)->nullable()->unique();  // Optional / Nullable for factory operators
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('department', 80)->nullable();
+            $table->string('phone', 20)->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->boolean('must_change_password')->default(false);
+            $table->timestamp('password_changed_at')->nullable();
+            $table->timestamp('last_login_at')->nullable();
+            $table->string('last_login_ip', 45)->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes(); // Two-Tier Deletion Architecture (deleted_at)
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
