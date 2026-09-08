@@ -5,7 +5,7 @@ import { FilterToolbar } from "../../components/common/FilterToolbar";
 import { DataTable, type ColumnDef } from "../../components/common/DataTable";
 import { Button } from "../../components/common/Button";
 import { Badge } from "../../components/common/Badge";
-import { TableActionButton } from "../../components/common/TableActionButton";
+import { RowActionsMenu } from "../../components/common/RowActionsMenu";
 import { Toast } from "../../components/common/Toast";
 import { UI_TOKENS } from "../../config/designTokens";
 import { getCompanies, deleteCompany, toggleCompanyStatus, type Company } from "../../services/companyService";
@@ -194,37 +194,39 @@ export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) 
       align: "right",
       sortable: false,
       render: (row) => (
-        <div className="flex items-center justify-end gap-1.5">
-          <TableActionButton
-            variant="secondary"
-            icon={<Eye className="h-3 w-3" />}
-            onClick={() => onNavigate(`/companies/${row.id}`)}
-          >
-            View
-          </TableActionButton>
-          <TableActionButton
-            variant="primary"
-            icon={<Edit2 className="h-3 w-3" />}
-            onClick={() => onNavigate(`/companies/${row.id}/edit`)}
-          >
-            Edit
-          </TableActionButton>
-          <TableActionButton
-            variant="secondary"
-            icon={row.is_active ? <ToggleRight className="h-3 w-3 text-emerald-600" /> : <ToggleLeft className="h-3 w-3 text-slate-400" />}
-            onClick={() => handleToggleStatus(row)}
-            title={row.is_active ? "Deactivate" : "Activate"}
-          >
-            {row.is_active ? "Deactivate" : "Activate"}
-          </TableActionButton>
-          <TableActionButton
-            variant="danger"
-            icon={<Trash2 className="h-3 w-3" />}
-            onClick={() => setDeleteTarget(row)}
-          >
-            Delete
-          </TableActionButton>
-        </div>
+        <RowActionsMenu
+          primaryActions={[
+            {
+              icon: <Eye className="w-3.5 h-3.5" />,
+              label: "View Details",
+              variant: "secondary",
+              onClick: () => onNavigate(`/companies/${row.id}`),
+            },
+            {
+              icon: <Edit2 className="w-3.5 h-3.5" />,
+              label: "Edit Company",
+              variant: "primary",
+              onClick: () => onNavigate(`/companies/${row.id}/edit`),
+            },
+          ]}
+          menuActions={[
+            {
+              icon: row.is_active
+                ? <ToggleRight className="w-3.5 h-3.5" />
+                : <ToggleLeft className="w-3.5 h-3.5" />,
+              label: row.is_active ? "Deactivate" : "Activate",
+              variant: row.is_active ? "warning" : "default",
+              onClick: () => handleToggleStatus(row),
+            },
+            {
+              icon: <Trash2 className="w-3.5 h-3.5" />,
+              label: "Delete Company",
+              variant: "danger",
+              dividerBefore: true,
+              onClick: () => setDeleteTarget(row),
+            },
+          ]}
+        />
       ),
     },
   ];
