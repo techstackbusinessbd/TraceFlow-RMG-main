@@ -149,7 +149,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             {
               id: 'master-companies',
               label: 'Companies',
-              requiredPermissions: ['system_admin.companies.view', 'master_data.companies.view'],
+              requiredPermissions: ['system_admin.companies.profile.view'],
               requiredRoles: ['superadmin', 'admin'],
             },
             {

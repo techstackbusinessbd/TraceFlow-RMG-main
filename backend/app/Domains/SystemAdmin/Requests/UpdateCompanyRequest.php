@@ -3,7 +3,6 @@
 namespace App\Domains\SystemAdmin\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateCompanyRequest extends FormRequest
 {
@@ -17,30 +16,23 @@ class UpdateCompanyRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     * Pure Server-Side Validation: Clear, strict rules for updating Sister Company.
+     *
+     * Pure Server-Side Validation.
+     * Company Code is STRICTLY system-generated and IMMUTABLE after creation — it is NEVER accepted from client input.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $companyId = $this->route('company') ?? $this->route('id');
-
         return [
-            'code' => [
-                'sometimes',
-                'string',
-                'min:2',
-                'max:10',
-                'regex:/^[A-Z0-9\-]+$/',
-                Rule::unique('companies', 'code')->ignore($companyId),
-            ],
-            'name' => ['required', 'string', 'min:2', 'max:150'],
+            // NOTE: 'code' is intentionally ABSENT — company codes are immutable after creation.
+            'name'       => ['required', 'string', 'min:2', 'max:150'],
             'legal_name' => ['nullable', 'string', 'max:180'],
-            'tax_id' => ['nullable', 'string', 'max:50'],
-            'email' => ['nullable', 'email', 'max:100'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'address' => ['nullable', 'string', 'max:500'],
-            'is_active' => ['boolean'],
+            'tax_id'     => ['nullable', 'string', 'max:50'],
+            'email'      => ['nullable', 'email', 'max:100'],
+            'phone'      => ['nullable', 'string', 'max:30'],
+            'address'    => ['nullable', 'string', 'max:500'],
+            'is_active'  => ['sometimes', 'boolean'],
         ];
     }
 
@@ -53,11 +45,9 @@ class UpdateCompanyRequest extends FormRequest
     {
         return [
             'name.required' => 'Company Name is required.',
-            'name.min' => 'Company Name must be at least 2 characters.',
-            'name.max' => 'Company Name may not exceed 150 characters.',
-            'code.unique' => 'This Company Code is already registered for another company.',
-            'code.regex' => 'Company Code may only contain uppercase letters, numbers, and hyphens.',
-            'email.email' => 'Please provide a valid official email address.',
+            'name.min'      => 'Company Name must be at least 2 characters.',
+            'name.max'      => 'Company Name may not exceed 150 characters.',
+            'email.email'   => 'Please provide a valid official email address.',
         ];
     }
 }

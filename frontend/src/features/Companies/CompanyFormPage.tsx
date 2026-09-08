@@ -115,6 +115,8 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
     setGeneralError(null);
 
     const payload: CompanyFormData = {
+      // NOTE: 'code' is intentionally omitted — it is 100% auto-generated server-side.
+      // The code field shown in the form is a read-only preview only.
       name: name.trim(),
       legal_name: legalName.trim() || undefined,
       tax_id: taxId.trim() || undefined,
