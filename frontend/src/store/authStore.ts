@@ -29,13 +29,13 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: JSON.parse(localStorage.getItem('tf_user') || 'null'),
-  token: localStorage.getItem('tf_token') || null,
-  isAuthenticated: !!localStorage.getItem('tf_token'),
+  user: JSON.parse(sessionStorage.getItem('tf_user') || 'null'),
+  token: sessionStorage.getItem('tf_token') || null,
+  isAuthenticated: !!sessionStorage.getItem('tf_token'),
 
   setAuth: (user, token) => {
-    localStorage.setItem('tf_token', token);
-    localStorage.setItem('tf_user', JSON.stringify(user));
+    sessionStorage.setItem('tf_token', token);
+    sessionStorage.setItem('tf_user', JSON.stringify(user));
     set({ user, token, isAuthenticated: true });
   },
 
@@ -43,11 +43,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const currentUser = get().user;
     if (!currentUser) return;
     const newUser = { ...currentUser, ...updatedFields };
-    localStorage.setItem('tf_user', JSON.stringify(newUser));
+    sessionStorage.setItem('tf_user', JSON.stringify(newUser));
     set({ user: newUser });
   },
 
   logout: () => {
+    sessionStorage.removeItem('tf_token');
+    sessionStorage.removeItem('tf_user');
+    // Also clean up any legacy localStorage tokens if present
     localStorage.removeItem('tf_token');
     localStorage.removeItem('tf_user');
     set({ user: null, token: null, isAuthenticated: false });

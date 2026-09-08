@@ -1,0 +1,145 @@
+import { useAuthStore } from "../store/authStore";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+function getHeaders(): HeadersInit {
+  const token = useAuthStore.getState().token;
+  return {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+async function handleResponse<T>(res: Response): Promise<T> {
+  const data = await res.json();
+  if (!res.ok) {
+    const err: { message: string; errors?: Record<string, string[]>; status?: number } = {
+      message: data.message || "An unexpected error occurred.",
+      errors: data.errors,
+      status: res.status,
+    };
+    throw err;
+  }
+  return data as T;
+}
+
+export interface Company {
+  id: number;
+  code: string;
+  name: string;
+  legal_name: string | null;
+  tax_id: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  is_active: boolean;
+  users_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CompanyListResponse {
+  status: string;
+  data: Company[];
+  pagination: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number;
+    to: number;
+  };
+}
+
+export interface CompanyParams {
+  search?: string;
+  status?: "active" | "inactive" | "";
+  sort_field?: string;
+  sort_direction?: "asc" | "desc";
+  per_page?: number;
+  page?: number;
+}
+
+export interface CompanyFormData {
+  code?: string;
+  name: string;
+  legal_name?: string;
+  tax_id?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  is_active?: boolean;
+}
+
+// GET /api/v1/companies
+export async function getCompanies(params: CompanyParams = {}): Promise<CompanyListResponse> {
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search);
+  if (params.status) query.set("status", params.status);
+  if (params.sort_field) query.set("sort_field", params.sort_field);
+  if (params.sort_direction) query.set("sort_direction", params.sort_direction);
+  if (params.per_page) query.set("per_page", String(params.per_page));
+  if (params.page) query.set("page", String(params.page));
+
+  const res = await fetch(`${API_BASE}/api/v1/companies?${query.toString()}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<CompanyListResponse>(res);
+}
+
+// GET /api/v1/companies/next-code
+export async function getNextCompanyCode(name?: string): Promise<{ next_code: string }> {
+  const query = name ? `?name=${encodeURIComponent(name)}` : "";
+  const res = await fetch(`${API_BASE}/api/v1/companies/next-code${query}`, {
+    headers: getHeaders(),
+  });
+  const data = await handleResponse<{ status: string; data: { next_code: string } }>(res);
+  return data.data;
+}
+
+// GET /api/v1/companies/:id
+export async function getCompany(id: number): Promise<{ data: Company }> {
+  const res = await fetch(`${API_BASE}/api/v1/companies/${id}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse<{ data: Company }>(res);
+}
+
+// POST /api/v1/companies
+export async function createCompany(payload: CompanyFormData): Promise<{ data: Company; message: string }> {
+  const res = await fetch(`${API_BASE}/api/v1/companies`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<{ data: Company; message: string }>(res);
+}
+
+// PUT /api/v1/companies/:id
+export async function updateCompany(id: number, payload: CompanyFormData): Promise<{ data: Company; message: string }> {
+  const res = await fetch(`${API_BASE}/api/v1/companies/${id}`, {
+    method: "PUT",
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<{ data: Company; message: string }>(res);
+}
+
+// DELETE /api/v1/companies/:id
+export async function deleteCompany(id: number): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE}/api/v1/companies/${id}`, {
+    method: "DELETE",
+    headers: getHeaders(),
+  });
+  return handleResponse<{ message: string }>(res);
+}
+
+// PATCH /api/v1/companies/:id/toggle-status
+export async function toggleCompanyStatus(id: number): Promise<{ data: { id: number; is_active: boolean }; message: string }> {
+  const res = await fetch(`${API_BASE}/api/v1/companies/${id}/toggle-status`, {
+    method: "PATCH",
+    headers: getHeaders(),
+  });
+  return handleResponse<{ data: { id: number; is_active: boolean }; message: string }>(res);
+}

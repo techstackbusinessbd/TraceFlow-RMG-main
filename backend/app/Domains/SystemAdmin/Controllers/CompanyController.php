@@ -1,0 +1,236 @@
+<?php
+
+namespace App\Domains\SystemAdmin\Controllers;
+
+use App\Domains\SystemAdmin\Requests\StoreCompanyRequest;
+use App\Domains\SystemAdmin\Requests\UpdateCompanyRequest;
+use App\Http\Controllers\Controller;
+use App\Models\Company;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class CompanyController extends Controller
+{
+    /**
+     * Display a paginated, searchable, and sortable list of Sister Companies.
+     * GET /api/v1/companies
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $query = Company::query()->withCount('users');
+
+        // Search Filter
+        if ($search = trim($request->query('search', ''))) {
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'ilike', "%{$search}%")
+                  ->orWhere('name', 'ilike', "%{$search}%")
+                  ->orWhere('legal_name', 'ilike', "%{$search}%")
+                  ->orWhere('tax_id', 'ilike', "%{$search}%")
+                  ->orWhere('email', 'ilike', "%{$search}%")
+                  ->orWhere('phone', 'ilike', "%{$search}%");
+            });
+        }
+
+        // Status Filter
+        $status = $request->query('status');
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        // Sorting
+        $sortField = $request->query('sort_field', 'name');
+        $sortDirection = strtolower($request->query('sort_direction', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $allowedSorts = ['id', 'code', 'name', 'legal_name', 'tax_id', 'email', 'phone', 'is_active', 'created_at', 'users_count'];
+
+        if (in_array($sortField, $allowedSorts, true)) {
+            $query->orderBy($sortField, $sortDirection);
+        } else {
+            $query->orderBy('name', 'asc');
+        }
+
+        $perPage = (int) $request->query('per_page', 10);
+        $perPage = in_array($perPage, [10, 15, 25, 50, 100], true) ? $perPage : 10;
+
+        $companies = $query->paginate($perPage);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $companies->items(),
+            'pagination' => [
+                'current_page' => $companies->currentPage(),
+                'last_page' => $companies->lastPage(),
+                'per_page' => $companies->perPage(),
+                'total' => $companies->total(),
+                'from' => $companies->firstItem() ?? 0,
+                'to' => $companies->lastItem() ?? 0,
+            ],
+        ]);
+    }
+
+    /**
+     * Generate the next intelligent system-generated Company Code.
+     * GET /api/v1/companies/next-code
+     */
+    public function nextCode(Request $request): JsonResponse
+    {
+        $companyName = $request->query('name', '');
+        $suggestedCode = $this->generateIntelligentCode($companyName);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'next_code' => $suggestedCode,
+            ],
+        ]);
+    }
+
+    /**
+     * Store a newly created Sister Company.
+     * POST /api/v1/companies
+     */
+    public function store(StoreCompanyRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        // If code is not provided or blank, automatically generate unique code
+        if (empty($validated['code'])) {
+            $validated['code'] = $this->generateIntelligentCode($validated['name']);
+        } else {
+            $validated['code'] = strtoupper(trim($validated['code']));
+        }
+
+        $company = Company::create($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Company registered successfully.',
+            'data' => $company->loadCount('users'),
+        ], 201);
+    }
+
+    /**
+     * Display detailed profile of a specific company.
+     * GET /api/v1/companies/{company}
+     */
+    public function show($id): JsonResponse
+    {
+        $company = Company::withCount('users')->findOrFail($id);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $company,
+        ]);
+    }
+
+    /**
+     * Update specified company details.
+     * PUT /api/v1/companies/{company}
+     */
+    public function update(UpdateCompanyRequest $request, $id): JsonResponse
+    {
+        $company = Company::findOrFail($id);
+        $validated = $request->validated();
+
+        if (!empty($validated['code'])) {
+            $validated['code'] = strtoupper(trim($validated['code']));
+        }
+
+        $company->update($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Company details updated successfully.',
+            'data' => $company->fresh()->loadCount('users'),
+        ]);
+    }
+
+    /**
+     * Soft delete a company.
+     * DELETE /api/v1/companies/{company}
+     */
+    public function destroy($id): JsonResponse
+    {
+        $company = Company::withCount('users')->findOrFail($id);
+
+        if ($company->users_count > 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Cannot delete company '{$company->name}'. It has {$company->users_count} assigned user accounts.",
+            ], 422);
+        }
+
+        $company->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Company soft-deleted successfully.',
+        ]);
+    }
+
+    /**
+     * Toggle active/inactive status.
+     * PATCH /api/v1/companies/{company}/toggle-status
+     */
+    public function toggleStatus($id): JsonResponse
+    {
+        $company = Company::findOrFail($id);
+        $company->is_active = !$company->is_active;
+        $company->save();
+
+        $statusText = $company->is_active ? 'activated' : 'deactivated';
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Company '{$company->name}' {$statusText} successfully.",
+            'data' => [
+                'id' => $company->id,
+                'is_active' => $company->is_active,
+            ],
+        ]);
+    }
+
+    /**
+     * Helper to derive an intelligent 2-4 letter company code, or fallback to CMP-XXX.
+     */
+    private function generateIntelligentCode(string $name): string
+    {
+        $name = trim($name);
+        $prefix = '';
+
+        if (!empty($name)) {
+            // Take initials of major words e.g. "Ananta Woven Ltd" -> "AWL"
+            $words = preg_split('/\s+/', preg_replace('/[^a-zA-Z0-9\s]/', '', $name));
+            $initials = '';
+            foreach ($words as $word) {
+                if (!empty($word)) {
+                    $initials .= strtoupper($word[0]);
+                }
+            }
+
+            if (strlen($initials) >= 2) {
+                $prefix = substr($initials, 0, 4);
+            } else {
+                $prefix = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $name), 0, 3));
+            }
+        }
+
+        if (strlen($prefix) < 2) {
+            $prefix = 'CMP';
+        }
+
+        // Ensure uniqueness
+        $baseCode = $prefix;
+        $counter = 1;
+
+        while (Company::where('code', $baseCode)->exists()) {
+            $counter++;
+            $baseCode = "{$prefix}-" . str_pad((string)$counter, 2, '0', STR_PAD_LEFT);
+        }
+
+        return $baseCode;
+    }
+}

@@ -11,6 +11,9 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { LoginPage } from "./features/Auth/LoginPage";
 import { ExecutiveDashboard } from "./features/Dashboard/ExecutiveDashboard";
 import { UserProfilePage } from "./features/Profile/UserProfilePage";
+import { CompanyListPage } from "./features/Companies/CompanyListPage";
+import { CompanyFormPage } from "./features/Companies/CompanyFormPage";
+import { CompanyDetailsPage } from "./features/Companies/CompanyDetailsPage";
 import { useAuthStore } from "./store/authStore";
 
 interface BuyerRow {
@@ -29,6 +32,17 @@ const SAMPLE_BUYERS: BuyerRow[] = [
   { id: "4", code: "AWL-BYR-004", name: "Next Retail Ltd", country: "United Kingdom", brandsCount: 3, status: "Inactive" },
   { id: "5", code: "AWL-BYR-005", name: "PVH Corp (Tommy Hilfiger / Calvin Klein)", country: "United States", brandsCount: 5, status: "Active" },
 ];
+
+// Helper: parse /companies/:id and /companies/:id/edit
+function parseCompanyPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: number } {
+  if (path === "/companies") return { type: "list" };
+  if (path === "/companies/create") return { type: "create" };
+  const editMatch = path.match(/^\/companies\/(\d+)\/edit$/);
+  if (editMatch) return { type: "edit", id: parseInt(editMatch[1]) };
+  const viewMatch = path.match(/^\/companies\/(\d+)$/);
+  if (viewMatch) return { type: "view", id: parseInt(viewMatch[1]) };
+  return { type: null };
+}
 
 export function App() {
   const { isAuthenticated, canAccessWidget } = useAuthStore();
@@ -57,7 +71,6 @@ export function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Redirect to permitted landing if authenticated and at "/" or "/login" or unpermitted "/dashboard"
   useEffect(() => {
     if (isAuthenticated) {
       if (currentPath === "/" || currentPath === "/login") {
@@ -70,12 +83,10 @@ export function App() {
     }
   }, [isAuthenticated, currentPath, canViewDashboard, canViewMasterBuyers, defaultLandingPath]);
 
-  // If user is not authenticated, strictly render LoginPage
   if (!isAuthenticated) {
     return <LoginPage />;
   }
 
-  // If authenticated user visits /login, immediately push defaultLandingPath
   if (currentPath === "/login") {
     window.history.replaceState({}, "", defaultLandingPath);
   }
@@ -90,6 +101,8 @@ export function App() {
       navigateTo("/dashboard");
     } else if (moduleId === "master-buyers") {
       navigateTo("/master/buyers");
+    } else if (moduleId === "master-companies") {
+      navigateTo("/companies");
     } else {
       navigateTo(`/${moduleId}`);
     }
@@ -97,6 +110,8 @@ export function App() {
 
   const isDashboard = currentPath === "/dashboard" || currentPath === "/" || currentPath === "/login";
   const isProfile = currentPath === "/profile";
+  const companyRoute = parseCompanyPath(currentPath);
+  const isCompanySection = companyRoute.type !== null;
 
   // Handle column sort toggle
   const handleSort = (field: string) => {
@@ -200,8 +215,142 @@ export function App() {
     return null;
   };
 
-  const currentModuleId = isDashboard ? "dashboard" : isProfile ? "profile" : currentPath.replace(/^\//, "").replace("master/buyers", "master-buyers") || "master-buyers";
+  // Determine active module ID for navigation rail
+  let currentModuleId: string;
+  if (isDashboard) {
+    currentModuleId = "dashboard";
+  } else if (isProfile) {
+    currentModuleId = "profile";
+  } else if (isCompanySection) {
+    currentModuleId = "master-companies";
+  } else {
+    currentModuleId = currentPath.replace(/^\//, "").replace("master/buyers", "master-buyers") || "master-buyers";
+  }
+
   const activeCategory = getActiveCategory(currentModuleId);
+
+  // Build breadcrumbs
+  const getBreadcrumbs = () => {
+    if (isDashboard) {
+      return [
+        { label: "Home", href: "/dashboard" },
+        { label: "Executive Dashboard", active: true },
+      ];
+    }
+    if (isProfile) {
+      return [
+        { label: "Home", href: "/dashboard" },
+        { label: "Security & Accounts", href: "/profile" },
+        { label: "User Profile", active: true },
+      ];
+    }
+    if (isCompanySection) {
+      const base = [
+        { label: "Home", href: "/dashboard" },
+        { label: "Governance & Setup", href: "/companies" },
+      ];
+      if (companyRoute.type === "list") {
+        return [...base, { label: "Sister Companies", active: true }];
+      }
+      if (companyRoute.type === "create") {
+        return [...base, { label: "Sister Companies", href: "/companies" }, { label: "Register Company", active: true }];
+      }
+      if (companyRoute.type === "edit") {
+        return [...base, { label: "Sister Companies", href: "/companies" }, { label: "Edit Company", active: true }];
+      }
+      if (companyRoute.type === "view") {
+        return [...base, { label: "Sister Companies", href: "/companies" }, { label: "Company Profile", active: true }];
+      }
+    }
+    return [
+      { label: "Home", href: "/dashboard" },
+      { label: "Master Data", href: "/master/buyers" },
+      { label: "Buyer Directory", active: true },
+    ];
+  };
+
+  // Render the main content area
+  const renderContent = () => {
+    if (isDashboard) return <ExecutiveDashboard />;
+    if (isProfile) return <UserProfilePage />;
+
+    // Company Section Routes
+    if (isCompanySection) {
+      if (companyRoute.type === "list") {
+        return <CompanyListPage onNavigate={navigateTo} />;
+      }
+      if (companyRoute.type === "create") {
+        return <CompanyFormPage mode="create" onNavigate={navigateTo} />;
+      }
+      if (companyRoute.type === "edit" && companyRoute.id) {
+        return <CompanyFormPage mode="edit" companyId={companyRoute.id} onNavigate={navigateTo} />;
+      }
+      if (companyRoute.type === "view" && companyRoute.id) {
+        return <CompanyDetailsPage companyId={companyRoute.id} onNavigate={navigateTo} />;
+      }
+    }
+
+    // Default: Buyer Directory (placeholder)
+    return (
+      <>
+        <PageHeader
+          title="Buyer Directory"
+          badgeCount={sortedData.length}
+          badgeLabel="Registered Buyers"
+          actions={
+            <>
+              <Button variant="secondary" icon={<Download className="h-3.5 w-3.5" />}>
+                Export List
+              </Button>
+              <Button variant="primary" icon={<Plus className="h-3.5 w-3.5" />}>
+                Create Buyer
+              </Button>
+            </>
+          }
+        />
+
+        <FilterToolbar
+          searchValue={search}
+          onSearchChange={setSearch}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          activeSortLabel={getSortHeaderName()}
+          searchPlaceholder="Search buyers by code, name, or country..."
+          onFilterSubmit={() => {}}
+          onReset={() => {
+            setSearch("");
+            setStatusFilter("ALL");
+            setSortField("name");
+            setSortDirection("asc");
+          }}
+          filterInputs={
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={`${UI_TOKENS.input.select} py-1.5 text-xs`}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="Active">Active Only</option>
+              <option value="Inactive">Inactive Only</option>
+            </select>
+          }
+        />
+
+        <DataTable
+          columns={columns}
+          data={sortedData}
+          totalRecords={sortedData.length}
+          currentPage={page}
+          totalPages={1}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+        />
+      </>
+    );
+  };
 
   return (
     <AppLayout
@@ -209,92 +358,10 @@ export function App() {
       hideRail={isDashboard}
       activeCategory={activeCategory}
       onProfileClick={() => navigateTo("/profile")}
-      breadcrumbs={
-        isDashboard
-          ? [
-              { label: "Home", href: "/dashboard" },
-              { label: "Executive Dashboard", active: true },
-            ]
-          : isProfile
-          ? [
-              { label: "Home", href: "/dashboard" },
-              { label: "Security & Accounts", href: "/profile" },
-              { label: "User Profile", active: true },
-            ]
-          : [
-              { label: "Home", href: "/dashboard" },
-              { label: "Master Data", href: "/master/buyers" },
-              { label: "Buyer Directory", active: true },
-            ]
-      }
+      breadcrumbs={getBreadcrumbs()}
       onSelectModule={handleSelectModule}
     >
-      {isDashboard ? (
-        <ExecutiveDashboard />
-      ) : isProfile ? (
-        <UserProfilePage />
-      ) : (
-        <>
-          {/* Tier 1: Power Automate Sleek Header Row */}
-          <PageHeader
-            title="Buyer Directory"
-            badgeCount={sortedData.length}
-            badgeLabel="Registered Buyers"
-            actions={
-              <>
-                <Button variant="secondary" icon={<Download className="h-3.5 w-3.5" />}>
-                  Export List
-                </Button>
-                <Button variant="primary" icon={<Plus className="h-3.5 w-3.5" />}>
-                  Create Buyer
-                </Button>
-              </>
-            }
-          />
-
-          {/* Tier 2: Unified Modern Filter Toolbar */}
-          <FilterToolbar
-            searchValue={search}
-            onSearchChange={setSearch}
-            pageSize={pageSize}
-            onPageSizeChange={setPageSize}
-            activeSortLabel={getSortHeaderName()}
-            searchPlaceholder="Search buyers by code, name, or country..."
-            onFilterSubmit={() => {}}
-            onReset={() => {
-              setSearch("");
-              setStatusFilter("ALL");
-              setSortField("name");
-              setSortDirection("asc");
-            }}
-            filterInputs={
-              <select 
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className={`${UI_TOKENS.input.select} py-1.5 text-xs`}
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="Active">Active Only</option>
-                <option value="Inactive">Inactive Only</option>
-              </select>
-            }
-          />
-
-          {/* Tier 3: Enterprise DataTable Shell with Interactive Sorting */}
-          <DataTable
-            columns={columns}
-            data={sortedData}
-            totalRecords={sortedData.length}
-            currentPage={page}
-            totalPages={1}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSort={handleSort}
-          />
-        </>
-      )}
+      {renderContent()}
     </AppLayout>
   );
 }

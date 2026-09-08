@@ -33,6 +33,21 @@ return [
                 ],
             ],
         ],
+        'companies' => [
+            'label' => 'Sister Companies & Legal Entities',
+            'resources' => [
+                'profile' => [
+                    'label' => 'Company Profile & Entity Registry',
+                    'actions' => [
+                        'view' => 'View Sister Companies Directory and Legal Profiles',
+                        'create' => 'Register New Sister Company / Business Unit',
+                        'update' => 'Modify Company Details and Operational Status',
+                        'delete' => 'Soft Delete Company / Entity',
+                        'restore' => 'Restore Soft Deleted Company',
+                    ],
+                ],
+            ],
+        ],
         'devices' => [
             'label' => 'Hardware Floor Tablets & Devices',
             'resources' => [
