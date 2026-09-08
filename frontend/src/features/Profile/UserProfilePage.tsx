@@ -432,24 +432,22 @@ export const UserProfilePage: React.FC = () => {
       </div>
 
       {/* Enterprise Floating Toast Notification */}
-      <div className={UI_TOKENS.toast.container}>
-        {profileSuccessMessage && (
-          <Toast
-            type="success"
-            title="Profile Updated"
-            message={profileSuccessMessage}
-            onClose={() => setProfileSuccessMessage(null)}
-          />
-        )}
-        {passwordSuccessMessage && (
-          <Toast
-            type="success"
-            title="Security Updated"
-            message={passwordSuccessMessage}
-            onClose={() => setPasswordSuccessMessage(null)}
-          />
-        )}
-      </div>
+      {profileSuccessMessage && (
+        <Toast
+          type="success"
+          title="Profile Updated"
+          message={profileSuccessMessage}
+          onClose={() => setProfileSuccessMessage(null)}
+        />
+      )}
+      {passwordSuccessMessage && (
+        <Toast
+          type="success"
+          title="Security Updated"
+          message={passwordSuccessMessage}
+          onClose={() => setPasswordSuccessMessage(null)}
+        />
+      )}
     </div>
   );
 };

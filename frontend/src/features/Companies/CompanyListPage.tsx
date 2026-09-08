@@ -9,12 +9,16 @@ import { RowActionsMenu } from "../../components/common/RowActionsMenu";
 import { Toast } from "../../components/common/Toast";
 import { UI_TOKENS } from "../../config/designTokens";
 import { getCompanies, deleteCompany, toggleCompanyStatus, type Company } from "../../services/companyService";
+import { formatPhoneNumber } from "../../utils/phoneFormatter";
+import { useAuthStore } from "../../store/authStore";
 
 interface CompanyListPageProps {
   onNavigate: (path: string) => void;
 }
 
 export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) => {
+  const { hasRole } = useAuthStore();
+  const isSuperAdmin = hasRole("superadmin");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -94,8 +98,13 @@ export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) 
       const newStatus = res.data.is_active ? "Activated" : "Deactivated";
       showToast("success", `Company ${newStatus}`, `"${company.name}" has been ${newStatus.toLowerCase()} successfully.`);
       loadCompanies();
-    } catch {
-      showToast("error", "Status Update Failed", "Could not update company status. Please try again.");
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      showToast(
+        "error",
+        "Status Update Failed",
+        apiError?.message || "Could not update company status. Active users must be deactivated first."
+      );
     }
   };
 
@@ -140,7 +149,12 @@ export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) 
       sortable: true,
       render: (row) => (
         <div>
-          <span className="font-semibold text-slate-900">{row.name}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-900">{row.name}</span>
+            {row.is_default && (
+              <Badge variant="info" className="text-[10px] px-1.5 py-0">Default</Badge>
+            )}
+          </div>
           {row.legal_name && (
             <p className="text-[11px] text-slate-500 mt-0.5">{row.legal_name}</p>
           )}
@@ -163,7 +177,7 @@ export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) 
       render: (row) => (
         <div className="space-y-0.5">
           {row.email && <p className="text-xs text-slate-700">{row.email}</p>}
-          {row.phone && <p className="text-[11px] text-slate-500">{row.phone}</p>}
+          {row.phone && <p className="text-[11px] text-slate-500 font-mono">{formatPhoneNumber(row.phone)}</p>}
           {!row.email && !row.phone && <span className="text-slate-400 text-xs">—</span>}
         </div>
       ),
@@ -209,23 +223,37 @@ export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) 
               onClick: () => onNavigate(`/companies/${row.id}/edit`),
             },
           ]}
-          menuActions={[
-            {
-              icon: row.is_active
-                ? <ToggleRight className="w-3.5 h-3.5" />
-                : <ToggleLeft className="w-3.5 h-3.5" />,
-              label: row.is_active ? "Deactivate" : "Activate",
-              variant: row.is_active ? "warning" : "default",
-              onClick: () => handleToggleStatus(row),
-            },
-            {
-              icon: <Trash2 className="w-3.5 h-3.5" />,
-              label: "Delete Company",
-              variant: "danger",
-              dividerBefore: true,
-              onClick: () => setDeleteTarget(row),
-            },
-          ]}
+          menuActions={
+            row.is_default
+              ? []
+              : [
+                  {
+                    icon: row.is_active
+                      ? <ToggleRight className="w-3.5 h-3.5" />
+                      : <ToggleLeft className="w-3.5 h-3.5" />,
+                    label: row.is_active ? "Deactivate" : "Activate",
+                    variant: row.is_active ? "warning" : "default",
+                    onClick: () => {
+                      if (row.is_active && (row.active_users_count ?? 0) > 0 && !isSuperAdmin) {
+                        showToast(
+                          "error",
+                          "Cannot Deactivate",
+                          `"${row.name}" has ${row.active_users_count} active assigned user(s). Deactivate users first.`
+                        );
+                        return;
+                      }
+                      handleToggleStatus(row);
+                    },
+                  },
+                  {
+                    icon: <Trash2 className="w-3.5 h-3.5" />,
+                    label: "Delete Company",
+                    variant: "danger",
+                    dividerBefore: true,
+                    onClick: () => setDeleteTarget(row),
+                  },
+                ]
+          }
         />
       ),
     },
@@ -235,7 +263,7 @@ export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) 
     <div className={UI_TOKENS.appLayout.mainContent}>
       {/* Tier 1: Sleek Header Row */}
       <PageHeader
-        title="Sister Companies"
+        title="Companies"
         badgeCount={total}
         badgeLabel="Companies"
         actions={

@@ -6,6 +6,8 @@ import { Badge } from "../../components/common/Badge";
 import { Toast } from "../../components/common/Toast";
 import { UI_TOKENS } from "../../config/designTokens";
 import { getCompany, toggleCompanyStatus, type Company } from "../../services/companyService";
+import { formatPhoneNumber } from "../../utils/phoneFormatter";
+import { useAuthStore } from "../../store/authStore";
 
 interface CompanyDetailsPageProps {
   companyId: number;
@@ -16,6 +18,9 @@ export const CompanyDetailsPage: React.FC<CompanyDetailsPageProps> = ({
   companyId,
   onNavigate,
 }) => {
+  const { hasRole } = useAuthStore();
+  const isSuperAdmin = hasRole("superadmin");
+
   const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isToggling, setIsToggling] = useState(false);
@@ -42,8 +47,13 @@ export const CompanyDetailsPage: React.FC<CompanyDetailsPageProps> = ({
       const newStatus = res.data.is_active ? "Activated" : "Deactivated";
       setCompany((prev) => prev ? { ...prev, is_active: res.data.is_active } : null);
       showToast("success", `Company ${newStatus}`, res.message);
-    } catch {
-      showToast("error", "Status Update Failed", "Could not toggle company status. Please try again.");
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      showToast(
+        "error",
+        "Status Update Failed",
+        apiError?.message || "Could not toggle company status. Active users must be deactivated first."
+      );
     } finally {
       setIsToggling(false);
     }
@@ -93,16 +103,35 @@ export const CompanyDetailsPage: React.FC<CompanyDetailsPageProps> = ({
             >
               Back to List
             </Button>
-            <Button
-              variant="secondary"
-              icon={company.is_active
-                ? <ToggleRight className="h-3.5 w-3.5 text-emerald-600" />
-                : <ToggleLeft className="h-3.5 w-3.5 text-slate-400" />}
-              onClick={handleToggleStatus}
-              disabled={isToggling}
-            >
-              {isToggling ? "Updating..." : company.is_active ? "Deactivate" : "Activate"}
-            </Button>
+            {!company.is_default && (
+              <Button
+                variant="secondary"
+                icon={company.is_active
+                  ? <ToggleRight className="h-3.5 w-3.5 text-emerald-600" />
+                  : <ToggleLeft className="h-3.5 w-3.5 text-slate-400" />}
+                onClick={() => {
+                  if (company.is_active && (company.active_users_count ?? 0) > 0 && !isSuperAdmin) {
+                    showToast(
+                      "error",
+                      "Cannot Deactivate",
+                      `This company has ${company.active_users_count} active assigned user(s). Deactivate users first.`
+                    );
+                    return;
+                  }
+                  handleToggleStatus();
+                }}
+                disabled={isToggling}
+                title={
+                  company.is_active && (company.active_users_count ?? 0) > 0
+                    ? isSuperAdmin
+                      ? `Active (${company.active_users_count} active users — Super Admin can force deactivate)`
+                      : `Cannot deactivate: ${company.active_users_count} active user(s) assigned`
+                    : undefined
+                }
+              >
+                {isToggling ? "Updating..." : company.is_active ? "Deactivate" : "Activate"}
+              </Button>
+            )}
             <Button
               variant="primary"
               icon={<Edit2 className="h-3.5 w-3.5" />}
@@ -121,10 +150,15 @@ export const CompanyDetailsPage: React.FC<CompanyDetailsPageProps> = ({
           {/* Identity Card */}
           <div className={UI_TOKENS.card.base}>
             <div className={UI_TOKENS.card.header}>
-              <h2 className={`${UI_TOKENS.card.title} flex items-center gap-2`}>
-                <Building2 className="w-4 h-4 text-[#0066FF]" />
-                Company Identity
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className={`${UI_TOKENS.card.title} flex items-center gap-2`}>
+                  <Building2 className="w-4 h-4 text-[#0066FF]" />
+                  Company Identity
+                </h2>
+                {company.is_default && (
+                  <Badge variant="info" className="text-[10px] px-2 py-0.5">Default System Company</Badge>
+                )}
+              </div>
               <Badge variant={company.is_active ? "success" : "danger"}>
                 {company.is_active ? "Active" : "Inactive"}
               </Badge>
@@ -174,16 +208,18 @@ export const CompanyDetailsPage: React.FC<CompanyDetailsPageProps> = ({
                 <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1">
                   <Phone className="w-3 h-3" /> Phone Number
                 </p>
-                <p className="text-sm text-slate-800">{company.phone || <span className="text-slate-400">Not provided</span>}</p>
+                <p className="text-sm text-slate-800 font-mono">
+                  {company.phone ? formatPhoneNumber(company.phone) : <span className="text-slate-400 font-sans">Not provided</span>}
+                </p>
               </div>
-              {company.address && (
-                <div className="md:col-span-2 space-y-1">
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> Address
-                  </p>
-                  <p className="text-sm text-slate-800 leading-relaxed">{company.address}</p>
-                </div>
-              )}
+              <div className="md:col-span-2 space-y-1">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                  <MapPin className="w-3 h-3" /> Address
+                </p>
+                <p className="text-sm text-slate-800 leading-relaxed">
+                  {company.address || <span className="text-slate-400">Not provided</span>}
+                </p>
+              </div>
             </div>
           </div>
         </div>

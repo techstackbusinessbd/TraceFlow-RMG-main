@@ -353,6 +353,22 @@ export const AppLauncherModal: React.FC<AppLauncherModalProps> = ({
     }
   }, [isOpen, initialSearchQuery]);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   // Filter apps strictly by user permission

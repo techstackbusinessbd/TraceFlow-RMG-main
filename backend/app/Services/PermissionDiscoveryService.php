@@ -8,6 +8,7 @@ class PermissionDiscoveryService
 {
     /**
      * Scan all Domains in app/Domains and discover their permissions.php manifests.
+     * Enforces strict enterprise workflow serial ordering.
      *
      * @return array<string, array>
      */
@@ -25,6 +26,50 @@ class PermissionDiscoveryService
                 $catalog[$domainSlug] = $manifest;
             }
         }
+
+        // 1. Enterprise Module Serial Ordering Priority
+        $modulePriority = [
+            'system_admin' => 1,
+            'master_data' => 2,
+            'order' => 3,
+            'warehouse' => 4,
+            'cutting' => 5,
+            'sewing' => 6,
+            'qc' => 7,
+        ];
+
+        uksort($catalog, function ($a, $b) use ($modulePriority) {
+            $pA = $modulePriority[$a] ?? 99;
+            $pB = $modulePriority[$b] ?? 99;
+            return $pA <=> $pB;
+        });
+
+        // 2. Submodule Serial Ordering Priority per Module
+        $submodulePriority = [
+            'system_admin' => [
+                'users' => 1,
+                'roles' => 2,
+                'companies' => 3,
+                'devices' => 4,
+            ],
+            'master_data' => [
+                'buyers' => 1,
+                'styles' => 2,
+                'lines' => 3,
+            ],
+        ];
+
+        foreach ($catalog as $modKey => &$modData) {
+            if (isset($modData['submodules']) && isset($submodulePriority[$modKey])) {
+                $pMap = $submodulePriority[$modKey];
+                uksort($modData['submodules'], function ($sA, $sB) use ($pMap) {
+                    $posA = $pMap[$sA] ?? 99;
+                    $posB = $pMap[$sB] ?? 99;
+                    return $posA <=> $posB;
+                });
+            }
+        }
+        unset($modData);
 
         return $catalog;
     }

@@ -28,5 +28,17 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::guessPolicyNamesUsing(function (string $modelClass) {
             return str_replace('\\Models\\', '\\Policies\\', $modelClass) . 'Policy';
         });
+
+        // 3. Enterprise Rate Limiters
+        // Login Brute-Force Shield: 5 requests per minute per email/IP
+        \Illuminate\Support\Facades\RateLimiter::for('login', function (\Illuminate\Http\Request $request) {
+            $key = (string) $request->input('login', $request->ip());
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by($key);
+        });
+
+        // Standard API Rate Limiter: 120 requests per minute
+        \Illuminate\Support\Facades\RateLimiter::for('api', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
     }
 }

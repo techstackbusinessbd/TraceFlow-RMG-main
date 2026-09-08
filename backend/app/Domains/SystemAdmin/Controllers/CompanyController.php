@@ -19,7 +19,7 @@ class CompanyController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Company::query()->withCount('users');
+        $query = Company::query()->withCount(['users', 'activeUsers']);
 
         // Search Filter
         if ($search = trim($request->query('search', ''))) {
@@ -104,7 +104,7 @@ class CompanyController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Company registered successfully.',
-            'data' => $company->loadCount('users'),
+            'data' => $company->loadCount(['users', 'activeUsers']),
         ], 201);
     }
 
@@ -114,7 +114,7 @@ class CompanyController extends Controller
      */
     public function show($id): JsonResponse
     {
-        $company = Company::withCount('users')->findOrFail($id);
+        $company = Company::withCount(['users', 'activeUsers'])->findOrFail($id);
 
         return response()->json([
             'status' => 'success',
@@ -134,12 +134,40 @@ class CompanyController extends Controller
         // Company Code is IMMUTABLE after creation — never touched on update.
         unset($validated['code']);
 
+        $currentUser = $request->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('superadmin') || $currentUser->hasRole('Super Admin'));
+
+        // Business Rule: The default system company can NEVER be deactivated by anyone (even Super Admin)
+        if (isset($validated['is_active']) && !$validated['is_active'] && $company->is_default) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "The default system company '{$company->name}' cannot be deactivated.",
+                'errors' => [
+                    'is_active' => ["Default system company cannot be deactivated."],
+                ],
+            ], 422);
+        }
+
+        // Business Rule: Cannot deactivate company if it has active users (Super Admin can bypass/force)
+        if (isset($validated['is_active']) && !$validated['is_active'] && !$isSuperAdmin) {
+            $activeUsersCount = $company->activeUsers()->count();
+            if ($activeUsersCount > 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Cannot deactivate company '{$company->name}'. It has {$activeUsersCount} active assigned user account(s). Please deactivate or reassign users first.",
+                    'errors' => [
+                        'is_active' => ["Cannot deactivate company with {$activeUsersCount} active user(s). Only Super Admin can force deactivate."],
+                    ],
+                ], 422);
+            }
+        }
+
         $company->update($validated);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Company details updated successfully.',
-            'data' => $company->fresh()->loadCount('users'),
+            'data' => $company->fresh()->loadCount(['users', 'activeUsers']),
         ]);
     }
 
@@ -147,15 +175,36 @@ class CompanyController extends Controller
      * Soft delete a company.
      * DELETE /api/v1/companies/{company}
      */
-    public function destroy($id): JsonResponse
+    public function destroy(Request $request, $id): JsonResponse
     {
-        $company = Company::withCount('users')->findOrFail($id);
+        $company = Company::withCount(['users', 'activeUsers'])->findOrFail($id);
 
-        if ($company->users_count > 0) {
+        // Business Rule: The default system company can NEVER be deleted by anyone (even Super Admin)
+        if ($company->is_default) {
             return response()->json([
                 'status' => 'error',
-                'message' => "Cannot delete company '{$company->name}'. It has {$company->users_count} assigned user accounts.",
+                'message' => "The default system company '{$company->name}' is a protected core entity and cannot be deleted by anyone.",
             ], 422);
+        }
+
+        $currentUser = $request->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('superadmin') || $currentUser->hasRole('Super Admin'));
+
+        // If not superadmin, block if active users or assigned users exist
+        if (!$isSuperAdmin) {
+            if ($company->active_users_count > 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Cannot delete company '{$company->name}'. It has {$company->active_users_count} active assigned user account(s). Please deactivate or reassign users first.",
+                ], 422);
+            }
+
+            if ($company->users_count > 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Cannot delete company '{$company->name}'. It has {$company->users_count} assigned user account(s). Please reassign or delete assigned users first.",
+                ], 422);
+            }
         }
 
         $company->delete();
@@ -170,9 +219,31 @@ class CompanyController extends Controller
      * Toggle active/inactive status.
      * PATCH /api/v1/companies/{company}/toggle-status
      */
-    public function toggleStatus($id): JsonResponse
+    public function toggleStatus(Request $request, $id): JsonResponse
     {
-        $company = Company::findOrFail($id);
+        $company = Company::withCount('activeUsers')->findOrFail($id);
+
+        // Business Rule: The default system company can NEVER be deactivated by anyone (even Super Admin)
+        if ($company->is_default && $company->is_active) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "The default system company '{$company->name}' is a protected core entity and cannot be deactivated.",
+            ], 422);
+        }
+
+        $currentUser = $request->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('superadmin') || $currentUser->hasRole('Super Admin'));
+
+        // If currently active and trying to deactivate, check active users unless Super Admin
+        if ($company->is_active && !$isSuperAdmin) {
+            if ($company->active_users_count > 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Cannot deactivate company '{$company->name}'. It has {$company->active_users_count} active assigned user account(s). Please deactivate or reassign users first.",
+                ], 422);
+            }
+        }
+
         $company->is_active = !$company->is_active;
         $company->save();
 

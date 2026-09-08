@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
 import { UI_TOKENS } from "../../config/designTokens";
 
@@ -45,25 +46,33 @@ export const Toast: React.FC<ToastProps> = ({
     },
   }[type];
 
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={`${UI_TOKENS.toast.base} ${typeConfig.style} animate-in fade-in slide-in-from-top-2`}
-    >
-      {typeConfig.icon}
-      <div className={UI_TOKENS.toast.content}>
-        <h4 className={UI_TOKENS.toast.title}>{title || typeConfig.defaultTitle}</h4>
-        <p className={UI_TOKENS.toast.message}>{message}</p>
-      </div>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Dismiss notification"
-        className={UI_TOKENS.toast.closeBtn}
+  const toastElement = (
+    <div className={UI_TOKENS.toast.container}>
+      <div
+        role="status"
+        aria-live="polite"
+        className={`${UI_TOKENS.toast.base} ${typeConfig.style} animate-in fade-in slide-in-from-top-2`}
       >
-        <X className="w-4 h-4" />
-      </button>
+        {typeConfig.icon}
+        <div className={UI_TOKENS.toast.content}>
+          <h4 className={UI_TOKENS.toast.title}>{title || typeConfig.defaultTitle}</h4>
+          <p className={UI_TOKENS.toast.message}>{message}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Dismiss notification"
+          className={UI_TOKENS.toast.closeBtn}
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
+
+  if (typeof document !== "undefined") {
+    return createPortal(toastElement, document.body);
+  }
+
+  return toastElement;
 };

@@ -12,6 +12,15 @@ function getHeaders(): HeadersInit {
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
+  if (res.status === 401) {
+    useAuthStore.getState().logout();
+    if (!window.location.pathname.startsWith("/login")) {
+      window.location.href = "/login";
+    }
+    const err = { message: "Session expired or unauthenticated. Please log in.", status: 401 };
+    throw err;
+  }
+
   const data = await res.json();
   if (!res.ok) {
     const err: { message: string; errors?: Record<string, string[]>; status?: number } = {
@@ -34,7 +43,9 @@ export interface Company {
   phone: string | null;
   address: string | null;
   is_active: boolean;
+  is_default?: boolean;
   users_count?: number;
+  active_users_count?: number;
   created_at: string;
   updated_at: string;
 }

@@ -14,6 +14,8 @@ import {
   updateCompany,
   type CompanyFormData,
 } from "../../services/companyService";
+import { formatPhoneNumber } from "../../utils/phoneFormatter";
+import { useAuthStore } from "../../store/authStore";
 
 interface CompanyFormPageProps {
   mode: "create" | "edit";
@@ -29,6 +31,8 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
   onNavigate,
 }) => {
   const isEditMode = mode === "edit";
+  const { hasRole } = useAuthStore();
+  const isSuperAdmin = hasRole("superadmin");
 
   // Form Fields
   const [code, setCode] = useState("");
@@ -39,6 +43,8 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [isDefault, setIsDefault] = useState(false);
+  const [activeUsersCount, setActiveUsersCount] = useState(0);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingCode, setIsLoadingCode] = useState(false);
@@ -65,9 +71,11 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
           setLegalName(data.legal_name ?? "");
           setTaxId(data.tax_id ?? "");
           setEmail(data.email ?? "");
-          setPhone(data.phone ?? "");
+          setPhone(data.phone ? formatPhoneNumber(data.phone) : "");
           setAddress(data.address ?? "");
           setIsActive(data.is_active);
+          setIsDefault(!!data.is_default);
+          setActiveUsersCount(data.active_users_count ?? 0);
         })
         .catch(() => {
           showToast("error", "Load Failed", "Could not load company details.");
@@ -293,13 +301,19 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
                   label="Phone Number"
                   htmlFor="phone"
                   error={fieldErrors.phone}
+                  helperText="e.g. +880 9666-778833 or +880 1700-000000"
                 >
                   <TextInput
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="e.g. +8802-xxxx-xxxx"
+                    onBlur={() => {
+                      if (phone.trim()) {
+                        setPhone(formatPhoneNumber(phone));
+                      }
+                    }}
+                    placeholder="+880 9666-778833"
                     isError={!!fieldErrors.phone}
                   />
                 </FormField>
@@ -333,7 +347,9 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
 
               <div className="space-y-3">
                 <p className="text-xs text-slate-600">
-                  Inactive companies cannot create new orders or transactions, and their users may have restricted access.
+                  {isDefault
+                    ? "This is the default system company. It is permanent and cannot be deactivated."
+                    : "Inactive companies cannot create new orders or transactions, and their users may have restricted access."}
                 </p>
 
                 <div className="flex items-center gap-3 pt-1">
@@ -341,22 +357,69 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
                     type="button"
                     role="switch"
                     aria-checked={isActive}
-                    onClick={() => setIsActive((v) => !v)}
-                    className={`relative inline-flex h-6 w-11 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-1 ${isActive ? "bg-[#0066FF]" : "bg-slate-300"}`}
+                    disabled={isDefault || (isEditMode && isActive && activeUsersCount > 0 && !isSuperAdmin)}
+                    onClick={() => {
+                      if (isDefault) {
+                        showToast("error", "Action Prohibited", "The default system company cannot be deactivated.");
+                        return;
+                      }
+                      if (isEditMode && isActive && activeUsersCount > 0 && !isSuperAdmin) {
+                        showToast("error", "Cannot Deactivate", `This company has ${activeUsersCount} active assigned user(s). Deactivate or reassign them first.`);
+                        return;
+                      }
+                      setIsActive((v) => !v);
+                    }}
+                    className={`relative inline-flex h-6 w-11 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-1 ${
+                      isDefault || (isEditMode && isActive && activeUsersCount > 0 && !isSuperAdmin)
+                        ? "bg-[#0066FF] opacity-60 cursor-not-allowed"
+                        : isActive
+                        ? "bg-[#0066FF] cursor-pointer"
+                        : "bg-slate-300 cursor-pointer"
+                    }`}
                   >
                     <span
                       className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isActive ? "translate-x-5" : "translate-x-0"}`}
                     />
                   </button>
                   <div>
-                    <span className="text-xs font-semibold text-slate-900">
-                      {isActive ? "Active" : "Inactive"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-900">
+                        {isActive ? "Active" : "Inactive"}
+                      </span>
+                      {isDefault && (
+                        <Badge variant="info" className="text-[10px] px-1.5 py-0">Core Entity</Badge>
+                      )}
+                    </div>
                     <p className="text-[11px] text-slate-500">
-                      {isActive ? "Operational — can accept orders" : "Suspended — no new transactions"}
+                      {isDefault
+                        ? "Protected default entity — cannot be deactivated"
+                        : isEditMode && isActive && activeUsersCount > 0
+                        ? isSuperAdmin
+                          ? `Active (${activeUsersCount} active users — Super Admin Force Allowed)`
+                          : `Locked (${activeUsersCount} active user accounts)`
+                        : isActive
+                        ? "Operational — can accept orders"
+                        : "Suspended — no new transactions"}
                     </p>
                   </div>
                 </div>
+
+                {isDefault && (
+                  <div className="p-2 rounded bg-blue-50 border border-blue-200/80 text-[11px] text-[#0066FF] flex items-start gap-1.5 leading-snug">
+                    <span>🛡️ <strong>Default System Company:</strong> This is the primary system entity and cannot be deactivated or deleted by any user (including Super Admin).</span>
+                  </div>
+                )}
+
+                {!isDefault && isEditMode && isActive && activeUsersCount > 0 && !isSuperAdmin && (
+                  <div className="p-2 rounded bg-amber-50 border border-amber-200/80 text-[11px] text-amber-800 flex items-start gap-1.5 leading-snug">
+                    <span>⚠️ Deactivation is locked because this company has <strong>{activeUsersCount} active assigned user(s)</strong>. Please deactivate users in User Directory first.</span>
+                  </div>
+                )}
+                {!isDefault && isEditMode && isActive && activeUsersCount > 0 && isSuperAdmin && (
+                  <div className="p-2 rounded bg-blue-50 border border-blue-200/80 text-[11px] text-[#0066FF] flex items-start gap-1.5 leading-snug">
+                    <span>⚡ <strong>Super Admin Override Active:</strong> You can force deactivate this company even though it has {activeUsersCount} active user account(s).</span>
+                  </div>
+                )}
 
                 <div className="pt-2 border-t border-slate-100">
                   <div className="flex items-center gap-2">
@@ -381,8 +444,8 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
                   disabled={isSubmitting || isLoadingData}
                 >
                   {isSubmitting
-                    ? isEditMode ? "Saving Changes..." : "Registering..."
-                    : isEditMode ? "Save Changes" : "Register Company"}
+                    ? isEditMode ? "Updating Company..." : "Registering..."
+                    : isEditMode ? "Update Company" : "Register Company"}
                 </Button>
                 <Button
                   type="button"

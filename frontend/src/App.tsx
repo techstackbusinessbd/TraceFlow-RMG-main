@@ -1,12 +1,4 @@
 import { useState, useEffect } from "react";
-import { Plus, Download, Edit2, Eye } from "lucide-react";
-import { PageHeader } from "./components/common/PageHeader";
-import { FilterToolbar } from "./components/common/FilterToolbar";
-import { DataTable, type ColumnDef } from "./components/common/DataTable";
-import { Button } from "./components/common/Button";
-import { Badge } from "./components/common/Badge";
-import { TableActionButton } from "./components/common/TableActionButton";
-import { UI_TOKENS } from "./config/designTokens";
 import { AppLayout } from "./components/layout/AppLayout";
 import { LoginPage } from "./features/Auth/LoginPage";
 import { ExecutiveDashboard } from "./features/Dashboard/ExecutiveDashboard";
@@ -14,24 +6,19 @@ import { UserProfilePage } from "./features/Profile/UserProfilePage";
 import { CompanyListPage } from "./features/Companies/CompanyListPage";
 import { CompanyFormPage } from "./features/Companies/CompanyFormPage";
 import { CompanyDetailsPage } from "./features/Companies/CompanyDetailsPage";
+import { UserListPage } from "./features/Users/UserListPage";
+import { UserFormPage } from "./features/Users/UserFormPage";
+import { UserDetailsPage } from "./features/Users/UserDetailsPage";
+import { UserPermissionsPage } from "./features/Users/UserPermissionsPage";
+import { RoleListPage } from "./features/Roles/RoleListPage";
+import { RoleMatrixPage } from "./features/Roles/RoleMatrixPage";
+import { RoleCreatePage } from "./features/Roles/RoleCreatePage";
+import { BuyerListPage } from "./features/Buyers/BuyerListPage";
+import { BuyerFormPage } from "./features/Buyers/BuyerFormPage";
+import { BuyerDetailsPage } from "./features/Buyers/BuyerDetailsPage";
 import { useAuthStore } from "./store/authStore";
 
-interface BuyerRow {
-  id: string;
-  code: string;
-  name: string;
-  country: string;
-  brandsCount: number;
-  status: "Active" | "Inactive";
-}
 
-const SAMPLE_BUYERS: BuyerRow[] = [
-  { id: "1", code: "AWL-BYR-001", name: "H&M Hennes & Mauritz", country: "Sweden", brandsCount: 4, status: "Active" },
-  { id: "2", code: "AWL-BYR-002", name: "Zara (Inditex Group)", country: "Spain", brandsCount: 6, status: "Active" },
-  { id: "3", code: "AWL-BYR-003", name: "Marks & Spencer (M&S)", country: "United Kingdom", brandsCount: 2, status: "Active" },
-  { id: "4", code: "AWL-BYR-004", name: "Next Retail Ltd", country: "United Kingdom", brandsCount: 3, status: "Inactive" },
-  { id: "5", code: "AWL-BYR-005", name: "PVH Corp (Tommy Hilfiger / Calvin Klein)", country: "United States", brandsCount: 5, status: "Active" },
-];
 
 // Helper: parse /companies/:id and /companies/:id/edit
 function parseCompanyPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: number } {
@@ -44,14 +31,41 @@ function parseCompanyPath(path: string): { type: "list" | "create" | "edit" | "v
   return { type: null };
 }
 
+// Helper: parse /users/:id, /users/:id/edit, and /users/:id/permissions
+function parseUserPath(path: string): { type: "list" | "create" | "edit" | "view" | "permissions" | null; id?: number } {
+  if (path === "/users") return { type: "list" };
+  if (path === "/users/create") return { type: "create" };
+  const permsMatch = path.match(/^\/users\/(\d+)\/permissions$/);
+  if (permsMatch) return { type: "permissions", id: parseInt(permsMatch[1]) };
+  const editMatch = path.match(/^\/users\/(\d+)\/edit$/);
+  if (editMatch) return { type: "edit", id: parseInt(editMatch[1]) };
+  const viewMatch = path.match(/^\/users\/(\d+)$/);
+  if (viewMatch) return { type: "view", id: parseInt(viewMatch[1]) };
+  return { type: null };
+}
+
+// Helper: parse /roles and /roles/:id/matrix
+function parseRolePath(path: string): { type: "list" | "create" | "matrix" | null; id?: number } {
+  if (path === "/roles") return { type: "list" };
+  if (path === "/roles/create") return { type: "create" };
+  const matrixMatch = path.match(/^\/roles\/(\d+)\/matrix$/);
+  if (matrixMatch) return { type: "matrix", id: parseInt(matrixMatch[1]) };
+  return { type: null };
+}
+
+// Helper: parse /master/buyers, /master/buyers/create, /master/buyers/:id, and /master/buyers/:id/edit
+function parseBuyerPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: number } {
+  if (path === "/master/buyers") return { type: "list" };
+  if (path === "/master/buyers/create") return { type: "create" };
+  const editMatch = path.match(/^\/master\/buyers\/(\d+)\/edit$/);
+  if (editMatch) return { type: "edit", id: parseInt(editMatch[1]) };
+  const viewMatch = path.match(/^\/master\/buyers\/(\d+)$/);
+  if (viewMatch) return { type: "view", id: parseInt(viewMatch[1]) };
+  return { type: null };
+}
+
 export function App() {
   const { isAuthenticated, canAccessWidget } = useAuthStore();
-  const [search, setSearch] = useState("");
-  const [pageSize, setPageSize] = useState(10);
-  const [page, setPage] = useState(1);
-  const [sortField, setSortField] = useState<string>("name");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
   const canViewDashboard = canAccessWidget(
@@ -103,6 +117,10 @@ export function App() {
       navigateTo("/master/buyers");
     } else if (moduleId === "master-companies") {
       navigateTo("/companies");
+    } else if (moduleId === "admin-users") {
+      navigateTo("/users");
+    } else if (moduleId === "admin-roles") {
+      navigateTo("/roles");
     } else {
       navigateTo(`/${moduleId}`);
     }
@@ -112,96 +130,14 @@ export function App() {
   const isProfile = currentPath === "/profile";
   const companyRoute = parseCompanyPath(currentPath);
   const isCompanySection = companyRoute.type !== null;
+  const userRoute = parseUserPath(currentPath);
+  const isUserSection = userRoute.type !== null;
+  const roleRoute = parseRolePath(currentPath);
+  const isRoleSection = roleRoute.type !== null;
+  const buyerRoute = parseBuyerPath(currentPath);
+  const isBuyerSection = buyerRoute.type !== null;
 
-  // Handle column sort toggle
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
 
-  // Filter & Sort Logic
-  const filteredData = SAMPLE_BUYERS.filter((item) => {
-    const matchesSearch =
-      item.code.toLowerCase().includes(search.toLowerCase()) ||
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.country.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "ALL" || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const sortedData = [...filteredData].sort((a, b) => {
-    let valA = a[sortField as keyof BuyerRow];
-    let valB = b[sortField as keyof BuyerRow];
-
-    if (typeof valA === "string" && typeof valB === "string") {
-      return sortDirection === "asc"
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
-    }
-    if (typeof valA === "number" && typeof valB === "number") {
-      return sortDirection === "asc" ? valA - valB : valB - valA;
-    }
-    return 0;
-  });
-
-  const getSortHeaderName = () => {
-    const col = columns.find(c => c.key === sortField);
-    return col ? `${col.header} (${sortDirection.toUpperCase()})` : `Name (${sortDirection.toUpperCase()})`;
-  };
-
-  const columns: ColumnDef<BuyerRow>[] = [
-    {
-      key: "code",
-      header: "Buyer Code",
-      render: (item) => <Badge variant="code">{item.code}</Badge>,
-    },
-    {
-      key: "name",
-      header: "Buyer Name",
-      render: (item) => <span className="font-semibold text-slate-900">{item.name}</span>,
-    },
-    {
-      key: "country",
-      header: "Country",
-      render: (item) => <span className="text-slate-600">{item.country}</span>,
-    },
-    {
-      key: "brandsCount",
-      header: "Assigned Brands",
-      align: "center",
-      render: (item) => <Badge variant="neutral">{item.brandsCount} Brands</Badge>,
-    },
-    {
-      key: "status",
-      header: "Status",
-      align: "center",
-      render: (item) => (
-        <Badge variant={item.status === "Active" ? "success" : "danger"}>
-          {item.status}
-        </Badge>
-      ),
-    },
-    {
-      key: "actions",
-      header: "Actions",
-      align: "right",
-      sortable: false,
-      render: () => (
-        <div className="flex items-center justify-end gap-1.5">
-          <TableActionButton variant="secondary" icon={<Eye className="h-3 w-3" />}>
-            View
-          </TableActionButton>
-          <TableActionButton variant="primary" icon={<Edit2 className="h-3 w-3" />}>
-            Edit
-          </TableActionButton>
-        </div>
-      ),
-    },
-  ];
 
   // Map current module/path to Category
   const getActiveCategory = (moduleId: string): string | null => {
@@ -223,6 +159,10 @@ export function App() {
     currentModuleId = "profile";
   } else if (isCompanySection) {
     currentModuleId = "master-companies";
+  } else if (isUserSection) {
+    currentModuleId = "admin-users";
+  } else if (isRoleSection) {
+    currentModuleId = "admin-roles";
   } else {
     currentModuleId = currentPath.replace(/^\//, "").replace("master/buyers", "master-buyers") || "master-buyers";
   }
@@ -250,16 +190,67 @@ export function App() {
         { label: "Governance & Setup", href: "/companies" },
       ];
       if (companyRoute.type === "list") {
-        return [...base, { label: "Sister Companies", active: true }];
+        return [...base, { label: "Companies", active: true }];
       }
       if (companyRoute.type === "create") {
-        return [...base, { label: "Sister Companies", href: "/companies" }, { label: "Register Company", active: true }];
+        return [...base, { label: "Companies", href: "/companies" }, { label: "Register Company", active: true }];
       }
       if (companyRoute.type === "edit") {
-        return [...base, { label: "Sister Companies", href: "/companies" }, { label: "Edit Company", active: true }];
+        return [...base, { label: "Companies", href: "/companies" }, { label: "Edit Company", active: true }];
       }
       if (companyRoute.type === "view") {
-        return [...base, { label: "Sister Companies", href: "/companies" }, { label: "Company Profile", active: true }];
+        return [...base, { label: "Companies", href: "/companies" }, { label: "Company Profile", active: true }];
+      }
+    }
+    if (isUserSection) {
+      const base = [
+        { label: "Home", href: "/dashboard" },
+        { label: "System Admin & Auth", href: "/users" },
+      ];
+      if (userRoute.type === "list") {
+        return [...base, { label: "User Directory", active: true }];
+      }
+      if (userRoute.type === "create") {
+        return [...base, { label: "User Directory", href: "/users" }, { label: "Create User", active: true }];
+      }
+      if (userRoute.type === "edit") {
+        return [...base, { label: "User Directory", href: "/users" }, { label: "Edit User", active: true }];
+      }
+      if (userRoute.type === "view") {
+        return [...base, { label: "User Directory", href: "/users" }, { label: "User Profile", active: true }];
+      }
+    }
+    if (isRoleSection) {
+      const base = [
+        { label: "Home", href: "/dashboard" },
+        { label: "System Admin & Auth", href: "/roles" },
+      ];
+      if (roleRoute.type === "list") {
+        return [...base, { label: "Roles & Policy Matrix", active: true }];
+      }
+      if (roleRoute.type === "create") {
+        return [...base, { label: "Roles & Policy Matrix", href: "/roles" }, { label: "Create Role", active: true }];
+      }
+      if (roleRoute.type === "matrix") {
+        return [...base, { label: "Roles & Policy Matrix", href: "/roles" }, { label: "Policy Matrix Grid", active: true }];
+      }
+    }
+    if (isBuyerSection) {
+      const base = [
+        { label: "Home", href: "/dashboard" },
+        { label: "Master Data", href: "/master/buyers" },
+      ];
+      if (buyerRoute.type === "list") {
+        return [...base, { label: "Buyers & Brands", active: true }];
+      }
+      if (buyerRoute.type === "create") {
+        return [...base, { label: "Buyers & Brands", href: "/master/buyers" }, { label: "Register Buyer", active: true }];
+      }
+      if (buyerRoute.type === "edit") {
+        return [...base, { label: "Buyers & Brands", href: "/master/buyers" }, { label: "Edit Buyer", active: true }];
+      }
+      if (buyerRoute.type === "view") {
+        return [...base, { label: "Buyers & Brands", href: "/master/buyers" }, { label: "Buyer Profile", active: true }];
       }
     }
     return [
@@ -290,66 +281,56 @@ export function App() {
       }
     }
 
-    // Default: Buyer Directory (placeholder)
-    return (
-      <>
-        <PageHeader
-          title="Buyer Directory"
-          badgeCount={sortedData.length}
-          badgeLabel="Registered Buyers"
-          actions={
-            <>
-              <Button variant="secondary" icon={<Download className="h-3.5 w-3.5" />}>
-                Export List
-              </Button>
-              <Button variant="primary" icon={<Plus className="h-3.5 w-3.5" />}>
-                Create Buyer
-              </Button>
-            </>
-          }
-        />
+    // User Section Routes
+    if (isUserSection) {
+      if (userRoute.type === "list") {
+        return <UserListPage onNavigate={navigateTo} />;
+      }
+      if (userRoute.type === "create") {
+        return <UserFormPage mode="create" onNavigate={navigateTo} />;
+      }
+      if (userRoute.type === "edit" && userRoute.id) {
+        return <UserFormPage mode="edit" userId={userRoute.id} onNavigate={navigateTo} />;
+      }
+      if (userRoute.type === "view" && userRoute.id) {
+        return <UserDetailsPage userId={userRoute.id} onNavigate={navigateTo} />;
+      }
+      if (userRoute.type === "permissions" && userRoute.id) {
+        return <UserPermissionsPage userId={userRoute.id} onNavigate={navigateTo} />;
+      }
+    }
 
-        <FilterToolbar
-          searchValue={search}
-          onSearchChange={setSearch}
-          pageSize={pageSize}
-          onPageSizeChange={setPageSize}
-          activeSortLabel={getSortHeaderName()}
-          searchPlaceholder="Search buyers by code, name, or country..."
-          onFilterSubmit={() => {}}
-          onReset={() => {
-            setSearch("");
-            setStatusFilter("ALL");
-            setSortField("name");
-            setSortDirection("asc");
-          }}
-          filterInputs={
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className={`${UI_TOKENS.input.select} py-1.5 text-xs`}
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="Active">Active Only</option>
-              <option value="Inactive">Inactive Only</option>
-            </select>
-          }
-        />
+    // Role Section Routes
+    if (isRoleSection) {
+      if (roleRoute.type === "list") {
+        return <RoleListPage onNavigate={navigateTo} />;
+      }
+      if (roleRoute.type === "create") {
+        return <RoleCreatePage onNavigate={navigateTo} />;
+      }
+      if (roleRoute.type === "matrix" && roleRoute.id) {
+        return <RoleMatrixPage roleId={roleRoute.id} onNavigate={navigateTo} />;
+      }
+    }
 
-        <DataTable
-          columns={columns}
-          data={sortedData}
-          totalRecords={sortedData.length}
-          currentPage={page}
-          totalPages={1}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          onSort={handleSort}
-        />
-      </>
-    );
+    // Buyer Section Routes (Phase 1: Dynamic Master Data)
+    if (isBuyerSection) {
+      if (buyerRoute.type === "list") {
+        return <BuyerListPage onNavigate={navigateTo} />;
+      }
+      if (buyerRoute.type === "create") {
+        return <BuyerFormPage mode="create" onNavigate={navigateTo} />;
+      }
+      if (buyerRoute.type === "edit" && buyerRoute.id) {
+        return <BuyerFormPage mode="edit" buyerId={buyerRoute.id} onNavigate={navigateTo} />;
+      }
+      if (buyerRoute.type === "view" && buyerRoute.id) {
+        return <BuyerDetailsPage buyerId={buyerRoute.id} onNavigate={navigateTo} />;
+      }
+    }
+
+    // Default Fallback: Live Dynamic Buyer List Page
+    return <BuyerListPage onNavigate={navigateTo} />;
   };
 
   return (

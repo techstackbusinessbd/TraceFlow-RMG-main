@@ -35,8 +35,8 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
     <div className={UI_TOKENS.filter.container}>
       {/* Top Row: Search + Dynamic Filters + Actions */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+        <div className="relative flex-1 flex items-center">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <input
             type="text"
             className={`${UI_TOKENS.input.base} pl-9`}

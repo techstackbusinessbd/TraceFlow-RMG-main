@@ -20,12 +20,14 @@ class Company extends Model
         'phone',
         'address',
         'is_active',
+        'is_default',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'is_default' => 'boolean',
         ];
     }
 
@@ -35,5 +37,13 @@ class Company extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Active users affiliated with this company.
+     */
+    public function activeUsers(): HasMany
+    {
+        return $this->hasMany(User::class)->where('is_active', true);
     }
 }

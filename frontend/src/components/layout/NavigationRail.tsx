@@ -127,8 +127,14 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             },
             {
               id: 'admin-users',
-              label: 'User Directory & RBAC',
-              requiredPermissions: ['system_admin.users.view', 'system_admin.roles.view'],
+              label: 'User Directory',
+              requiredPermissions: ['system_admin.users.account.view', 'system_admin.users.view'],
+              requiredRoles: ['superadmin', 'admin'],
+            },
+            {
+              id: 'admin-roles',
+              label: 'Roles & Policy Matrix',
+              requiredPermissions: ['system_admin.roles.matrix.view', 'system_admin.roles.view'],
               requiredRoles: ['superadmin', 'admin'],
             },
           ],
