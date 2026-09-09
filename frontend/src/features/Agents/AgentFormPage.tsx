@@ -258,19 +258,58 @@ export const AgentFormPage: React.FC<AgentFormPageProps> = ({
                   />
                 </FormField>
 
-                {/* Country */}
+                {/* Country Dropdown */}
                 <FormField
                   label="Headquarters Country"
                   required
                   error={errors.country}
                   helperText="Principal headquarters or global sourcing office."
                 >
-                  <TextInput
-                    value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    placeholder="e.g. Bangladesh, Hong Kong, Singapore"
-                    isError={!!errors.country}
-                  />
+                  <div className="relative">
+                    <select
+                      value={formData.country}
+                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                      className={`w-full ${UI_TOKENS.input.select} ${errors.country ? UI_TOKENS.input.error : ""}`}
+                    >
+                      <option value="">Select Headquarters Country...</option>
+                      <optgroup label="Domestic & Sourcing Hubs">
+                        <option value="Bangladesh">Bangladesh</option>
+                        <option value="Hong Kong">Hong Kong</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="India">India</option>
+                        <option value="China">China</option>
+                        <option value="Turkey">Turkey</option>
+                      </optgroup>
+                      <optgroup label="Primary European Markets">
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Germany">Germany</option>
+                        <option value="Sweden">Sweden</option>
+                        <option value="Spain">Spain</option>
+                        <option value="France">France</option>
+                        <option value="Italy">Italy</option>
+                        <option value="Netherlands">Netherlands</option>
+                        <option value="Denmark">Denmark</option>
+                        <option value="Belgium">Belgium</option>
+                        <option value="Poland">Poland</option>
+                        <option value="Norway">Norway</option>
+                      </optgroup>
+                      <optgroup label="Americas">
+                        <option value="United States">United States</option>
+                        <option value="Canada">Canada</option>
+                        <option value="Brazil">Brazil</option>
+                        <option value="Mexico">Mexico</option>
+                      </optgroup>
+                      <optgroup label="Asia-Pacific & Middle East">
+                        <option value="Japan">Japan</option>
+                        <option value="Australia">Australia</option>
+                        <option value="United Arab Emirates">United Arab Emirates</option>
+                        <option value="Saudi Arabia">Saudi Arabia</option>
+                        <option value="South Korea">South Korea</option>
+                        <option value="South Africa">South Africa</option>
+                        <option value="Other">Other Country</option>
+                      </optgroup>
+                    </select>
+                  </div>
                 </FormField>
               </div>
             </div>
