@@ -181,6 +181,8 @@ export function App() {
     currentModuleId = "admin-roles";
   } else if (isAgentSection) {
     currentModuleId = "master-agents";
+  } else if (isBuyerSection) {
+    currentModuleId = "master-buyers";
   } else {
     currentModuleId = currentPath.replace(/^\//, "").replace("master/buyers", "master-buyers") || "master-buyers";
   }
