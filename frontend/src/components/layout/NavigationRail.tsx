@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Truck,
   Database,
+  ShieldCheck,
 } from 'lucide-react';
 import { UI_TOKENS } from '../../config/designTokens';
 import { useAuthStore } from '../../store/authStore';
@@ -80,6 +81,48 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
   const categories: NavCategory[] = [
     {
+      id: 'system-admin',
+      title: 'System Admin',
+      icon: ShieldCheck,
+      requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser', 'production_manager', 'floor_supervisor', 'store_manager', 'commercial_manager'],
+      items: [
+        {
+          id: 'user-profile-group',
+          label: 'User Account & Profile',
+          requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser', 'production_manager', 'floor_supervisor', 'store_manager', 'commercial_manager'],
+          subItems: [
+            {
+              id: 'profile',
+              label: 'My Profile',
+            },
+            {
+              id: 'profile-password',
+              label: 'Change Password',
+            },
+          ],
+        },
+        {
+          id: 'user-directory-group',
+          label: 'User Directory',
+          requiredRoles: ['superadmin', 'admin'],
+          subItems: [
+            {
+              id: 'admin-users',
+              label: 'User',
+              requiredPermissions: ['system_admin.users.account.view', 'system_admin.users.view'],
+              requiredRoles: ['superadmin', 'admin'],
+            },
+            {
+              id: 'admin-roles',
+              label: 'Role Matrix',
+              requiredPermissions: ['system_admin.roles.matrix.view', 'system_admin.roles.view'],
+              requiredRoles: ['superadmin', 'admin'],
+            },
+          ],
+        },
+      ],
+    },
+    {
       id: 'master-data',
       title: 'Master Data',
       icon: Database,
@@ -92,13 +135,13 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
           subItems: [
             {
               id: 'master-companies',
-              label: 'Company Directory',
+              label: 'Company',
               requiredPermissions: ['system_admin.companies.profile.view'],
               requiredRoles: ['superadmin', 'admin'],
             },
             {
               id: 'master-units',
-              label: 'Factory Floors & Lines',
+              label: 'Factory Floors & Line',
               requiredPermissions: ['master_data.lines.setup.view'],
               requiredRoles: ['superadmin', 'admin', 'production_manager', 'floor_supervisor', 'standarduser'],
             },
@@ -106,7 +149,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
         },
         {
           id: 'merchandising-master-group',
-          label: 'Merchandising',
+          label: 'Merchandising Master',
           requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
           subItems: [
             {
@@ -117,7 +160,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             },
             {
               id: 'master-agents',
-              label: 'Buying Agent Directory',
+              label: 'Buying Agent',
               requiredPermissions: ['master_data.agents.profile.view'],
               requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
             },
@@ -139,25 +182,6 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
               label: 'Suppliers Directory',
               requiredPermissions: ['master_data.suppliers.view', 'suppliers.view'],
               requiredRoles: ['superadmin', 'admin', 'commercial_manager'],
-            },
-          ],
-        },
-        {
-          id: 'identity-master-group',
-          label: 'System & Security',
-          requiredRoles: ['superadmin', 'admin'],
-          subItems: [
-            {
-              id: 'admin-users',
-              label: 'User Directory',
-              requiredPermissions: ['system_admin.users.account.view', 'system_admin.users.view'],
-              requiredRoles: ['superadmin', 'admin'],
-            },
-            {
-              id: 'admin-roles',
-              label: 'Roles & Policy Matrix',
-              requiredPermissions: ['system_admin.roles.matrix.view', 'system_admin.roles.view'],
-              requiredRoles: ['superadmin', 'admin'],
             },
           ],
         },
@@ -445,10 +469,11 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
   // Default all submodule groups to open so all submenus are visibly displayed in the sidebar
   const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({
+    'user-profile-group': true,
+    'user-directory-group': true,
     'org-setup-group': true,
     'merchandising-master-group': true,
     'sourcing-master-group': true,
-    'identity-master-group': true,
     'product-dev-group': true,
     'commercial-orders': true,
     'warehouse-group': true,

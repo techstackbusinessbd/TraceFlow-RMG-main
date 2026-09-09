@@ -37,6 +37,15 @@ export const UserProfilePage: React.FC = () => {
 
   const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+  React.useEffect(() => {
+    if (window.location.hash === "#password" || window.location.hash === "#security-password") {
+      const el = document.getElementById("security-password");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, []);
+
   // Handle Profile Update (Pure Server-Side Validation)
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -354,7 +363,7 @@ export const UserProfilePage: React.FC = () => {
           </div>
 
           {/* Security & Password Reset Card */}
-          <div className={UI_TOKENS.card.base}>
+          <div id="security-password" className={UI_TOKENS.card.base}>
             <div className={UI_TOKENS.card.header}>
               <h3 className={UI_TOKENS.card.title}>Security & Password</h3>
             </div>

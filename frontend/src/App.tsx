@@ -159,6 +159,14 @@ export function App() {
   const handleSelectModule = (moduleId: string) => {
     if (moduleId === "dashboard") {
       navigateTo("/dashboard");
+    } else if (moduleId === "profile") {
+      navigateTo("/profile");
+    } else if (moduleId === "profile-password") {
+      navigateTo("/profile#password");
+      setTimeout(() => {
+        const el = document.getElementById("security-password");
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }, 50);
     } else if (moduleId === "master-buyers") {
       navigateTo("/master/buyers");
     } else if (moduleId === "master-styles" || moduleId === "styles-costing") {
@@ -214,8 +222,8 @@ export function App() {
 
   // Map current module/path to Category
   const getActiveCategory = (moduleId: string): string | null => {
-    if (["profile", "profile-password"].includes(moduleId)) return "auth";
-    if (["master-companies", "master-units", "master-buyers", "master-agents", "master-styles", "master-suppliers", "admin-users", "admin-roles"].includes(moduleId)) return "master-data";
+    if (["profile", "profile-password", "admin-users", "admin-roles"].includes(moduleId)) return "system-admin";
+    if (["master-companies", "master-units", "master-buyers", "master-agents", "master-styles", "master-suppliers"].includes(moduleId)) return "master-data";
     if (["inquiries", "styles-costing", "techpacks", "order-pos"].includes(moduleId)) return "merchandising";
     if (["warehouse-rolls", "roll-grn", "shade-lots", "trims-warehouse"].includes(moduleId)) return "materials";
     if (["cad-markers", "spreading-tables", "cutting-bundles", "sewing-lines", "hourly-production"].includes(moduleId)) return "shopfloor";
@@ -259,8 +267,9 @@ export function App() {
     if (isProfile) {
       return [
         { label: "Home", href: "/dashboard" },
-        { label: "Security & Accounts", href: "/profile" },
-        { label: "User Profile", active: true },
+        { label: "System Admin", href: "/profile" },
+        { label: "User Account & Profile", href: "/profile" },
+        { label: "My Profile", active: true },
       ];
     }
     if (isCompanySection) {
@@ -285,8 +294,8 @@ export function App() {
     if (isUserSection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "Master Data", href: "/users" },
-        { label: "System & Security", href: "/users" },
+        { label: "System Admin", href: "/users" },
+        { label: "User Directory", href: "/users" },
       ];
       if (userRoute.type === "list") {
         return [...base, { label: "User Directory", active: true }];
@@ -304,17 +313,17 @@ export function App() {
     if (isRoleSection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "Master Data", href: "/roles" },
-        { label: "System & Security", href: "/roles" },
+        { label: "System Admin", href: "/roles" },
+        { label: "User Directory", href: "/roles" },
       ];
       if (roleRoute.type === "list") {
-        return [...base, { label: "Roles & Policy Matrix", active: true }];
+        return [...base, { label: "Role Matrix", active: true }];
       }
       if (roleRoute.type === "create") {
-        return [...base, { label: "Roles & Policy Matrix", href: "/roles" }, { label: "Create Role", active: true }];
+        return [...base, { label: "Role Matrix", href: "/roles" }, { label: "Create Role", active: true }];
       }
       if (roleRoute.type === "matrix") {
-        return [...base, { label: "Roles & Policy Matrix", href: "/roles" }, { label: "Policy Matrix Grid", active: true }];
+        return [...base, { label: "Role Matrix", href: "/roles" }, { label: "Policy Matrix Grid", active: true }];
       }
     }
     if (isAgentSection) {
