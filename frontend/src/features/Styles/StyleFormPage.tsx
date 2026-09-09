@@ -27,102 +27,27 @@ import {
 import { getOperationalCompanies, type Company } from "../../services/companyService";
 import { getBuyers, type Buyer } from "../../services/buyerService";
 
+import {
+  getMasterMetadata,
+  DEFAULT_MASTER_METADATA,
+  type MasterMetadata,
+} from "../../services/masterMetadataService";
+
 interface StyleFormPageProps {
   mode: "create" | "edit";
   styleId?: string | number;
   onNavigate: (path: string) => void;
 }
 
-const WOVEN_CATEGORIES = [
-  "Woven Tops (Shirts/Blouses)",
-  "Woven Bottoms (Trousers/Chinos)",
-  "Denim & Jeans",
-  "Cargo & Utility Shorts",
-  "Outerwear / Woven Jackets",
-];
-
-const WASH_TYPES = [
-  "None / Raw / Rinse",
-  "Enzyme Wash",
-  "Stone Enzyme Wash",
-  "Bleach Wash",
-  "Acid Wash",
-  "Tint & Distress",
-  "Resin 3D Crinkle",
-];
-
-// Standard fashion seasons mapped to Buyer profiles / sourcing origins
-const BUYER_SEASONS_EU = [
-  "Spring/Summer",
-  "Autumn/Winter",
-  "Pre-Fall",
-  "Holiday",
-  "All Seasons / Carry Over",
-];
-
-const BUYER_SEASONS_US = [
-  "Spring",
-  "Summer",
-  "Fall",
-  "Holiday",
-  "Resort / Cruise",
-  "Back to School",
-  "All Seasons / Carry Over",
-];
-
-const DEFAULT_SEASONS = [
-  "Spring/Summer",
-  "Autumn/Winter",
-  "Pre-Fall",
-  "Holiday",
-  "All Seasons / Carry Over",
-];
-
-const SEASON_YEARS = [
-  "2025",
-  "2026",
-  "2027",
-  "2028",
-  "2029",
-  "2030",
-];
-
-const COMMON_GARMENT_ITEMS = [
-  "Casual Chino Pant",
-  "5-Pocket Denim Jeans",
-  "Cargo Utility Pant",
-  "Bermuda Shorts",
-  "Formal Dress Shirt",
-  "Casual Button-Down Shirt",
-  "Flannel Overshirt",
-  "Woven Blazer / Jacket",
-];
-
-const COMMON_FABRICS = [
-  "100% Cotton Twill (240 GSM)",
-  "98% Cotton 2% Spandex Stretch Twill",
-  "100% Cotton Poplin (120 GSM)",
-  "100% Cotton Oxford Weave",
-  "100% Cotton Indigo Denim (12 oz)",
-  "99% Cotton 1% Elastane Denim",
-  "65% Polyester 35% Cotton (TC) Twill",
-  "100% Linen Plain Weave",
-];
-
-const PRESET_SIZE_SCALES = {
-  "Men's Tops": ["XS", "S", "M", "L", "XL", "XXL", "3XL"],
-  "Waist (Inches)": ["28", "30", "32", "34", "36", "38", "40"],
-  "Waist x Inseam": ["30x32", "32x32", "34x32", "36x32", "38x32"],
-};
-
 export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onNavigate }) => {
+  const [metadata, setMetadata] = useState<MasterMetadata>(DEFAULT_MASTER_METADATA);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<number>(1);
   const [nextCode, setNextCode] = useState<string>("Loading...");
   const [categoriesList, setCategoriesList] = useState<string[]>(() => {
     const saved = localStorage.getItem("traceflow_style_categories");
-    return saved ? JSON.parse(saved) : WOVEN_CATEGORIES;
+    return saved ? JSON.parse(saved) : DEFAULT_MASTER_METADATA.woven_categories;
   });
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState("");
@@ -141,12 +66,12 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
     brand_id: null,
     buyer_style_no: "",
     style_name: "",
-    product_category: WOVEN_CATEGORIES[1], // Default: Woven Bottoms
+    product_category: DEFAULT_MASTER_METADATA.woven_categories[1], // Default: Woven Bottoms
     garment_item: "Casual Chino Pant",
     fabric_type: "100% Cotton Twill",
     season: "",
     base_smv: 18.5,
-    wash_type: WASH_TYPES[1], // Enzyme Wash
+    wash_type: DEFAULT_MASTER_METADATA.wash_types[1], // Enzyme Wash
     description: "",
     status: "Development",
     is_active: true,
@@ -163,10 +88,10 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
   });
 
   // Dynamically derive available seasons based on the selected Buyer's profile/origin
-  const availableSeasonNames = React.useMemo(() => {
+  const availableSeasonNames: string[] = React.useMemo(() => {
     if (!formData.buyer_id) return [];
     const b = buyers.find((x) => x.id === Number(formData.buyer_id));
-    if (!b) return DEFAULT_SEASONS;
+    if (!b) return metadata.seasons?.eu || DEFAULT_MASTER_METADATA.seasons.eu;
 
     const bName = (b.name || "").toLowerCase();
     const bCountry = (b.country || "").toLowerCase();
@@ -182,12 +107,12 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
       bName.includes("levi") ||
       bName.includes("kohl")
     ) {
-      return BUYER_SEASONS_US;
+      return metadata.seasons.us;
     }
 
     // EU & International buyers (H&M, Inditex, Next, M&S, etc.)
-    return BUYER_SEASONS_EU;
-  }, [formData.buyer_id, buyers]);
+    return metadata.seasons.eu;
+  }, [formData.buyer_id, buyers, metadata]);
 
   // Keep combined formData.season synchronized when seasonName or seasonYear changes
   useEffect(() => {
@@ -203,6 +128,20 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
     setToast({ type, title, message });
     setTimeout(() => setToast(null), 4000);
   };
+
+  // Fetch centralized RMG master metadata from backend
+  useEffect(() => {
+    getMasterMetadata()
+      .then((meta) => {
+        setMetadata(meta);
+        // If local storage has no custom categories, initialize with backend woven categories
+        const saved = localStorage.getItem("traceflow_style_categories");
+        if (!saved && meta.woven_categories?.length > 0) {
+          setCategoriesList(meta.woven_categories);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Fetch operational companies (excluding Platform Owner)
   useEffect(() => {
@@ -644,7 +583,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                     disabled={!formData.buyer_id}
                     onChange={(e) => setSeasonYear(e.target.value)}
                   >
-                    {SEASON_YEARS.map((y) => (
+                    {(metadata.seasons?.years || ["2025", "2026", "2027", "2028", "2029", "2030"]).map((y) => (
                       <option key={y} value={y}>
                         {y}
                       </option>
@@ -733,7 +672,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                     onChange={(e) => setFormData((prev) => ({ ...prev, garment_item: e.target.value }))}
                   />
                   <datalist id="garment-presets">
-                    {COMMON_GARMENT_ITEMS.map((item) => (
+                    {(metadata.garment_items || []).map((item) => (
                       <option key={item} value={item} />
                     ))}
                   </datalist>
@@ -747,7 +686,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                     onChange={(e) => setFormData((prev) => ({ ...prev, fabric_type: e.target.value }))}
                   />
                   <datalist id="fabric-presets">
-                    {COMMON_FABRICS.map((f) => (
+                    {(metadata.fabric_constructions || []).map((f) => (
                       <option key={f} value={f} />
                     ))}
                   </datalist>
@@ -769,7 +708,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                     value={formData.wash_type}
                     onChange={(e) => setFormData((prev) => ({ ...prev, wash_type: e.target.value }))}
                   >
-                    {WASH_TYPES.map((w) => (
+                    {(metadata.wash_types || []).map((w) => (
                       <option key={w} value={w}>
                         {w}
                       </option>
@@ -863,7 +802,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                 <h2 className={UI_TOKENS.card.title}>Size Scale & Ratios</h2>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] text-slate-500 mr-1 hidden sm:inline">Presets:</span>
-                  {Object.entries(PRESET_SIZE_SCALES).map(([name, scale]) => (
+                  {Object.entries(metadata.size_scales || {}).map(([name, scale]) => (
                     <button
                       key={name}
                       type="button"
