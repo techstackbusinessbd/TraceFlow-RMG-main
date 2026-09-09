@@ -72,11 +72,11 @@ const APPS_CATALOG: AppCard[] = [
     requiredRoles: ["superadmin", "admin"],
   },
 
-  // 02. Master Governance
+  // 02. Enterprise Governance
   {
     id: "master-companies",
     name: "Companies",
-    category: "Master Governance",
+    category: "Enterprise Governance",
     description: "Legal entity profiles, codes, tax IDs and factory setups",
     icon: Building2,
     submodules: [
@@ -90,15 +90,18 @@ const APPS_CATALOG: AppCard[] = [
     ],
     requiredRoles: ["superadmin", "admin"],
   },
+
+  // 03. Merchandising & CRM
   {
     id: "master-buyers",
     name: "Buyers & Brands",
-    category: "Master Governance",
+    category: "Merchandising & CRM",
     description: "Global brands, contracts, and commission matrices",
     icon: Users,
     badge: "Active",
     submodules: [
       { id: "master-buyers", name: "Buyer Directory" },
+      { id: "master-agents", name: "Buying Agent Directory" },
       { id: "master-brands", name: "Brands List" },
     ],
     requiredPermissions: [
@@ -108,10 +111,12 @@ const APPS_CATALOG: AppCard[] = [
     ],
     requiredRoles: ["superadmin", "admin", "standarduser", "merchandiser"],
   },
+
+  // 04. Sourcing & Procurement
   {
     id: "master-suppliers",
     name: "Suppliers & Mills",
-    category: "Master Governance",
+    category: "Sourcing & Procurement",
     description: "Yarn spinners, fabric mills, and accessory vendors",
     icon: Building2,
     submodules: [
@@ -126,11 +131,11 @@ const APPS_CATALOG: AppCard[] = [
     requiredRoles: ["superadmin", "admin", "commercial_manager"],
   },
 
-  // Merchandising
+  // 05. Merchandising Flows
   {
     id: "inquiries",
     name: "Buyer Inquiries",
-    category: "Merchandising & Styles",
+    category: "Merchandising & CRM",
     description: "Sample proto development and early costing requests",
     icon: Shirt,
     submodules: [
@@ -143,7 +148,7 @@ const APPS_CATALOG: AppCard[] = [
   {
     id: "styles-costing",
     name: "Styles & BOM Costing",
-    category: "Merchandising & Styles",
+    category: "Merchandising & CRM",
     description: "Complete bill of materials and pre-costing calculator",
     icon: Shirt,
     badge: "Core",
@@ -162,7 +167,7 @@ const APPS_CATALOG: AppCard[] = [
   {
     id: "order-pos",
     name: "Customer Purchase Orders",
-    category: "Merchandising & Styles",
+    category: "Merchandising & CRM",
     description: "Commercial PO line allocation and delivery schedule",
     icon: Shirt,
     submodules: [
@@ -454,38 +459,44 @@ export const AppLauncherModal: React.FC<AppLauncherModalProps> = ({
               {
                 id: "governance",
                 step: "02",
-                category: "Master Governance",
-                title: "2. Master Governance & System Setup",
+                category: "Enterprise Governance",
+                title: "2. Enterprise Governance & Corporate Setup",
               },
               {
                 id: "merchandising",
                 step: "03",
-                category: "Merchandising & Styles",
-                title: "3. Merchandising, Costing & Buyer Orders",
+                category: "Merchandising & CRM",
+                title: "3. Merchandising, Styles & Buyer CRM",
+              },
+              {
+                id: "sourcing",
+                step: "04",
+                category: "Sourcing & Procurement",
+                title: "4. Sourcing, Mills & Procurement",
               },
               {
                 id: "materials",
-                step: "04",
+                step: "05",
                 category: "Warehouse & Materials",
-                title: "4. Supply Chain, Fabric Rolls & Inventory",
+                title: "5. Supply Chain, Fabric Rolls & Inventory",
               },
               {
                 id: "shopfloor",
-                step: "05",
+                step: "06",
                 category: "Shopfloor Manufacturing",
-                title: "5. Shopfloor CAD, Cutting & Sewing Lines",
+                title: "6. Shopfloor CAD, Cutting & Sewing Lines",
               },
               {
                 id: "quality",
-                step: "06",
+                step: "07",
                 category: "Quality Assurance",
-                title: "6. Quality Control Audits & Compliance",
+                title: "7. Quality Control Audits & Compliance",
               },
               {
                 id: "shipping",
-                step: "07",
+                step: "08",
                 category: "Finishing & Dispatch",
-                title: "7. Finishing, Packaging & Commercial Dispatch",
+                title: "8. Finishing, Packaging & Commercial Dispatch",
               },
             ].map((moduleGroup) => {
               const groupApps = filteredApps.filter(

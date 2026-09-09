@@ -267,7 +267,7 @@ export function App() {
     if (isCompanySection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "Governance & Setup", href: "/companies" },
+        { label: "Enterprise Governance", href: "/companies" },
       ];
       if (companyRoute.type === "list") {
         return [...base, { label: "Company Directory", active: true }];
@@ -318,7 +318,7 @@ export function App() {
     if (isAgentSection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "Master Data", href: "/master/agents" },
+        { label: "Merchandising & CRM", href: "/master/buyers" },
       ];
       if (agentRoute.type === "list") {
         return [...base, { label: "Buying Agent Directory", active: true }];
@@ -336,7 +336,7 @@ export function App() {
     if (isBuyerSection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "Master Data", href: "/master/buyers" },
+        { label: "Merchandising & CRM", href: "/master/buyers" },
       ];
       if (buyerRoute.type === "list") {
         return [...base, { label: "Buyer Directory", active: true }];
@@ -354,7 +354,7 @@ export function App() {
     if (isStyleSection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "Master Data", href: "/master/styles" },
+        { label: "Merchandising & CRM", href: "/master/styles" },
       ];
       if (styleRoute.type === "list") {
         return [...base, { label: "Style Library", active: true }];
