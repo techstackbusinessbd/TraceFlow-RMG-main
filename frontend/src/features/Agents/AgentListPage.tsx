@@ -301,7 +301,7 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
 
       {/* Tier 1: Sleek Header Row */}
       <PageHeader
-        title="Buying Agents & Houses"
+        title="Buying Agents Directory"
         badgeCount={total}
         badgeLabel={total === 1 ? "Agent" : "Agents"}
         actions={

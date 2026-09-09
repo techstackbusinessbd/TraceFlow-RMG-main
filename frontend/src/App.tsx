@@ -261,16 +261,16 @@ export function App() {
         { label: "Master Data", href: "/master/agents" },
       ];
       if (agentRoute.type === "list") {
-        return [...base, { label: "Buying Agents & Houses", active: true }];
+        return [...base, { label: "Buying Agents Directory", active: true }];
       }
       if (agentRoute.type === "create") {
-        return [...base, { label: "Buying Agents & Houses", href: "/master/agents" }, { label: "Register Agent", active: true }];
+        return [...base, { label: "Buying Agents Directory", href: "/master/agents" }, { label: "Register Agent", active: true }];
       }
       if (agentRoute.type === "edit") {
-        return [...base, { label: "Buying Agents & Houses", href: "/master/agents" }, { label: "Edit Agent", active: true }];
+        return [...base, { label: "Buying Agents Directory", href: "/master/agents" }, { label: "Edit Agent", active: true }];
       }
       if (agentRoute.type === "view") {
-        return [...base, { label: "Buying Agents & Houses", href: "/master/agents" }, { label: "Agent Profile", active: true }];
+        return [...base, { label: "Buying Agents Directory", href: "/master/agents" }, { label: "Agent Profile", active: true }];
       }
     }
     if (isBuyerSection) {
