@@ -651,35 +651,13 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                     ))}
                   </select>
                 </FormField>
-
-                {/* 5. Garment Item */}
-                <div className="md:col-span-2">
-                  <FormField
-                    label="Garment Item"
-                    required
-                    error={errors.garment_item}
-                    helperText="Specific apparel article or construction type (e.g. Casual Chino Pant, 5-Pocket Jeans)."
-                  >
-                    <TextInput
-                      list="garment-presets"
-                      placeholder="e.g. Casual Chino Pant, Formal Shirt, Cargo Pant"
-                      value={formData.garment_item}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, garment_item: e.target.value }))}
-                    />
-                    <datalist id="garment-presets">
-                      {COMMON_GARMENT_ITEMS.map((item) => (
-                        <option key={item} value={item} />
-                      ))}
-                    </datalist>
-                  </FormField>
-                </div>
               </div>
             </div>
 
-            {/* Card 2: Garment & Technical Specifications */}
+            {/* Card 2: Garment Specifications & Technical Engineering */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <h2 className={UI_TOKENS.card.title}>Woven Specifications & Engineering</h2>
+                <h2 className={UI_TOKENS.card.title}>Garment Specifications & Engineering</h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -699,11 +677,12 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                   />
                 </FormField>
 
+                {/* Unified Apparel Grouping: Category & Item side by side */}
                 <FormField
-                  label="Woven Category"
+                  label="Product Category"
                   required
                   error={errors.product_category}
-                  helperText="Choose standard or add verified custom category."
+                  helperText="Broad department (e.g. Woven Bottoms, Denim)."
                 >
                   <div className="flex items-center gap-1.5">
                     <select
@@ -739,6 +718,25 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                       <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                </FormField>
+
+                <FormField
+                  label="Garment Item"
+                  required
+                  error={errors.garment_item}
+                  helperText="Specific garment article (e.g. Chino Pant, 5-Pocket Jeans)."
+                >
+                  <TextInput
+                    list="garment-presets"
+                    placeholder="e.g. Casual Chino Pant, Formal Shirt, Cargo Pant"
+                    value={formData.garment_item}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, garment_item: e.target.value }))}
+                  />
+                  <datalist id="garment-presets">
+                    {COMMON_GARMENT_ITEMS.map((item) => (
+                      <option key={item} value={item} />
+                    ))}
+                  </datalist>
                 </FormField>
 
                 <FormField label="Fabric Construction" required error={errors.fabric_type} helperText="Select popular weave/composition or type custom.">
