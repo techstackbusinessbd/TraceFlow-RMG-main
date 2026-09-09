@@ -8,7 +8,7 @@ import { Badge } from "../../components/common/Badge";
 import { Toast } from "../../components/common/Toast";
 import { Toggle } from "../../components/common/Toggle";
 import { UI_TOKENS } from "../../config/designTokens";
-import { getCompanies, type Company } from "../../services/companyService";
+import { getOperationalCompanies, type Company } from "../../services/companyService";
 import {
   getAgentById,
   getAgentNextCode,
@@ -52,14 +52,14 @@ export const AgentFormPage: React.FC<AgentFormPageProps> = ({
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Load companies
+  // Load companies (excluding Platform Owner)
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const res = await getCompanies({ per_page: 100 });
-        setCompanies(res.data);
-        if (mode === "create" && res.data.length > 0) {
-          const defaultCmp = res.data.find((c) => c.is_default) || res.data[0];
+        const operationalList = await getOperationalCompanies();
+        setCompanies(operationalList);
+        if (mode === "create" && operationalList.length > 0) {
+          const defaultCmp = operationalList[0];
           setSelectedCompanyId(defaultCmp.id);
           setFormData((prev) => ({ ...prev, company_id: defaultCmp.id }));
           loadNextCode(defaultCmp.id);

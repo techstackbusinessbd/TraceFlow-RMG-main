@@ -29,7 +29,7 @@ import {
   getBuyerNextCode,
   type BuyerFormData,
 } from "../../services/buyerService";
-import { getCompanies, type Company } from "../../services/companyService";
+import { getOperationalCompanies, type Company } from "../../services/companyService";
 import { getAgents, type Agent } from "../../services/agentService";
 
 interface BuyerFormPageProps {
@@ -68,14 +68,14 @@ export const BuyerFormPage: React.FC<BuyerFormPageProps> = ({ mode, buyerId, onN
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Load companies for multi-company assignment
+  // Load companies for multi-company assignment (excluding Platform Owner)
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const res = await getCompanies({ per_page: 100 });
-        setCompanies(res.data);
-        if (mode === "create" && res.data.length > 0) {
-          const defaultCmp = res.data.find((c) => c.is_default) || res.data[0];
+        const operationalList = await getOperationalCompanies();
+        setCompanies(operationalList);
+        if (mode === "create" && operationalList.length > 0) {
+          const defaultCmp = operationalList[0];
           setSelectedCompanyId(defaultCmp.id);
           setFormData((prev) => ({ ...prev, company_id: defaultCmp.id }));
           loadNextCode(defaultCmp.id);

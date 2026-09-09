@@ -27,7 +27,7 @@ import {
   type StyleFormData,
   type StyleColorItem,
 } from "../../services/styleService";
-import { getCompanies, type Company } from "../../services/companyService";
+import { getOperationalCompanies, type Company } from "../../services/companyService";
 import { getBuyers, type Buyer } from "../../services/buyerService";
 
 interface StyleFormPageProps {
@@ -140,13 +140,13 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Fetch companies & buyers
+  // Fetch operational companies (excluding Platform Owner) & buyers
   useEffect(() => {
-    getCompanies({ per_page: 100 })
-      .then((res) => {
-        setCompanies(res.data);
-        if (res.data.length > 0 && mode === "create") {
-          const defaultCo = res.data.find((c) => c.is_default) || res.data[0];
+    getOperationalCompanies()
+      .then((operationalList) => {
+        setCompanies(operationalList);
+        if (operationalList.length > 0 && mode === "create") {
+          const defaultCo = operationalList[0];
           setSelectedCompanyId(defaultCo.id);
           setFormData((prev) => ({ ...prev, company_id: defaultCo.id }));
         }

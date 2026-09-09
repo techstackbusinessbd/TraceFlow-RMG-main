@@ -8,7 +8,7 @@ import { Badge } from "../../components/common/Badge";
 import { RowActionsMenu } from "../../components/common/RowActionsMenu";
 import { Toast } from "../../components/common/Toast";
 import { UI_TOKENS } from "../../config/designTokens";
-import { getCompanies, type Company } from "../../services/companyService";
+import { getOperationalCompanies, type Company } from "../../services/companyService";
 import {
   getAgents,
   deleteAgent,
@@ -58,8 +58,8 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const res = await getCompanies({ per_page: 100 });
-        setCompanies(res.data);
+        const operationalList = await getOperationalCompanies();
+        setCompanies(operationalList);
       } catch {
         // silent fail
       }

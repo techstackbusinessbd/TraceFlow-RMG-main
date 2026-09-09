@@ -71,6 +71,7 @@ export interface CompanyParams {
   sort_direction?: "asc" | "desc";
   per_page?: number;
   page?: number;
+  operational?: boolean;
 }
 
 export interface CompanyFormData {
@@ -93,11 +94,32 @@ export async function getCompanies(params: CompanyParams = {}): Promise<CompanyL
   if (params.sort_direction) query.set("sort_direction", params.sort_direction);
   if (params.per_page) query.set("per_page", String(params.per_page));
   if (params.page) query.set("page", String(params.page));
+  if (params.operational) query.set("operational", "true");
 
   const res = await fetch(`${API_BASE}/api/v1/companies?${query.toString()}`, {
     headers: getHeaders(),
   });
-  return handleResponse<CompanyListResponse>(res);
+  const data = await handleResponse<CompanyListResponse>(res);
+  
+  // Strict Client-Side Filter Guarantee: If operational is true, ensure PLT / Platform Owner is never returned
+  if (params.operational && data?.data) {
+    data.data = data.data.filter(
+      (c) => c.code !== "PLT" && !c.is_default && !c.name.toLowerCase().includes("platform owner")
+    );
+  }
+
+  return data;
+}
+
+/**
+ * Fetch ONLY production operating companies for dropdowns and form selectors.
+ * GUARANTEE: Platform Owner (PLT) is strictly filtered out both server-side and client-side.
+ */
+export async function getOperationalCompanies(): Promise<Company[]> {
+  const res = await getCompanies({ operational: true, status: "active", per_page: 100 });
+  return (res.data || []).filter(
+    (c) => c.code !== "PLT" && !c.is_default && !c.name.toLowerCase().includes("platform owner")
+  );
 }
 
 // GET /api/v1/companies/next-code

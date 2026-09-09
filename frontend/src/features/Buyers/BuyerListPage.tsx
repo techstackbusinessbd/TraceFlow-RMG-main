@@ -9,7 +9,7 @@ import { RowActionsMenu } from "../../components/common/RowActionsMenu";
 import { Toast } from "../../components/common/Toast";
 import { UI_TOKENS } from "../../config/designTokens";
 import { getBuyers, deleteBuyer, toggleBuyerStatus, type Buyer } from "../../services/buyerService";
-import { getCompanies, type Company } from "../../services/companyService";
+import { getOperationalCompanies, type Company } from "../../services/companyService";
 import { formatPhoneNumber } from "../../utils/phoneFormatter";
 import { useAuthStore } from "../../store/authStore";
 
@@ -50,8 +50,8 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
   };
 
   useEffect(() => {
-    getCompanies({ per_page: 100 })
-      .then((res) => setCompanies(res.data))
+    getOperationalCompanies()
+      .then((operationalList) => setCompanies(operationalList))
       .catch(() => {});
   }, []);
 

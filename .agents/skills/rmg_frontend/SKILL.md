@@ -101,6 +101,9 @@ Every entity details/view page MUST use `<div className={UI_TOKENS.appLayout.mai
    - The Sidebar Navigation Rail, Top Pinned Breadcrumb, and `<PageHeader>` Title MUST use the exact same directory name without discrepancies.
    - PageHeader Counter Badge: `{total} <Entities>` (e.g., `{total} Users`, `{total} Companies`, `{total} Buyers`, `{total} Agents`).
    - PageHeader Action Buttons: Primary action is always `"Create <Entity>"` (with Plus icon). Secondary export action is always `"Export Directory"` (with Download icon). Create/Edit action is always `"Cancel"` and `"Save <Entity>"`. Details action is always `"Back to Directory"` and `"Edit <Entity>"`.
+6. **Platform Owner Exclusion in Selectors (STRICT & FINAL)**:
+    - The core administrative tenant "Platform Owner" (`code === 'PLT'`) MUST NEVER be rendered as an option in company dropdowns, style forms, buyer forms, or filter select elements.
+    - All operational company selectors must filter out `PLT` so factory operators and merchandisers only ever see production entities.
 
 
 ---

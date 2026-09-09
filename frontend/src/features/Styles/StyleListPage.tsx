@@ -14,7 +14,7 @@ import {
   toggleStyleStatus,
   type WovenStyle,
 } from "../../services/styleService";
-import { getCompanies, type Company } from "../../services/companyService";
+import { getOperationalCompanies, type Company } from "../../services/companyService";
 import { getBuyers, type Buyer } from "../../services/buyerService";
 import { useAuthStore } from "../../store/authStore";
 
@@ -58,8 +58,8 @@ export const StyleListPage: React.FC<StyleListPageProps> = ({ onNavigate }) => {
   };
 
   useEffect(() => {
-    getCompanies({ per_page: 100 })
-      .then((res) => setCompanies(res.data))
+    getOperationalCompanies()
+      .then((operationalList) => setCompanies(operationalList))
       .catch(() => {});
     getBuyers({ per_page: 100 })
       .then((res) => setBuyers(res.data))

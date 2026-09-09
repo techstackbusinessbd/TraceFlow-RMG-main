@@ -84,3 +84,6 @@ public function getNextCode(Request $request): JsonResponse
    All multi-table insertions, status cascading, or order generation operations MUST be wrapped in `DB::transaction(function () { ... })`.
 3. **Event-Driven Redis Caching**:
    High-frequency dropdown endpoints (such as active buyers, agents, lines, colors) MUST be cached in Redis with instant event-driven invalidation upon `created`, `updated`, or `deleted` model events.
+4. **Strict Platform Owner Exclusion Standard**:
+   The `PLT` (Platform Owner) entity is an administrative system root tenant and MUST be filtered out (`where('code', '!=', 'PLT')` or `where('is_default', false)`) from all operational company listings, master dropdowns, buyer/style bindings, and report queries.
+

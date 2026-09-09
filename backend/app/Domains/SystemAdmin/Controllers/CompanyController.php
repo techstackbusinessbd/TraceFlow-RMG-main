@@ -41,6 +41,11 @@ class CompanyController extends Controller
             $query->where('is_active', false);
         }
 
+        // Operational Filter: Platform Owner (PLT) is excluded from operational dropdowns and master bindings
+        if ($request->boolean('operational', false) || $request->boolean('exclude_platform', false)) {
+            $query->where('code', '!=', 'PLT')->where('is_default', false);
+        }
+
         // Sorting
         $sortField = $request->query('sort_field', 'name');
         $sortDirection = strtolower($request->query('sort_direction', 'asc')) === 'desc' ? 'desc' : 'asc';
