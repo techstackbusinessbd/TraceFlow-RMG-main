@@ -2,14 +2,9 @@ import React, { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Save,
-  Building2,
   Plus,
   Trash2,
   Tag,
-  Scissors,
-  Layers,
-  Palette,
-  Sparkles,
   Lightbulb,
   ArrowRight,
 } from "lucide-react";
@@ -56,11 +51,29 @@ const WASH_TYPES = [
   "Resin 3D Crinkle",
 ];
 
-const SEASON_NAMES = [
+// Standard fashion seasons mapped to Buyer profiles / sourcing origins
+const BUYER_SEASONS_EU = [
   "Spring/Summer",
   "Autumn/Winter",
   "Pre-Fall",
+  "Holiday",
+  "All Seasons / Carry Over",
+];
+
+const BUYER_SEASONS_US = [
+  "Spring",
+  "Summer",
+  "Fall",
+  "Holiday",
   "Resort / Cruise",
+  "Back to School",
+  "All Seasons / Carry Over",
+];
+
+const DEFAULT_SEASONS = [
+  "Spring/Summer",
+  "Autumn/Winter",
+  "Pre-Fall",
   "Holiday",
   "All Seasons / Carry Over",
 ];
@@ -115,7 +128,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
-  const [seasonName, setSeasonName] = useState<string>("Spring/Summer");
+  const [seasonName, setSeasonName] = useState<string>("");
   const [seasonYear, setSeasonYear] = useState<string>("2026");
 
   const [formData, setFormData] = useState<StyleFormData>({
@@ -127,7 +140,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
     product_category: WOVEN_CATEGORIES[1], // Default: Woven Bottoms
     garment_item: "Casual Chino Pant",
     fabric_type: "100% Cotton Twill",
-    season: "Spring/Summer 2026",
+    season: "",
     base_smv: 18.5,
     wash_type: WASH_TYPES[1], // Enzyme Wash
     description: "",
@@ -144,6 +157,33 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
       { size_name: "36", sort_order: 4 },
     ],
   });
+
+  // Dynamically derive available seasons based on the selected Buyer's profile/origin
+  const availableSeasonNames = React.useMemo(() => {
+    if (!formData.buyer_id) return [];
+    const b = buyers.find((x) => x.id === Number(formData.buyer_id));
+    if (!b) return DEFAULT_SEASONS;
+
+    const bName = (b.name || "").toLowerCase();
+    const bCountry = (b.country || "").toLowerCase();
+
+    // US Market buyers typically use 4-season cycle
+    if (
+      bCountry.includes("united states") ||
+      bCountry.includes("usa") ||
+      bCountry.includes("canada") ||
+      bName.includes("target") ||
+      bName.includes("walmart") ||
+      bName.includes("gap") ||
+      bName.includes("levi") ||
+      bName.includes("kohl")
+    ) {
+      return BUYER_SEASONS_US;
+    }
+
+    // EU & International buyers (H&M, Inditex, Next, M&S, etc.)
+    return BUYER_SEASONS_EU;
+  }, [formData.buyer_id, buyers]);
 
   // Keep combined formData.season synchronized when seasonName or seasonYear changes
   useEffect(() => {
@@ -468,24 +508,10 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
             {/* Card 1: Core Affiliations */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0066FF] flex items-center justify-center shadow-2xs">
-                    <Building2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className={UI_TOKENS.card.title}>Buyer & Commercial Affiliation</h2>
-                    <p className="text-[11px] text-slate-500">
-                      Company provenance, client buyer account, and production season calendar
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400 font-medium">Stage:</span>
-                  <Badge variant="neutral">Step 1 of 4</Badge>
-                </div>
+                <h2 className={UI_TOKENS.card.title}>Buyer & Commercial Affiliation</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 1. Company */}
                 <FormField
                   label="Company"
@@ -499,7 +525,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                     onChange={(e) => {
                       const cid = Number(e.target.value);
                       setSelectedCompanyId(cid);
-                      setFormData((prev) => ({ ...prev, company_id: cid }));
+                      setFormData((prev) => ({ ...prev, company_id: cid, buyer_id: "" }));
                     }}
                     disabled={mode === "edit"}
                   >
@@ -521,7 +547,22 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                   <select
                     className={`w-full ${UI_TOKENS.input.select} ${errors.buyer_id ? UI_TOKENS.input.error : ""}`}
                     value={formData.buyer_id}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, buyer_id: Number(e.target.value) || "" }))}
+                    onChange={(e) => {
+                      const selectedBId = Number(e.target.value) || "";
+                      setFormData((prev) => ({ ...prev, buyer_id: selectedBId }));
+                      // Set appropriate default season for buyer if available
+                      if (selectedBId) {
+                        const b = buyers.find((x) => x.id === selectedBId);
+                        const bName = (b?.name || "").toLowerCase();
+                        if (bName.includes("target") || bName.includes("walmart") || bName.includes("gap") || bName.includes("levis") || bName.includes("kohls")) {
+                          setSeasonName("Spring");
+                        } else {
+                          setSeasonName("Spring/Summer");
+                        }
+                      } else {
+                        setSeasonName("");
+                      }
+                    }}
                   >
                     <option value="">Select Buyer...</option>
                     {buyers.map((b) => (
@@ -532,53 +573,65 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                   </select>
                 </FormField>
 
-                {/* 3. Season Group (Combined 2-column inline grid for perfect alignment) */}
-                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-slate-50/80 rounded-lg border border-slate-200/70">
-                  <FormField
-                    label="Season Name"
-                    required
-                    error={errors.season}
-                    helperText="Fashion buying cycle or collection."
+                {/* 3. Season Name (Dependent on Buyer) */}
+                <FormField
+                  label="Season Name"
+                  required
+                  error={errors.season}
+                  helperText={
+                    !formData.buyer_id
+                      ? "Please select a Buyer first to load applicable seasons."
+                      : "Fashion buying collection for selected buyer."
+                  }
+                >
+                  <select
+                    className={`w-full ${UI_TOKENS.input.select} ${!formData.buyer_id ? "bg-slate-50 text-slate-400 cursor-not-allowed" : ""}`}
+                    value={seasonName}
+                    disabled={!formData.buyer_id}
+                    onChange={(e) => setSeasonName(e.target.value)}
                   >
-                    <select
-                      className={`w-full ${UI_TOKENS.input.select}`}
-                      value={seasonName}
-                      onChange={(e) => setSeasonName(e.target.value)}
-                    >
-                      {SEASON_NAMES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
+                    {!formData.buyer_id ? (
+                      <option value="">Select Buyer First...</option>
+                    ) : (
+                      <>
+                        <option value="">Select Season...</option>
+                        {availableSeasonNames.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </>
+                    )}
+                  </select>
+                </FormField>
 
-                  <FormField
-                    label="Season Year"
-                    required
-                    helperText="Calendar delivery & production year."
+                {/* 4. Season Year */}
+                <FormField
+                  label="Season Year"
+                  required
+                  helperText="Calendar delivery & production year."
+                >
+                  <select
+                    className={`w-full ${UI_TOKENS.input.select} ${!formData.buyer_id ? "bg-slate-50 text-slate-400 cursor-not-allowed" : ""}`}
+                    value={seasonYear}
+                    disabled={!formData.buyer_id}
+                    onChange={(e) => setSeasonYear(e.target.value)}
                   >
-                    <select
-                      className={`w-full ${UI_TOKENS.input.select}`}
-                      value={seasonYear}
-                      onChange={(e) => setSeasonYear(e.target.value)}
-                    >
-                      {SEASON_YEARS.map((y) => (
-                        <option key={y} value={y}>
-                          {y}
-                        </option>
-                      ))}
-                    </select>
-                  </FormField>
-                </div>
+                    {SEASON_YEARS.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
 
-                {/* 4. Garment Item */}
+                {/* 5. Garment Item */}
                 <div className="md:col-span-2">
                   <FormField
                     label="Garment Item"
                     required
                     error={errors.garment_item}
-                    helperText="Specific apparel article or construction type (e.g. Chino Pant, 5-Pocket Jeans, Cargo Shorts)."
+                    helperText="Specific apparel article or construction type (e.g. Casual Chino Pant, 5-Pocket Jeans)."
                   >
                     <TextInput
                       list="garment-presets"
@@ -599,21 +652,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
             {/* Card 2: Garment & Technical Specifications */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-2xs">
-                    <Scissors className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className={UI_TOKENS.card.title}>Woven Specifications & Engineering</h2>
-                    <p className="text-[11px] text-slate-500">
-                      Fabric construction, industrial wash standard, and IE minute evaluation
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400 font-medium">Stage:</span>
-                  <Badge variant="neutral">Step 2 of 4</Badge>
-                </div>
+                <h2 className={UI_TOKENS.card.title}>Woven Specifications & Engineering</h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -730,17 +769,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
             {/* Card 3: Colorways Repeater */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-pink-50 text-pink-600 flex items-center justify-center shadow-2xs">
-                    <Palette className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className={UI_TOKENS.card.title}>Colorways & Shade Matrix</h2>
-                    <p className="text-[11px] text-slate-500">
-                      Pantone codes, hex shades, and production color variant mapping
-                    </p>
-                  </div>
-                </div>
+                <h2 className={UI_TOKENS.card.title}>Colorways & Shades</h2>
                 <Button
                   type="button"
                   variant="secondary"
@@ -806,17 +835,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
             {/* Card 4: Size Scale Builder */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shadow-2xs">
-                    <Layers className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className={UI_TOKENS.card.title}>Size Scale & Ratio Spectrum</h2>
-                    <p className="text-[11px] text-slate-500">
-                      Ordered size breakdown, waist-inseam combinations, and cutting ratios
-                    </p>
-                  </div>
-                </div>
+                <h2 className={UI_TOKENS.card.title}>Size Scale & Ratios</h2>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] text-slate-500 mr-1 hidden sm:inline">Presets:</span>
                   {Object.entries(PRESET_SIZE_SCALES).map(([name, scale]) => (
@@ -877,10 +896,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
             {/* Sidebar Card 1: System Identifiers & Status */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-[#0066FF]" />
-                  <h2 className={UI_TOKENS.card.title}>Governance & Status</h2>
-                </div>
+                <h2 className={UI_TOKENS.card.title}>Governance & Status</h2>
               </div>
 
               <div className="space-y-4">
@@ -927,10 +943,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
             {/* Sidebar Card 2: Live Summary Preview */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#0066FF]" />
-                  <h2 className={UI_TOKENS.card.title}>Style Summary Card</h2>
-                </div>
+                <h2 className={UI_TOKENS.card.title}>Style Summary</h2>
               </div>
 
               <div className="space-y-3 text-xs">
