@@ -10,6 +10,8 @@ import {
   Layers,
   Palette,
   Sparkles,
+  Lightbulb,
+  ArrowRight,
 } from "lucide-react";
 import { PageHeader } from "../../components/common/PageHeader";
 import { Button } from "../../components/common/Button";
@@ -268,6 +270,27 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
     }));
   };
 
+  // Helper for normalized comparison
+  const normalizeCategory = (str: string) =>
+    str.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  // Real-time suggestions for identical or closely matching categories
+  const categorySuggestions = React.useMemo(() => {
+    const input = newCategoryInput.trim();
+    if (!input || input.length < 2) return [];
+
+    const normInput = normalizeCategory(input);
+    const tokens = input.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
+
+    return categoriesList.filter((cat) => {
+      const normCat = normalizeCategory(cat);
+      // 1. Exact or prefix match
+      if (normCat.includes(normInput) || normInput.includes(normCat)) return true;
+      // 2. Token overlap (e.g. user types "Denim" or "Jackets" or "Jeans")
+      return tokens.some((token) => normCat.includes(token));
+    });
+  }, [newCategoryInput, categoriesList]);
+
   // Anti-Garbage Category Addition with Duplicate & Formatting Guards
   const handleSaveNewCategory = () => {
     const trimmed = newCategoryInput.trim().replace(/\s+/g, " ");
@@ -289,12 +312,12 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
 
     // Check duplicate case-insensitively
     const isDuplicate = categoriesList.some(
-      (cat) => cat.toLowerCase().replace(/[^a-z0-9]/g, "") === formatted.toLowerCase().replace(/[^a-z0-9]/g, "")
+      (cat) => normalizeCategory(cat) === normalizeCategory(formatted)
     );
 
     if (isDuplicate) {
       const existing = categoriesList.find(
-        (cat) => cat.toLowerCase().replace(/[^a-z0-9]/g, "") === formatted.toLowerCase().replace(/[^a-z0-9]/g, "")
+        (cat) => normalizeCategory(cat) === normalizeCategory(formatted)
       );
       setCategoryError(`This category already exists as "${existing}". Please select it from the list.`);
       return;
@@ -308,6 +331,14 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
     setCategoryError(null);
     setIsAddingCategory(false);
     showToast("success", "Category Added", `"${formatted}" has been added and selected.`);
+  };
+
+  const handleSelectExistingSuggestion = (existingCat: string) => {
+    setFormData((prev) => ({ ...prev, product_category: existingCat }));
+    setNewCategoryInput("");
+    setCategoryError(null);
+    setIsAddingCategory(false);
+    showToast("success", "Category Selected", `"${existingCat}" selected directly from existing library.`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -862,6 +893,36 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                 System auto-trims, formats title case, and prevents duplicate variations.
               </p>
             </div>
+
+            {/* Smart Similar / Existing Categories Suggestion Panel */}
+            {categorySuggestions.length > 0 && (
+              <div className="p-3 bg-amber-50/80 rounded-lg border border-amber-200 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Similar / Existing Categories Found in System:</span>
+                </div>
+                <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+                  {categorySuggestions.map((sug) => (
+                    <div
+                      key={sug}
+                      onClick={() => handleSelectExistingSuggestion(sug)}
+                      className="flex items-center justify-between p-2 rounded bg-white hover:bg-amber-100/60 border border-amber-100 hover:border-amber-300 transition-colors cursor-pointer group text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Tag className="w-3 h-3 text-amber-500" />
+                        <span className="font-medium text-slate-800 group-hover:text-amber-900">{sug}</span>
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0066FF] group-hover:text-blue-700">
+                        Use this <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10.5px] text-amber-700">
+                  💡 Click <strong>"Use this"</strong> to select an existing category instead of creating a duplicate.
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
               <Button
