@@ -20,6 +20,7 @@ import { AgentListPage } from "./features/Agents/AgentListPage";
 import { AgentFormPage } from "./features/Agents/AgentFormPage";
 import { AgentDetailsPage } from "./features/Agents/AgentDetailsPage";
 import { NotFoundPage } from "./components/common/NotFoundPage";
+import { AccessDeniedPage } from "./components/common/AccessDeniedPage";
 import { useAuthStore } from "./store/authStore";
 
 
@@ -89,6 +90,22 @@ export function App() {
   );
   const canViewMasterBuyers = canAccessWidget(
     ['master_data.buyers.profile.view'],
+    ['superadmin', 'admin', 'standarduser', 'merchandiser']
+  );
+  const canViewCompanies = canAccessWidget(
+    ['system_admin.companies.profile.view'],
+    ['superadmin', 'admin']
+  );
+  const canViewUsers = canAccessWidget(
+    ['system_admin.users.account.view', 'system_admin.users.view'],
+    ['superadmin', 'admin']
+  );
+  const canViewRoles = canAccessWidget(
+    ['system_admin.roles.matrix.view', 'system_admin.roles.view'],
+    ['superadmin', 'admin']
+  );
+  const canViewAgents = canAccessWidget(
+    ['master_data.agents.profile.view'],
     ['superadmin', 'admin', 'standarduser', 'merchandiser']
   );
 
@@ -165,6 +182,15 @@ export function App() {
     isAgentSection ||
     isBuyerSection;
   const isNotFound = !isKnownRoute;
+
+  // Check if current route violates user's authorization
+  const isUnauthorized =
+    (isDashboard && !canViewDashboard) ||
+    (isCompanySection && !canViewCompanies) ||
+    (isUserSection && !canViewUsers) ||
+    (isRoleSection && !canViewRoles) ||
+    (isAgentSection && !canViewAgents) ||
+    (isBuyerSection && !canViewMasterBuyers);
 
   // Map current module/path to Category
   const getActiveCategory = (moduleId: string): string | null => {
@@ -302,6 +328,12 @@ export function App() {
         return [...base, { label: "Buyer Directory", href: "/master/buyers" }, { label: "Buyer Profile", active: true }];
       }
     }
+    if (isUnauthorized) {
+      return [
+        { label: "Home", href: "/dashboard" },
+        { label: "Access Denied", active: true },
+      ];
+    }
     return [
       { label: "Home", href: "/dashboard" },
       { label: "Page Not Found", active: true },
@@ -310,6 +342,11 @@ export function App() {
 
   // Render the main content area
   const renderContent = () => {
+    // 1. Guard against Unauthorized Access (403)
+    if (isUnauthorized) {
+      return <AccessDeniedPage currentPath={currentPath} onNavigate={navigateTo} />;
+    }
+
     if (isDashboard) return <ExecutiveDashboard />;
     if (isProfile) return <UserProfilePage />;
 
@@ -400,7 +437,7 @@ export function App() {
   return (
     <AppLayout
       currentModuleId={currentModuleId}
-      hideRail={isDashboard || isNotFound}
+      hideRail={isDashboard || isNotFound || isUnauthorized}
       activeCategory={activeCategory}
       onProfileClick={() => navigateTo("/profile")}
       breadcrumbs={getBreadcrumbs()}
