@@ -156,6 +156,16 @@ export function App() {
   const buyerRoute = parseBuyerPath(currentPath);
   const isBuyerSection = buyerRoute.type !== null;
 
+  const isKnownRoute =
+    isDashboard ||
+    isProfile ||
+    isCompanySection ||
+    isUserSection ||
+    isRoleSection ||
+    isAgentSection ||
+    isBuyerSection;
+  const isNotFound = !isKnownRoute;
+
   // Map current module/path to Category
   const getActiveCategory = (moduleId: string): string | null => {
     if (["profile", "profile-password", "admin-users", "admin-roles"].includes(moduleId)) return "auth";
@@ -390,7 +400,7 @@ export function App() {
   return (
     <AppLayout
       currentModuleId={currentModuleId}
-      hideRail={isDashboard}
+      hideRail={isDashboard || isNotFound}
       activeCategory={activeCategory}
       onProfileClick={() => navigateTo("/profile")}
       breadcrumbs={getBreadcrumbs()}
