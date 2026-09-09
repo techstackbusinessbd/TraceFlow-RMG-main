@@ -10,7 +10,7 @@ import { formatPhoneNumber } from "../../utils/phoneFormatter";
 import { useAuthStore } from "../../store/authStore";
 
 interface BuyerDetailsPageProps {
-  buyerId: number;
+  buyerId: string | number;
   onNavigate: (path: string) => void;
 }
 
@@ -116,7 +116,7 @@ export const BuyerDetailsPage: React.FC<BuyerDetailsPageProps> = ({ buyerId, onN
                 <Button
                   variant="primary"
                   icon={<Edit2 className="h-3.5 w-3.5" />}
-                  onClick={() => onNavigate(`/master/buyers/${buyer.id}/edit`)}
+                  onClick={() => onNavigate(`/master/buyers/${buyer.uuid || buyer.id}/edit`)}
                 >
                   Edit Profile
                 </Button>
@@ -164,7 +164,7 @@ export const BuyerDetailsPage: React.FC<BuyerDetailsPageProps> = ({ buyerId, onN
                 <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Buying Agent / House</p>
                 {buyer.buyer_type === "agent" && buyer.agent ? (
                   <div
-                    onClick={() => onNavigate(`/master/agents/${buyer.agent?.id}`)}
+                    onClick={() => onNavigate(`/master/agents/${buyer.agent?.uuid || buyer.agent?.id}`)}
                     className="font-medium text-sm text-[#0066FF] hover:underline cursor-pointer flex items-center gap-1.5 mt-0.5"
                   >
                     <span>{buyer.agent.name}</span>

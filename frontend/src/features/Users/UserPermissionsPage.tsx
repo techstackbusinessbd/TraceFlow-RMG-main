@@ -32,7 +32,7 @@ import {
 } from "../../services/userService";
 
 interface UserPermissionsPageProps {
-  userId: number;
+  userId: string | number;
   onNavigate: (path: string) => void;
 }
 

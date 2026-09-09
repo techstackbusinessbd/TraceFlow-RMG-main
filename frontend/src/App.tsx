@@ -24,26 +24,26 @@ import { useAuthStore } from "./store/authStore";
 
 
 // Helper: parse /companies/:id and /companies/:id/edit
-function parseCompanyPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: number } {
+function parseCompanyPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: string } {
   if (path === "/companies") return { type: "list" };
   if (path === "/companies/create") return { type: "create" };
-  const editMatch = path.match(/^\/companies\/(\d+)\/edit$/);
-  if (editMatch) return { type: "edit", id: parseInt(editMatch[1]) };
-  const viewMatch = path.match(/^\/companies\/(\d+)$/);
-  if (viewMatch) return { type: "view", id: parseInt(viewMatch[1]) };
+  const editMatch = path.match(/^\/companies\/([a-zA-Z0-9-]+)\/edit$/);
+  if (editMatch) return { type: "edit", id: editMatch[1] };
+  const viewMatch = path.match(/^\/companies\/([a-zA-Z0-9-]+)$/);
+  if (viewMatch) return { type: "view", id: viewMatch[1] };
   return { type: null };
 }
 
 // Helper: parse /users/:id, /users/:id/edit, and /users/:id/permissions
-function parseUserPath(path: string): { type: "list" | "create" | "edit" | "view" | "permissions" | null; id?: number } {
+function parseUserPath(path: string): { type: "list" | "create" | "edit" | "view" | "permissions" | null; id?: string } {
   if (path === "/users") return { type: "list" };
   if (path === "/users/create") return { type: "create" };
-  const permsMatch = path.match(/^\/users\/(\d+)\/permissions$/);
-  if (permsMatch) return { type: "permissions", id: parseInt(permsMatch[1]) };
-  const editMatch = path.match(/^\/users\/(\d+)\/edit$/);
-  if (editMatch) return { type: "edit", id: parseInt(editMatch[1]) };
-  const viewMatch = path.match(/^\/users\/(\d+)$/);
-  if (viewMatch) return { type: "view", id: parseInt(viewMatch[1]) };
+  const permsMatch = path.match(/^\/users\/([a-zA-Z0-9-]+)\/permissions$/);
+  if (permsMatch) return { type: "permissions", id: permsMatch[1] };
+  const editMatch = path.match(/^\/users\/([a-zA-Z0-9-]+)\/edit$/);
+  if (editMatch) return { type: "edit", id: editMatch[1] };
+  const viewMatch = path.match(/^\/users\/([a-zA-Z0-9-]+)$/);
+  if (viewMatch) return { type: "view", id: viewMatch[1] };
   return { type: null };
 }
 
@@ -57,24 +57,24 @@ function parseRolePath(path: string): { type: "list" | "create" | "matrix" | nul
 }
 
 // Helper: parse /master/agents, /master/agents/create, /master/agents/:id, and /master/agents/:id/edit
-function parseAgentPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: number } {
+function parseAgentPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: string } {
   if (path === "/master/agents") return { type: "list" };
   if (path === "/master/agents/create") return { type: "create" };
-  const editMatch = path.match(/^\/master\/agents\/(\d+)\/edit$/);
-  if (editMatch) return { type: "edit", id: parseInt(editMatch[1]) };
-  const viewMatch = path.match(/^\/master\/agents\/(\d+)$/);
-  if (viewMatch) return { type: "view", id: parseInt(viewMatch[1]) };
+  const editMatch = path.match(/^\/master\/agents\/([a-zA-Z0-9-]+)\/edit$/);
+  if (editMatch) return { type: "edit", id: editMatch[1] };
+  const viewMatch = path.match(/^\/master\/agents\/([a-zA-Z0-9-]+)$/);
+  if (viewMatch) return { type: "view", id: viewMatch[1] };
   return { type: null };
 }
 
 // Helper: parse /master/buyers, /master/buyers/create, /master/buyers/:id, and /master/buyers/:id/edit
-function parseBuyerPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: number } {
+function parseBuyerPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: string } {
   if (path === "/master/buyers") return { type: "list" };
   if (path === "/master/buyers/create") return { type: "create" };
-  const editMatch = path.match(/^\/master\/buyers\/(\d+)\/edit$/);
-  if (editMatch) return { type: "edit", id: parseInt(editMatch[1]) };
-  const viewMatch = path.match(/^\/master\/buyers\/(\d+)$/);
-  if (viewMatch) return { type: "view", id: parseInt(viewMatch[1]) };
+  const editMatch = path.match(/^\/master\/buyers\/([a-zA-Z0-9-]+)\/edit$/);
+  if (editMatch) return { type: "edit", id: editMatch[1] };
+  const viewMatch = path.match(/^\/master\/buyers\/([a-zA-Z0-9-]+)$/);
+  if (viewMatch) return { type: "view", id: viewMatch[1] };
   return { type: null };
 }
 

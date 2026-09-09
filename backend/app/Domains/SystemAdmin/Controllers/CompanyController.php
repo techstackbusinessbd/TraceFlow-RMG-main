@@ -109,12 +109,25 @@ class CompanyController extends Controller
     }
 
     /**
+     * Resolve company by UUID or fallback ID.
+     */
+    private function resolveCompany(string|int $identifier): Company
+    {
+        return Company::where('uuid', $identifier)
+            ->orWhere('id', is_numeric($identifier) ? (int)$identifier : 0)
+            ->firstOrFail();
+    }
+
+    /**
      * Display detailed profile of a specific company.
      * GET /api/v1/companies/{company}
      */
     public function show($id): JsonResponse
     {
-        $company = Company::withCount(['users', 'activeUsers'])->findOrFail($id);
+        $company = Company::withCount(['users', 'activeUsers'])
+            ->where('uuid', $id)
+            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
+            ->firstOrFail();
 
         return response()->json([
             'status' => 'success',
@@ -128,7 +141,7 @@ class CompanyController extends Controller
      */
     public function update(UpdateCompanyRequest $request, $id): JsonResponse
     {
-        $company = Company::findOrFail($id);
+        $company = $this->resolveCompany($id);
         $validated = $request->validated();
 
         // Company Code is IMMUTABLE after creation — never touched on update.
@@ -166,24 +179,27 @@ class CompanyController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Company details updated successfully.',
-            'data' => $company->fresh()->loadCount(['users', 'activeUsers']),
+            'message' => 'Company profile updated successfully.',
+            'data' => $company->loadCount(['users', 'activeUsers']),
         ]);
     }
 
     /**
-     * Soft delete a company.
+     * Soft delete specified company.
      * DELETE /api/v1/companies/{company}
      */
     public function destroy(Request $request, $id): JsonResponse
     {
-        $company = Company::withCount(['users', 'activeUsers'])->findOrFail($id);
+        $company = Company::withCount(['users', 'activeUsers'])
+            ->where('uuid', $id)
+            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
+            ->firstOrFail();
 
         // Business Rule: The default system company can NEVER be deleted by anyone (even Super Admin)
         if ($company->is_default) {
             return response()->json([
                 'status' => 'error',
-                'message' => "The default system company '{$company->name}' is a protected core entity and cannot be deleted by anyone.",
+                'message' => "The default system company '{$company->name}' cannot be deleted.",
             ], 422);
         }
 
@@ -221,7 +237,10 @@ class CompanyController extends Controller
      */
     public function toggleStatus(Request $request, $id): JsonResponse
     {
-        $company = Company::withCount('activeUsers')->findOrFail($id);
+        $company = Company::withCount('activeUsers')
+            ->where('uuid', $id)
+            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
+            ->firstOrFail();
 
         // Business Rule: The default system company can NEVER be deactivated by anyone (even Super Admin)
         if ($company->is_default && $company->is_active) {
@@ -254,6 +273,7 @@ class CompanyController extends Controller
             'message' => "Company '{$company->name}' {$statusText} successfully.",
             'data' => [
                 'id' => $company->id,
+                'uuid' => $company->uuid,
                 'is_active' => $company->is_active,
             ],
         ]);

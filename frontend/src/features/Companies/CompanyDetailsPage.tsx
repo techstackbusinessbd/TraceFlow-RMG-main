@@ -10,7 +10,7 @@ import { formatPhoneNumber } from "../../utils/phoneFormatter";
 import { useAuthStore } from "../../store/authStore";
 
 interface CompanyDetailsPageProps {
-  companyId: number;
+  companyId: string | number;
   onNavigate: (path: string) => void;
 }
 
@@ -137,7 +137,7 @@ export const CompanyDetailsPage: React.FC<CompanyDetailsPageProps> = ({
             <Button
               variant="primary"
               icon={<Edit2 className="h-3.5 w-3.5" />}
-              onClick={() => onNavigate(`/companies/${company.id}/edit`)}
+              onClick={() => onNavigate(`/companies/${company.uuid || company.id}/edit`)}
             >
               Edit Company
             </Button>

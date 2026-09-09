@@ -166,12 +166,25 @@ class BuyerController extends Controller
     }
 
     /**
+     * Resolve buyer by UUID or fallback ID.
+     */
+    private function resolveBuyer(string|int $identifier): Buyer
+    {
+        return Buyer::where('uuid', $identifier)
+            ->orWhere('id', is_numeric($identifier) ? (int)$identifier : 0)
+            ->firstOrFail();
+    }
+
+    /**
      * Display a specific Buyer with its brands and company.
      * GET /api/v1/buyers/{buyer}
      */
-    public function show(int $id): JsonResponse
+    public function show(string|int $id): JsonResponse
     {
-        $buyer = Buyer::with(['company:id,code,name', 'agent:id,code,name', 'brands'])->findOrFail($id);
+        $buyer = Buyer::with(['company:id,code,name', 'agent:id,code,name', 'brands'])
+            ->where('uuid', $id)
+            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
+            ->firstOrFail();
 
         return response()->json([
             'status' => 'success',
@@ -183,9 +196,9 @@ class BuyerController extends Controller
      * Update an existing Buyer and sync brands.
      * PUT /api/v1/buyers/{buyer}
      */
-    public function update(UpdateBuyerRequest $request, int $id): JsonResponse
+    public function update(UpdateBuyerRequest $request, string|int $id): JsonResponse
     {
-        $buyer = Buyer::findOrFail($id);
+        $buyer = $this->resolveBuyer($id);
         $validated = $request->validated();
 
         return DB::transaction(function () use ($buyer, $validated) {
@@ -245,9 +258,9 @@ class BuyerController extends Controller
      * Soft delete a Buyer.
      * DELETE /api/v1/buyers/{buyer}
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(string|int $id): JsonResponse
     {
-        $buyer = Buyer::findOrFail($id);
+        $buyer = $this->resolveBuyer($id);
         $buyerName = $buyer->name;
         $buyer->delete();
 
@@ -261,9 +274,9 @@ class BuyerController extends Controller
      * Toggle active/inactive status.
      * PATCH /api/v1/buyers/{buyer}/toggle-status
      */
-    public function toggleStatus(int $id): JsonResponse
+    public function toggleStatus(string|int $id): JsonResponse
     {
-        $buyer = Buyer::findOrFail($id);
+        $buyer = $this->resolveBuyer($id);
         $buyer->is_active = !$buyer->is_active;
         $buyer->save();
 
@@ -274,6 +287,7 @@ class BuyerController extends Controller
             'message' => "Buyer '{$buyer->name}' {$statusText} successfully.",
             'data' => [
                 'id' => $buyer->id,
+                'uuid' => $buyer->uuid,
                 'is_active' => $buyer->is_active,
             ],
         ]);

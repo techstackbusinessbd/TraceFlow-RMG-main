@@ -13,6 +13,7 @@ class Agent extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'uuid',
         'company_id',
         'code',
         'name',
@@ -24,6 +25,15 @@ class Agent extends Model
         'commission_rate',
         'is_active',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
 
     protected function casts(): array
     {

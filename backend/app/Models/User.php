@@ -21,6 +21,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'uuid',
         'company_id',
         'emp_id',
         'username',
@@ -35,6 +36,15 @@ class User extends Authenticatable
         'last_login_at',
         'last_login_ip',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
 
     /**
      * The attributes that should be hidden for serialization.

@@ -125,12 +125,25 @@ class UserController extends Controller
     }
 
     /**
+     * Resolve user by UUID or fallback ID.
+     */
+    private function resolveUser(string|int $identifier): User
+    {
+        return User::where('uuid', $identifier)
+            ->orWhere('id', is_numeric($identifier) ? (int)$identifier : 0)
+            ->firstOrFail();
+    }
+
+    /**
      * Display detailed profile of a specific user.
      * GET /api/v1/users/{id}
      */
     public function show($id): JsonResponse
     {
-        $user = User::with(['company:id,code,name,legal_name,is_default', 'roles:id,name'])->findOrFail($id);
+        $user = User::with(['company:id,uuid,code,name,legal_name,is_default', 'roles:id,name'])
+            ->where('uuid', $id)
+            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
+            ->firstOrFail();
 
         $directPermissions = $user->getDirectPermissions()->pluck('name');
         $rolePermissions = $user->getPermissionsViaRoles()->pluck('name')->unique()->values();
@@ -152,7 +165,7 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, $id): JsonResponse
     {
-        $user = User::findOrFail($id);
+        $user = $this->resolveUser($id);
         $validated = $request->validated();
         $roles = $validated['roles'] ?? null;
         unset($validated['roles']);
@@ -216,26 +229,26 @@ class UserController extends Controller
     }
 
     /**
-     * Soft delete a user account.
+     * Soft delete specified user account.
      * DELETE /api/v1/users/{id}
      */
     public function destroy(Request $request, $id): JsonResponse
     {
-        $user = User::findOrFail($id);
+        $user = $this->resolveUser($id);
 
         // Protection 1: Root superadmin cannot be deleted
         if ($user->username === 'superadmin') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'The root Super Administrator account is permanent and cannot be deleted.',
+                'message' => 'The root Super Administrator account is immutable and cannot be deleted.',
             ], 422);
         }
 
-        // Protection 2: Cannot delete own logged-in account
+        // Protection 2: Cannot delete self
         if ($request->user() && $request->user()->id === $user->id) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'You cannot delete your own account while currently logged in.',
+                'message' => 'You cannot delete your own account.',
             ], 422);
         }
 
@@ -253,7 +266,7 @@ class UserController extends Controller
      */
     public function toggleStatus(Request $request, $id): JsonResponse
     {
-        $user = User::findOrFail($id);
+        $user = $this->resolveUser($id);
 
         // Protection 1: Root superadmin cannot be deactivated
         if ($user->username === 'superadmin' && $user->is_active) {
@@ -281,6 +294,7 @@ class UserController extends Controller
             'message' => "User '{$user->name}' {$statusText} successfully.",
             'data' => [
                 'id' => $user->id,
+                'uuid' => $user->uuid,
                 'is_active' => $user->is_active,
             ],
         ]);

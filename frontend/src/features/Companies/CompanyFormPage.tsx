@@ -20,7 +20,7 @@ import { useAuthStore } from "../../store/authStore";
 
 interface CompanyFormPageProps {
   mode: "create" | "edit";
-  companyId?: number;
+  companyId?: string | number;
   onNavigate: (path: string) => void;
 }
 

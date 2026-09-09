@@ -35,6 +35,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export interface Company {
   id: number;
+  uuid: string;
   code: string;
   name: string;
   legal_name: string | null;
@@ -110,7 +111,7 @@ export async function getNextCompanyCode(name?: string): Promise<{ next_code: st
 }
 
 // GET /api/v1/companies/:id
-export async function getCompany(id: number): Promise<{ data: Company }> {
+export async function getCompany(id: number | string): Promise<{ data: Company }> {
   const res = await fetch(`${API_BASE}/api/v1/companies/${id}`, {
     headers: getHeaders(),
   });
@@ -128,7 +129,7 @@ export async function createCompany(payload: CompanyFormData): Promise<{ data: C
 }
 
 // PUT /api/v1/companies/:id
-export async function updateCompany(id: number, payload: CompanyFormData): Promise<{ data: Company; message: string }> {
+export async function updateCompany(id: number | string, payload: CompanyFormData): Promise<{ data: Company; message: string }> {
   const res = await fetch(`${API_BASE}/api/v1/companies/${id}`, {
     method: "PUT",
     headers: getHeaders(),
@@ -138,7 +139,7 @@ export async function updateCompany(id: number, payload: CompanyFormData): Promi
 }
 
 // DELETE /api/v1/companies/:id
-export async function deleteCompany(id: number): Promise<{ message: string }> {
+export async function deleteCompany(id: number | string): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE}/api/v1/companies/${id}`, {
     method: "DELETE",
     headers: getHeaders(),
@@ -147,10 +148,10 @@ export async function deleteCompany(id: number): Promise<{ message: string }> {
 }
 
 // PATCH /api/v1/companies/:id/toggle-status
-export async function toggleCompanyStatus(id: number): Promise<{ data: { id: number; is_active: boolean }; message: string }> {
+export async function toggleCompanyStatus(id: number | string): Promise<{ data: { id: number; uuid?: string; is_active: boolean }; message: string }> {
   const res = await fetch(`${API_BASE}/api/v1/companies/${id}/toggle-status`, {
     method: "PATCH",
     headers: getHeaders(),
   });
-  return handleResponse<{ data: { id: number; is_active: boolean }; message: string }>(res);
+  return handleResponse<{ data: { id: number; uuid?: string; is_active: boolean }; message: string }>(res);
 }

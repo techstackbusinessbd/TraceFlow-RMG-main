@@ -169,7 +169,7 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
               </span>
               {buyer.agent && (
                 <div
-                  onClick={() => onNavigate(`/master/agents/${buyer.agent?.id}`)}
+                  onClick={() => onNavigate(`/master/agents/${buyer.agent?.uuid || buyer.agent?.id}`)}
                   className="text-xs text-indigo-600 font-medium hover:underline cursor-pointer block"
                 >
                   {buyer.agent.name}
@@ -239,7 +239,7 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
               icon: <Eye className="w-3.5 h-3.5" />,
               label: "View Profile",
               variant: "secondary",
-              onClick: () => onNavigate(`/master/buyers/${buyer.id}`),
+              onClick: () => onNavigate(`/master/buyers/${buyer.uuid || buyer.id}`),
             },
             ...(canEdit
               ? [
@@ -247,7 +247,7 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
                     icon: <Edit2 className="w-3.5 h-3.5" />,
                     label: "Edit Buyer",
                     variant: "primary" as const,
-                    onClick: () => onNavigate(`/master/buyers/${buyer.id}/edit`),
+                    onClick: () => onNavigate(`/master/buyers/${buyer.uuid || buyer.id}/edit`),
                   },
                 ]
               : []),

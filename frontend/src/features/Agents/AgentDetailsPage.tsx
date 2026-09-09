@@ -22,7 +22,7 @@ import { formatPhoneNumber } from "../../utils/phoneFormatter";
 import { useAuthStore } from "../../store/authStore";
 
 interface AgentDetailsPageProps {
-  agentId: number;
+  agentId: string | number;
   onNavigate: (path: string) => void;
 }
 
@@ -109,7 +109,7 @@ export const AgentDetailsPage: React.FC<AgentDetailsPageProps> = ({
               <Button
                 variant="primary"
                 icon={<Edit2 className="h-3.5 w-3.5" />}
-                onClick={() => onNavigate(`/master/agents/${agent.id}/edit`)}
+                onClick={() => onNavigate(`/master/agents/${agent.uuid || agent.id}/edit`)}
               >
                 Edit Agent
               </Button>

@@ -36,6 +36,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export interface AgentBuyerItem {
   id: number;
+  uuid?: string;
   company_id: number;
   code: string;
   name: string;
@@ -45,9 +46,11 @@ export interface AgentBuyerItem {
 
 export interface Agent {
   id: number;
+  uuid: string;
   company_id: number;
   company?: {
     id: number;
+    uuid?: string;
     code: string;
     name: string;
   };
@@ -127,7 +130,7 @@ export const getAgentNextCode = async (companyId?: number): Promise<{ next_code:
   return data.data;
 };
 
-export const getAgentById = async (id: number): Promise<Agent> => {
+export const getAgentById = async (id: number | string): Promise<Agent> => {
   const res = await fetch(`${API_BASE}/api/v1/agents/${id}`, {
     headers: getHeaders(),
   });
@@ -144,7 +147,7 @@ export const createAgent = async (data: AgentFormData): Promise<{ status: string
   return handleResponse<{ status: string; message: string; data: Agent }>(res);
 };
 
-export const updateAgent = async (id: number, data: Partial<AgentFormData>): Promise<{ status: string; message: string; data: Agent }> => {
+export const updateAgent = async (id: number | string, data: Partial<AgentFormData>): Promise<{ status: string; message: string; data: Agent }> => {
   const res = await fetch(`${API_BASE}/api/v1/agents/${id}`, {
     method: "PUT",
     headers: getHeaders(),
@@ -153,7 +156,7 @@ export const updateAgent = async (id: number, data: Partial<AgentFormData>): Pro
   return handleResponse<{ status: string; message: string; data: Agent }>(res);
 };
 
-export const deleteAgent = async (id: number): Promise<{ status: string; message: string }> => {
+export const deleteAgent = async (id: number | string): Promise<{ status: string; message: string }> => {
   const res = await fetch(`${API_BASE}/api/v1/agents/${id}`, {
     method: "DELETE",
     headers: getHeaders(),
@@ -161,10 +164,10 @@ export const deleteAgent = async (id: number): Promise<{ status: string; message
   return handleResponse<{ status: string; message: string }>(res);
 };
 
-export const toggleAgentStatus = async (id: number): Promise<{ status: string; message: string; data: { id: number; is_active: boolean } }> => {
+export const toggleAgentStatus = async (id: number | string): Promise<{ status: string; message: string; data: { id: number; uuid?: string; is_active: boolean } }> => {
   const res = await fetch(`${API_BASE}/api/v1/agents/${id}/toggle-status`, {
     method: "PATCH",
     headers: getHeaders(),
   });
-  return handleResponse<{ status: string; message: string; data: { id: number; is_active: boolean } }>(res);
+  return handleResponse<{ status: string; message: string; data: { id: number; uuid?: string; is_active: boolean } }>(res);
 };

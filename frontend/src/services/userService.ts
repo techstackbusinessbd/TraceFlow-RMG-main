@@ -40,6 +40,7 @@ export interface UserRole {
 
 export interface UserCompany {
   id: number;
+  uuid?: string;
   code: string;
   name: string;
   legal_name?: string | null;
@@ -48,6 +49,7 @@ export interface UserCompany {
 
 export interface AppUser {
   id: number;
+  uuid: string;
   company_id: number;
   emp_id: string;
   username: string;

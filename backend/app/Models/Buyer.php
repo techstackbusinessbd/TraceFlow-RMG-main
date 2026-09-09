@@ -13,6 +13,7 @@ class Buyer extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'uuid',
         'company_id',
         'buyer_type',
         'agent_id',
@@ -26,6 +27,15 @@ class Buyer extends Model
         'payment_terms',
         'is_active',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
 
     protected function casts(): array
     {

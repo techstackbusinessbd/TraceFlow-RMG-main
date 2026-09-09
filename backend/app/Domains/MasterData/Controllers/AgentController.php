@@ -137,12 +137,26 @@ class AgentController extends Controller
     }
 
     /**
+    /**
+     * Resolve agent by UUID or fallback ID.
+     */
+    private function resolveAgent(string|int $identifier): Agent
+    {
+        return Agent::where('uuid', $identifier)
+            ->orWhere('id', is_numeric($identifier) ? (int)$identifier : 0)
+            ->firstOrFail();
+    }
+
+    /**
      * Display a specific Agent with its associated buyers.
      * GET /api/v1/agents/{agent}
      */
-    public function show(int $id): JsonResponse
+    public function show(string|int $id): JsonResponse
     {
-        $agent = Agent::with(['company:id,code,name', 'buyers:id,company_id,agent_id,code,name,country,is_active'])->findOrFail($id);
+        $agent = Agent::with(['company:id,code,name', 'buyers:id,uuid,company_id,agent_id,code,name,country,is_active'])
+            ->where('uuid', $id)
+            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
+            ->firstOrFail();
 
         return response()->json([
             'status' => 'success',
@@ -154,9 +168,9 @@ class AgentController extends Controller
      * Update an existing Agent.
      * PUT /api/v1/agents/{agent}
      */
-    public function update(UpdateAgentRequest $request, int $id): JsonResponse
+    public function update(UpdateAgentRequest $request, string|int $id): JsonResponse
     {
-        $agent = Agent::findOrFail($id);
+        $agent = $this->resolveAgent($id);
         $validated = $request->validated();
 
         $agent->update([
@@ -183,9 +197,12 @@ class AgentController extends Controller
      * Delete an Agent (Soft delete).
      * DELETE /api/v1/agents/{agent}
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(string|int $id): JsonResponse
     {
-        $agent = Agent::withCount('buyers')->findOrFail($id);
+        $agent = Agent::withCount('buyers')
+            ->where('uuid', $id)
+            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
+            ->firstOrFail();
 
         if ($agent->buyers_count > 0) {
             return response()->json([
@@ -206,9 +223,9 @@ class AgentController extends Controller
      * Toggle Agent Active Status.
      * PATCH /api/v1/agents/{agent}/toggle-status
      */
-    public function toggleStatus(int $id): JsonResponse
+    public function toggleStatus(string|int $id): JsonResponse
     {
-        $agent = Agent::findOrFail($id);
+        $agent = $this->resolveAgent($id);
         $agent->is_active = !$agent->is_active;
         $agent->save();
 
@@ -219,6 +236,7 @@ class AgentController extends Controller
             'message' => "Buying Agent '{$agent->name}' {$statusLabel} successfully.",
             'data' => [
                 'id' => $agent->id,
+                'uuid' => $agent->uuid,
                 'is_active' => $agent->is_active,
             ],
         ]);

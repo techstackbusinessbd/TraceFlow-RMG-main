@@ -24,7 +24,7 @@ import { formatPhoneNumber } from "../../utils/phoneFormatter";
 import { useAuthStore } from "../../store/authStore";
 
 interface UserDetailsPageProps {
-  userId: number;
+  userId: string | number;
   onNavigate: (path: string) => void;
 }
 
@@ -142,7 +142,7 @@ export const UserDetailsPage: React.FC<UserDetailsPageProps> = ({
               <Button
                 variant="secondary"
                 icon={<Key className="h-3.5 w-3.5 text-[#0066FF]" />}
-                onClick={() => onNavigate(`/users/${user.id}/permissions`)}
+                onClick={() => onNavigate(`/users/${user.uuid || user.id}/permissions`)}
               >
                 Custom Permissions
               </Button>
@@ -150,7 +150,7 @@ export const UserDetailsPage: React.FC<UserDetailsPageProps> = ({
             <Button
               variant="primary"
               icon={<Edit2 className="h-3.5 w-3.5" />}
-              onClick={() => onNavigate(`/users/${user.id}/edit`)}
+              onClick={() => onNavigate(`/users/${user.uuid || user.id}/edit`)}
             >
               Edit User
             </Button>
@@ -253,7 +253,7 @@ export const UserDetailsPage: React.FC<UserDetailsPageProps> = ({
                   {!isRootSuperadmin && (
                     <button
                       type="button"
-                      onClick={() => onNavigate(`/users/${user.id}/permissions`)}
+                      onClick={() => onNavigate(`/users/${user.uuid || user.id}/permissions`)}
                       className="text-xs font-semibold text-[#0066FF] hover:underline cursor-pointer"
                     >
                       Manage Custom

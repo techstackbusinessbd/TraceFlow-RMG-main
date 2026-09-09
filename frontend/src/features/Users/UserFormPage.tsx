@@ -20,7 +20,7 @@ import { useAuthStore } from "../../store/authStore";
 
 interface UserFormPageProps {
   mode: "create" | "edit";
-  userId?: number;
+  userId?: string | number;
   onNavigate: (path: string) => void;
 }
 

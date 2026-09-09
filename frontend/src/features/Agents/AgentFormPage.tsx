@@ -19,7 +19,7 @@ import {
 
 interface AgentFormPageProps {
   mode: "create" | "edit";
-  agentId?: number;
+  agentId?: string | number;
   onNavigate: (path: string) => void;
 }
 

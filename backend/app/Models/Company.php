@@ -12,6 +12,7 @@ class Company extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'uuid',
         'code',
         'name',
         'legal_name',
@@ -22,6 +23,15 @@ class Company extends Model
         'is_active',
         'is_default',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
 
     protected function casts(): array
     {

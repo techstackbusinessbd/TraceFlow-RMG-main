@@ -34,7 +34,7 @@ import { getAgents, type Agent } from "../../services/agentService";
 
 interface BuyerFormPageProps {
   mode: "create" | "edit";
-  buyerId?: number;
+  buyerId?: string | number;
   onNavigate: (path: string) => void;
 }
 

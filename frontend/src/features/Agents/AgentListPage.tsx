@@ -249,7 +249,7 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
               icon: <Eye className="w-3.5 h-3.5" />,
               label: "View Profile",
               variant: "secondary",
-              onClick: () => onNavigate(`/master/agents/${agent.id}`),
+              onClick: () => onNavigate(`/master/agents/${agent.uuid || agent.id}`),
             },
             ...(canEdit
               ? [
@@ -257,7 +257,7 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
                     icon: <Edit2 className="w-3.5 h-3.5" />,
                     label: "Edit Agent",
                     variant: "primary" as const,
-                    onClick: () => onNavigate(`/master/agents/${agent.id}/edit`),
+                    onClick: () => onNavigate(`/master/agents/${agent.uuid || agent.id}/edit`),
                   },
                 ]
               : []),

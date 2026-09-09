@@ -36,6 +36,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export interface Brand {
   id?: number;
+  uuid?: string;
   buyer_id?: number;
   code?: string;
   name: string;
@@ -44,9 +45,11 @@ export interface Brand {
 
 export interface Buyer {
   id: number;
+  uuid: string;
   company_id: number;
   company?: {
     id: number;
+    uuid?: string;
     code: string;
     name: string;
   };
@@ -54,6 +57,7 @@ export interface Buyer {
   agent_id?: number | null;
   agent?: {
     id: number;
+    uuid?: string;
     code: string;
     name: string;
   } | null;
@@ -140,7 +144,7 @@ export const getBuyerNextCode = async (companyId?: number): Promise<{ next_code:
   return data.data;
 };
 
-export const getBuyerById = async (id: number): Promise<Buyer> => {
+export const getBuyerById = async (id: number | string): Promise<Buyer> => {
   const res = await fetch(`${API_BASE}/api/v1/buyers/${id}`, {
     headers: getHeaders(),
   });
@@ -157,7 +161,7 @@ export const createBuyer = async (data: BuyerFormData): Promise<{ status: string
   return handleResponse<{ status: string; message: string; data: Buyer }>(res);
 };
 
-export const updateBuyer = async (id: number, data: Partial<BuyerFormData>): Promise<{ status: string; message: string; data: Buyer }> => {
+export const updateBuyer = async (id: number | string, data: Partial<BuyerFormData>): Promise<{ status: string; message: string; data: Buyer }> => {
   const res = await fetch(`${API_BASE}/api/v1/buyers/${id}`, {
     method: "PUT",
     headers: getHeaders(),
@@ -166,7 +170,7 @@ export const updateBuyer = async (id: number, data: Partial<BuyerFormData>): Pro
   return handleResponse<{ status: string; message: string; data: Buyer }>(res);
 };
 
-export const deleteBuyer = async (id: number): Promise<{ status: string; message: string }> => {
+export const deleteBuyer = async (id: number | string): Promise<{ status: string; message: string }> => {
   const res = await fetch(`${API_BASE}/api/v1/buyers/${id}`, {
     method: "DELETE",
     headers: getHeaders(),
@@ -174,10 +178,10 @@ export const deleteBuyer = async (id: number): Promise<{ status: string; message
   return handleResponse<{ status: string; message: string }>(res);
 };
 
-export const toggleBuyerStatus = async (id: number): Promise<{ status: string; message: string; data: { id: number; is_active: boolean } }> => {
+export const toggleBuyerStatus = async (id: number | string): Promise<{ status: string; message: string; data: { id: number; uuid?: string; is_active: boolean } }> => {
   const res = await fetch(`${API_BASE}/api/v1/buyers/${id}/toggle-status`, {
     method: "PATCH",
     headers: getHeaders(),
   });
-  return handleResponse<{ status: string; message: string; data: { id: number; is_active: boolean } }>(res);
+  return handleResponse<{ status: string; message: string; data: { id: number; uuid?: string; is_active: boolean } }>(res);
 };

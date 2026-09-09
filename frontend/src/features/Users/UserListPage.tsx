@@ -254,13 +254,13 @@ export const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
                 icon: <Eye className="w-3.5 h-3.5" />,
                 label: "View Profile",
                 variant: "secondary",
-                onClick: () => onNavigate(`/users/${row.id}`),
+                onClick: () => onNavigate(`/users/${row.uuid || row.id}`),
               },
               {
                 icon: <Edit2 className="w-3.5 h-3.5" />,
                 label: "Edit User",
                 variant: "primary",
-                onClick: () => onNavigate(`/users/${row.id}/edit`),
+                onClick: () => onNavigate(`/users/${row.uuid || row.id}/edit`),
               },
             ]}
             menuActions={
@@ -271,7 +271,7 @@ export const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
                       icon: <Key className="w-3.5 h-3.5" />,
                       label: "Custom Permissions",
                       variant: "default",
-                      onClick: () => onNavigate(`/users/${row.id}/permissions`),
+                      onClick: () => onNavigate(`/users/${row.uuid || row.id}/permissions`),
                     },
                     ...(!isSelf
                       ? [

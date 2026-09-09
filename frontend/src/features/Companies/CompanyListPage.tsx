@@ -214,13 +214,13 @@ export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) 
               icon: <Eye className="w-3.5 h-3.5" />,
               label: "View Details",
               variant: "secondary",
-              onClick: () => onNavigate(`/companies/${row.id}`),
+              onClick: () => onNavigate(`/companies/${row.uuid || row.id}`),
             },
             {
               icon: <Edit2 className="w-3.5 h-3.5" />,
               label: "Edit Company",
               variant: "primary",
-              onClick: () => onNavigate(`/companies/${row.id}/edit`),
+              onClick: () => onNavigate(`/companies/${row.uuid || row.id}/edit`),
             },
           ]}
           menuActions={
