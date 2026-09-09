@@ -128,6 +128,10 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
+  const [isAddingSize, setIsAddingSize] = useState(false);
+  const [newSizeInput, setNewSizeInput] = useState("");
+  const [sizeModalError, setSizeModalError] = useState<string | null>(null);
+
   const [seasonName, setSeasonName] = useState<string>("");
   const [seasonYear, setSeasonYear] = useState<string>("2026");
 
@@ -353,6 +357,29 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
       ...prev,
       sizes: sizes.map((s, idx) => ({ size_name: s, sort_order: idx + 1 })),
     }));
+  };
+
+  // Add custom size via dedicated enterprise modal dialog
+  const handleSaveCustomSize = () => {
+    const trimmed = newSizeInput.trim().toUpperCase();
+    if (!trimmed) {
+      setSizeModalError("Please enter a size label (e.g. 42 or 4XL).");
+      return;
+    }
+
+    const isDuplicate = formData.sizes.some(
+      (s) => s.size_name.trim().toUpperCase() === trimmed
+    );
+    if (isDuplicate) {
+      setSizeModalError(`Size "${trimmed}" is already added to this style.`);
+      return;
+    }
+
+    handleAddSize(trimmed);
+    setNewSizeInput("");
+    setSizeModalError(null);
+    setIsAddingSize(false);
+    showToast("success", "Size Added", `Size "${trimmed}" added to size scale.`);
   };
 
   // Helper for normalized comparison
@@ -877,10 +904,9 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                 <button
                   type="button"
                   onClick={() => {
-                    const promptSize = window.prompt("Enter new size label (e.g. 42 or 4XL):");
-                    if (promptSize && promptSize.trim()) {
-                      handleAddSize(promptSize.trim());
-                    }
+                    setNewSizeInput("");
+                    setSizeModalError(null);
+                    setIsAddingSize(true);
                   }}
                   className="flex items-center gap-1 text-xs font-semibold text-[#0066FF] hover:bg-blue-50 px-2.5 py-1 rounded border border-dashed border-[#0066FF] cursor-pointer transition-colors"
                 >
@@ -1080,6 +1106,85 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                 onClick={handleSaveNewCategory}
               >
                 Verify & Add Category
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enterprise Custom Size Modal Dialog */}
+      {isAddingSize && (
+        <div className={UI_TOKENS.launcherModal.backdrop} onClick={() => setIsAddingSize(false)}>
+          <div
+            className="w-full max-w-sm bg-white rounded-xl shadow-2xl border border-slate-200 p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#0066FF] flex items-center justify-center font-bold text-xs">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Add Custom Size</h3>
+                  <p className="text-[11px] text-slate-500">Append size label to style scale</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddingSize(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {sizeModalError && (
+              <div className="p-2.5 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-1.5">
+                <span className="font-bold shrink-0">⚠️ Alert:</span>
+                <span>{sizeModalError}</span>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className={UI_TOKENS.form.label}>Size Label</label>
+              <TextInput
+                placeholder="e.g. 42, 4XL, 38x34"
+                value={newSizeInput}
+                onChange={(e) => {
+                  setNewSizeInput(e.target.value);
+                  if (sizeModalError) setSizeModalError(null);
+                }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSaveCustomSize();
+                  }
+                }}
+              />
+              <p className="text-[11px] text-slate-400">
+                Enter exact size notation or waist x inseam ratio.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setIsAddingSize(false);
+                  setNewSizeInput("");
+                  setSizeModalError(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleSaveCustomSize}
+              >
+                Add Size
               </Button>
             </div>
           </div>
