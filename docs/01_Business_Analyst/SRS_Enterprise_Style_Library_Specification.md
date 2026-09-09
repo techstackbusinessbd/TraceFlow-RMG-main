@@ -3,20 +3,24 @@
 **Document Reference:** `SRS_Enterprise_Style_Library_Specification.md`  
 **Target Audience:** Product Owner, Solution Architect, Lead Backend Engineers, Frontend Engineers, Merchandisers, IE Team  
 **Language Standard:** Bengali (Bangla) Requirements & Architectural Manifesto  
-**System Scope:** TraceFlow RMG ERP Ecosystem  
-**Document Version:** 3.0 (Enterprise Comprehensive Edition)  
+**System Scope:** TraceFlow RMG ERP Ecosystem (Exclusively 100% Woven Garments Manufacturing)  
+**Document Version:** 3.1 (Woven Specialization Edition)  
 
 ---
 
 ## ১. ভূমিকা ও ব্যবসায়িক প্রেক্ষাপট (Executive Business Context)
 
-তৈরি পোশাক (RMG Woven & Knit Garments) শিল্পে **"স্টাইল (Style)"** হলো সম্পূর্ণ ম্যানুফ্যাকচারিং, কস্টিং ও ট্রেসেবিলিটি চেইনের প্রধান কেন্দ্রবিন্দু। একটি পোশাক কারখানায় বায়ারের প্রাথমিক ইনকোয়ারি গ্রহণ, টেক-প্যাক (Tech Pack) অ্যানালাইসিস, ফ্যাব্রিক কনজাম্পশন, কাটিং মার্কার তৈরি, সুইং লাইন লোডিং, ওয়াশিং রেসিপি নির্ধারণ এবং ফাইনাল কোয়ালিটি ইন্সপেকশনের প্রতিটি ট্রানজ্যাকশন সরাসরি একটি নিবন্ধিত ও অনুমোদিত স্টাইলের (Style Master Entity) সাথে আবদ্ধ থাকে।
+> [!IMPORTANT]
+> **সিস্টেম স্কোপ পলিসি (Strict 100% Woven Scope):**  
+> এই ট্রেসেবিলিটি এবং ইআরপি প্ল্যাটফর্মটি **একচেটিয়াভাবে তৈরি পোশাকের "ওভেন গার্মেন্টস ম্যানুফ্যাকচারিং" (100% Woven Garments Only)** এর জন্য নিবেদিত। এতে কোনো প্রকার নিট (Knit) বা সোয়েটার প্রক্রিয়া অন্তর্ভুক্ত নয়। ওভেন পোশাকের সুনির্দিষ্ট অপারেশনাল প্রক্রিয়া—যেমন: রোল-টু-রোল ফেব্রিক ইনস্পেকশন (ASTM 4-Point), রিল্যাক্সেশন প্রক্রিয়া, প্যাটার্ন গ্রেইনিং, কাটিং স্প্রেডিং টেবিল, ফিউজিং মেশিনারি, ওভেন স্টিচিং লাইন (ডেনিম, ট্রাউজার, শার্ট, কার্গো, জ্যাকেট) এবং ইন্ডাস্ট্রিয়াল গার্মেন্টস ওয়াশিং এর উপর ভিত্তি করে সম্পূর্ণ আর্কিটেকচার তৈরি করা হয়েছে।
 
-### ১.১ বাস্তব গার্মেন্টস অপারেশনে স্টাইলের ভূমিকা
-1. **Buyer & Sub-Entity Inheritance:** আন্তর্জাতিক বায়ার (যেমন: H&M, Inditex/Zara, Levi's, American Eagle) তাদের প্রতিটি সিজনাল অর্ডারের জন্য ইউনিক স্টাইল কোড (Style Number) এবং সম্পূর্ণ স্পেসিফিকেশন শিট প্রদান করে। স্টাইল অবশ্যই নির্দিষ্ট বায়ার, বায়ারের সাব-ব্র্যান্ড এবং ডিপার্টমেন্টের সাথে সম্পর্কিত হতে হবে।
-2. **Standard Minute Value (SMV) ও IE ক্যাপাসিটি:** ইন্ডাস্ট্রিয়াল ইঞ্জিনিয়ারিং (IE) টিম প্রতিটি স্টাইলের অপারেশনের জটিলতা (Operation Breakdown) অনুযায়ী স্ট্যান্ডার্ড মিনিট ভ্যালু (Base SMV) নির্ধারণ করে। এই SMV সরাসরি সুইং লাইনের দৈনিক টার্গেট এবং এফিশিয়েন্সি হিসাব করতে ব্যবহৃত হয়।
-3. **Bill of Materials (BOM) ও ট্রিমস কনজাম্পশন:** স্টাইলে কোন কোন ফ্যাব্রিক কনস্ট্রাকশন (Twill, Denim, Poplin) এবং কোন কোন ট্রিমস (বাটন, জিপার, রিভেট, লেবেল, থ্রেড) ব্যবহৃত হবে তার ভিত্তি হলো এই স্টাইল মাস্টার।
-4. **Colorways & Size Range Matrix:** প্রতিটি স্টাইলের অধীনে একাধিক বায়ার কালার (যেমন: Black, Vintage Wash Blue) এবং নির্ধারিত সাইজ স্কেল (যেমন: Waist 28 to 38 অথবা S, M, L, XL) থাকে, যা ডাউনস্ট্রিম কাটিং বান্ডেল টিকিটের ম্যাট্রিক্স তৈরি করে।
+ওভেন তৈরি পোশাক শিল্পে **"স্টাইল (Style)"** হলো সম্পূর্ণ ম্যানুফ্যাকচারিং, কস্টিং ও ট্রেসেবিলিটি চেইনের প্রধান কেন্দ্রবিন্দু। একটি ওভেন পোশাক কারখানায় বায়ারের প্রাথমিক ইনকোয়ারি গ্রহণ, টেক-প্যাক (Tech Pack) অ্যানালাইসিস, ওভেন ফেব্রিক কনজাম্পশন (Yards/Meters), কাটিং মার্কার তৈরি, সুইং লাইন লোডিং, হেভি ওভেন ওয়াশিং রেসিপি নির্ধারণ এবং ফাইনাল কোয়ালিটি ইন্সপেকশনের প্রতিটি ট্রানজ্যাকশন সরাসরি একটি নিবন্ধিত ও অনুমোদিত ওভেন স্টাইলের (Woven Style Master Entity) সাথে আবদ্ধ থাকে।
+
+### ১.১ বাস্তব ওভেন গার্মেন্টস অপারেশনে স্টাইলের ভূমিকা
+1. **Buyer & Sub-Entity Inheritance:** আন্তর্জাতিক ওভেন বায়ার (যেমন: H&M, Inditex/Zara, Levi's, American Eagle, Tommy Hilfiger) তাদের প্রতিটি সিজনাল ওভেন অর্ডারের জন্য ইউনিক স্টাইল কোড (Style Number) এবং সম্পূর্ণ স্পেসিফিকেশন শিট প্রদান করে। স্টাইল অবশ্যই নির্দিষ্ট বায়ার, বায়ারের সাব-ব্র্যান্ড এবং ডিপার্টমেন্টের সাথে সম্পর্কিত হতে হবে।
+2. **Standard Minute Value (SMV) ও IE ক্যাপাসিটি:** ইন্ডাস্ট্রিয়াল ইঞ্জিনিয়ারিং (IE) টিম প্রতিটি ওভেন স্টাইলের অপারেশনের জটিলতা (Operation Breakdown - যেমন: ফ্রন্ট পার্ট, ব্যাক পার্ট, পকেট মেকিং, জিপার এটাচ, কলার জয়েন্ট, ওয়েস্টব্যান্ড ফিউজিং ইত্যাদি) অনুযায়ী স্ট্যান্ডার্ড মিনিট ভ্যালু (Base SMV) নির্ধারণ করে। এই SMV সরাসরি ওভেন সুইং লাইনের দৈনিক টার্গেট এবং এফিশিয়েন্সি হিসাব করতে ব্যবহৃত হয়।
+3. **Bill of Materials (BOM) ও ট্রিমস কনজাম্পশন:** ওভেন স্টাইলে কোন কোন ওভেন ফেব্রিক কনস্ট্রাকশন (Twill, Denim, Poplin, Canvas, Sheeting, Flannel, Oxford) এবং কোন কোন ওভেন ট্রিমস (বাটন, মেটাল জিপার, রিভেট, ফিউজিং ইন্টারলাইনিং, ড্র কর্ড, লেবেল, থ্রেড) ব্যবহৃত হবে তার ভিত্তি হলো এই স্টাইল মাস্টার।
+4. **Colorways & Size Range Matrix:** প্রতিটি স্টাইলের অধীনে একাধিক বায়ার কালার (যেমন: Black, Vintage Indigo Wash) এবং নির্ধারিত সাইজ স্কেল (যেমন: ওভেন ট্রাউজার/ডেনিমের জন্য Waist 28 to 38, Inseam 30, 32, 34 অথবা ওভেন শার্টের জন্য S, M, L, XL, XXL) থাকে, যা ডাউনস্ট্রিম কাটিং বান্ডেল টিকিটের ম্যাট্রিক্স তৈরি করে।
 
 ---
 
@@ -129,11 +133,12 @@ erDiagram
 | `Buyer Department`| BigInt / UUID | না | নির্বাচিত বায়ারের প্রোডাকশন বিভাগ (`buyer_departments`)। | Cascading Select |
 | `Buyer Style No` | String (50) | **হ্যাঁ** | বায়ারের অফিসিয়াল স্টাইল নম্বর (যেমন: `HM-JEANS-001`)। একই বায়ারের অধীনে ইউনিক হতে হবে। | TextInput |
 | `Style Name` | String (150) | **হ্যাঁ** | বাণিজ্যিক বা ডেসক্রিপটিভ স্টাইল নেম (যেমন: "Men's 5-Pocket Slim Fit Denim Pant")। Min: 3, Max: 150 chars। | TextInput |
-| `Product Category`| Enum | **হ্যাঁ** | `Woven Bottoms`, `Woven Tops`, `Denim & Casuals`, `Outerwear / Jackets`, `Cargo & Shorts`। | Select Dropdown |
-| `Garment Item` | String (100) | **হ্যাঁ** | সুনির্দিষ্ট আইটেম (যেমন: `Chino Pant`, `Cargo Short`, `Long Sleeve Flannel Shirt`, `Trucker Jacket`)। | TextInput / Autocomplete |
+| `Product Category`| Enum | **হ্যাঁ** | **শুধুমাত্র ওভেন ক্যাটাগরি:** `Woven Tops (Shirts/Blouses)`, `Woven Bottoms (Trousers/Chinos)`, `Denim & Jeans`, `Cargo & Utility Shorts`, `Outerwear / Woven Jackets`। | Select Dropdown |
+| `Garment Item` | String (100) | **হ্যাঁ** | সুনির্দিষ্ট ওভেন আইটেম (যেমন: `5-Pocket Denim Pant`, `Casual Chino Pant`, `Cargo Pant`, `Long Sleeve Dress Shirt`, `Flannel Shirt`, `Trucker Jacket`, `Blazer / Suit Jacket`)। | TextInput / Autocomplete |
+| `Fabric Type` | String (100) | **হ্যাঁ** | ওভেন ফেব্রিক কনস্ট্রাকশন (যেমন: `100% Cotton Twill`, `Denim (12 oz Spandex)`, `Poplin`, `Canvas`, `Chambray`, `Oxford`, `Corduroy`)। | TextInput / Autocomplete |
 | `Season` | String (50) | **হ্যাঁ** | বায়ার সিজন ও বছর (যেমন: `Spring/Summer 2026`, `Autumn/Winter 2026`, `Pre-Fall 2026`)। | TextInput / Season Select |
-| `Base SMV` | Decimal (5,2) | **হ্যাঁ** | স্ট্যান্ডার্ড মিনিট ভ্যালু (যেমন: `18.50`)। ০.০১ থেকে ৯৯৯.৯৯ এর মধ্যে হতে হবে। | Number Input (Step: 0.01) |
-| `Wash Type` | Enum | **হ্যাঁ** | `None / Raw / Rinse`, `Enzyme Wash`, `Stone Enzyme Wash`, `Bleach Wash`, `Acid Wash`, `Tint & Distress`। | Select Dropdown |
+| `Base SMV` | Decimal (5,2) | **হ্যাঁ** | ওভেন গার্মেন্টস স্ট্যান্ডার্ড মিনিট ভ্যালু (যেমন: `18.50`). ০.০১ থেকে ৯৯৯.৯৯ এর মধ্যে হতে হবে। | Number Input (Step: 0.01) |
+| `Wash Type` | Enum | **হ্যাঁ** | **ওভেন ওয়াশ প্রসেস:** `None / Raw / Rinse`, `Enzyme Wash`, `Stone Enzyme Wash`, `Bleach Wash`, `Acid Wash`, `Tint & Distress`, `Resin 3D Crinkle`। | Select Dropdown |
 | `Colorways List` | Array (Object)| **হ্যাঁ** | কমপক্ষে ১টি কালার থাকতে হবে। প্রতিটি কালারের কোড ও নাম বাধ্যতামূলক। | Dynamic Row Repeater with Add/Remove |
 | `Size Scale` | Array (Object)| **হ্যাঁ** | কমপক্ষে ১টি সাইজ থাকতে হবে। সাইজের নাম ও ম্যাট্রিক্স সাজানোর সর্ট অর্ডার থাকবে। | Dynamic Size Builder / Preset Chips |
 | `Description` | Text | না | ফেব্রিক কনস্ট্রাকশন, স্টিচিং ডিটেইলস ও বিশেষ স্পেসিফিকেশন নোট। | Textarea |
