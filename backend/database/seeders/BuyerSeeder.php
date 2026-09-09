@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Agent;
 use App\Models\Buyer;
 use App\Models\Company;
 use Illuminate\Database\Seeder;
@@ -16,9 +17,65 @@ class BuyerSeeder extends Seeder
             return;
         }
 
+        // 1. Seed Sample Buying Agents / Buying Houses
+        $agents = [
+            [
+                'name' => 'Li & Fung Sourcing Ltd',
+                'country' => 'Hong Kong',
+                'contact_person' => 'William Fung / Account Dir.',
+                'email' => 'sourcing.hk@lifung.com',
+                'phone' => '+852 2300 2300',
+                'address' => 'LiFung Plaza, 868 Cheung Sha Wan Road, Kowloon, Hong Kong',
+                'commission_rate' => 5.00,
+            ],
+            [
+                'name' => 'Asmara International Ltd',
+                'country' => 'Indonesia',
+                'contact_person' => 'Rajesh Mehra',
+                'email' => 'dhaka.office@asmaragroup.com',
+                'phone' => '+880 2 988 5601',
+                'address' => 'House 14, Road 11, Banani, Dhaka-1213, Bangladesh',
+                'commission_rate' => 4.50,
+            ],
+            [
+                'name' => 'Tex-Design Buying House',
+                'country' => 'Bangladesh',
+                'contact_person' => 'Kamal Hossain',
+                'email' => 'kamal@texdesign-bd.com',
+                'phone' => '+880 1711 000000',
+                'address' => 'Sector 3, Uttara, Dhaka, Bangladesh',
+                'commission_rate' => 3.00,
+            ],
+        ];
+
+        $agentPrefix = strtoupper(trim($company->code)) . '-AGT-';
+        $agentSeq = 1;
+        $createdAgents = [];
+
+        foreach ($agents as $aData) {
+            $code = $agentPrefix . str_pad((string)$agentSeq++, 3, '0', STR_PAD_LEFT);
+            $agent = Agent::updateOrCreate(
+                ['company_id' => $company->id, 'name' => $aData['name']],
+                [
+                    'code' => $code,
+                    'country' => $aData['country'],
+                    'contact_person' => $aData['contact_person'],
+                    'email' => $aData['email'],
+                    'phone' => $aData['phone'],
+                    'address' => $aData['address'],
+                    'commission_rate' => $aData['commission_rate'],
+                    'is_active' => true,
+                ]
+            );
+            $createdAgents[$aData['name']] = $agent;
+        }
+
+        // 2. Seed Sample Buyers (Mix of Direct and Via Agent)
         $buyers = [
             [
                 'name' => 'H&M Hennes & Mauritz',
+                'buyer_type' => 'direct',
+                'agent_name' => null,
                 'country' => 'Sweden',
                 'contact_person' => 'Johan Lindberg',
                 'email' => 'production.hm@hennes-mauritz.se',
@@ -28,6 +85,8 @@ class BuyerSeeder extends Seeder
             ],
             [
                 'name' => 'Zara (Inditex Group)',
+                'buyer_type' => 'direct',
+                'agent_name' => null,
                 'country' => 'Spain',
                 'contact_person' => 'Carlos Rodriguez',
                 'email' => 'sourcing@inditex.com',
@@ -37,6 +96,8 @@ class BuyerSeeder extends Seeder
             ],
             [
                 'name' => 'Marks & Spencer (M&S)',
+                'buyer_type' => 'direct',
+                'agent_name' => null,
                 'country' => 'United Kingdom',
                 'contact_person' => 'Sarah Jenkins',
                 'email' => 'garments@marks-and-spencer.co.uk',
@@ -46,6 +107,8 @@ class BuyerSeeder extends Seeder
             ],
             [
                 'name' => 'Next Retail Ltd',
+                'buyer_type' => 'agent',
+                'agent_name' => 'Li & Fung Sourcing Ltd',
                 'country' => 'United Kingdom',
                 'contact_person' => 'David Higgins',
                 'email' => 'orders@next.co.uk',
@@ -55,6 +118,8 @@ class BuyerSeeder extends Seeder
             ],
             [
                 'name' => 'PVH Corp',
+                'buyer_type' => 'agent',
+                'agent_name' => 'Asmara International Ltd',
                 'country' => 'United States',
                 'contact_person' => 'Michael Chang',
                 'email' => 'procurement@pvh.com',
@@ -64,15 +129,21 @@ class BuyerSeeder extends Seeder
             ],
         ];
 
-        $prefix = strtoupper(trim($company->code)) . '-BYR-';
-        $seq = 1;
+        $buyerPrefix = strtoupper(trim($company->code)) . '-BYR-';
+        $buyerSeq = 1;
 
         foreach ($buyers as $bData) {
-            $code = $prefix . str_pad((string)$seq++, 3, '0', STR_PAD_LEFT);
+            $code = $buyerPrefix . str_pad((string)$buyerSeq++, 3, '0', STR_PAD_LEFT);
+            $agentId = !empty($bData['agent_name']) && isset($createdAgents[$bData['agent_name']])
+                ? $createdAgents[$bData['agent_name']]->id
+                : null;
+
             $buyer = Buyer::updateOrCreate(
                 ['company_id' => $company->id, 'name' => $bData['name']],
                 [
                     'code' => $code,
+                    'buyer_type' => $bData['buyer_type'],
+                    'agent_id' => $agentId,
                     'country' => $bData['country'],
                     'contact_person' => $bData['contact_person'],
                     'email' => $bData['email'],

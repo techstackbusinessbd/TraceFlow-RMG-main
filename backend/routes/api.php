@@ -13,5 +13,6 @@ Route::prefix('v1')->group(function () {
     require __DIR__ . '/api/v1/companies.php';
     require __DIR__ . '/api/v1/users.php';
     require __DIR__ . '/api/v1/roles.php';
+    require __DIR__ . '/api/v1/agents.php';
     require __DIR__ . '/api/v1/buyers.php';
 });

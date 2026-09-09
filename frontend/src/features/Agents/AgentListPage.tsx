@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Eye, Edit2, ToggleLeft, ToggleRight, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Eye, Edit2, Trash2, Percent } from "lucide-react";
 import { PageHeader } from "../../components/common/PageHeader";
 import { FilterToolbar } from "../../components/common/FilterToolbar";
 import { DataTable, type ColumnDef } from "../../components/common/DataTable";
@@ -8,22 +8,27 @@ import { Badge } from "../../components/common/Badge";
 import { RowActionsMenu } from "../../components/common/RowActionsMenu";
 import { Toast } from "../../components/common/Toast";
 import { UI_TOKENS } from "../../config/designTokens";
-import { getBuyers, deleteBuyer, toggleBuyerStatus, type Buyer } from "../../services/buyerService";
 import { getCompanies, type Company } from "../../services/companyService";
+import {
+  getAgents,
+  deleteAgent,
+  toggleAgentStatus,
+  type Agent,
+} from "../../services/agentService";
 import { formatPhoneNumber } from "../../utils/phoneFormatter";
 import { useAuthStore } from "../../store/authStore";
 
-interface BuyerListPageProps {
+interface AgentListPageProps {
   onNavigate: (path: string) => void;
 }
 
-export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
+export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
   const { hasRole, hasPermission } = useAuthStore();
-  const canCreate = hasRole("superadmin") || hasPermission("master_data.buyers.profile.create");
-  const canEdit = hasRole("superadmin") || hasPermission("master_data.buyers.profile.update");
-  const canDelete = hasRole("superadmin") || hasPermission("master_data.buyers.profile.delete");
+  const canCreate = hasRole("superadmin") || hasPermission("master_data.agents.profile.create");
+  const canEdit = hasRole("superadmin") || hasPermission("master_data.agents.profile.update");
+  const canDelete = hasRole("superadmin") || hasPermission("master_data.agents.profile.delete");
 
-  const [buyers, setBuyers] = useState<Buyer[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -38,7 +43,7 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   // Confirm delete dialog state
-  const [deleteTarget, setDeleteTarget] = useState<Buyer | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Toast state
@@ -49,57 +54,73 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Load Companies for filter dropdown
   useEffect(() => {
-    getCompanies({ per_page: 100 })
-      .then((res) => setCompanies(res.data))
-      .catch(() => {});
+    const fetchCompanies = async () => {
+      try {
+        const res = await getCompanies({ per_page: 100 });
+        setCompanies(res.data);
+      } catch {
+        // silent fail
+      }
+    };
+    fetchCompanies();
   }, []);
 
-  const loadBuyers = useCallback(async () => {
+  // Fetch agents data
+  const loadAgents = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await getBuyers({
+      const res = await getAgents({
         search,
-        company_id: companyFilter || undefined,
+        company_id: companyFilter,
         status: statusFilter as "" | "active" | "inactive",
         sort_field: sortField,
         sort_direction: sortDirection,
         per_page: pageSize,
         page: currentPage,
       });
-      setBuyers(res.data);
+      setAgents(res.data);
       setTotal(res.pagination.total);
       setTotalPages(res.pagination.last_page);
     } catch {
-      showToast("error", "Failed to Load", "Could not fetch the registered buyers list. Please try again.");
+      showToast("error", "Failed to Load", "Could not fetch buying agents list. Please try again.");
     } finally {
       setIsLoading(false);
     }
   }, [search, companyFilter, statusFilter, sortField, sortDirection, pageSize, currentPage]);
 
   useEffect(() => {
-    loadBuyers();
-  }, [loadBuyers]);
+    loadAgents();
+  }, [loadAgents]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
-      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortField(field);
       setSortDirection("asc");
     }
+  };
+
+  const handleResetFilters = () => {
+    setSearch("");
+    setCompanyFilter("");
+    setStatusFilter("");
+    setSortField("name");
+    setSortDirection("asc");
     setCurrentPage(1);
   };
 
-  const handleToggleStatus = async (buyer: Buyer) => {
+  const handleToggleStatus = async (agent: Agent) => {
     try {
-      const res = await toggleBuyerStatus(buyer.id);
-      showToast("success", "Status Updated", res.message);
-      setBuyers((prev) =>
-        prev.map((b) => (b.id === buyer.id ? { ...b, is_active: res.data.is_active } : b))
+      const res = await toggleAgentStatus(agent.id);
+      setAgents((prev) =>
+        prev.map((a) => (a.id === agent.id ? { ...a, is_active: res.data.is_active } : a))
       );
+      showToast("success", "Status Updated", res.message);
     } catch {
-      showToast("error", "Update Failed", "Could not toggle buyer status. Try again.");
+      showToast("error", "Update Failed", "Could not toggle buying agent status. Try again.");
     }
   };
 
@@ -107,12 +128,13 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      const res = await deleteBuyer(deleteTarget.id);
-      showToast("success", "Buyer Removed", res.message);
+      const res = await deleteAgent(deleteTarget.id);
+      showToast("success", "Agent Removed", res.message);
       setDeleteTarget(null);
-      loadBuyers();
-    } catch {
-      showToast("error", "Delete Failed", "Could not delete buyer. Please try again.");
+      loadAgents();
+    } catch (err: unknown) {
+      const errorMsg = (err as { message?: string })?.message || "Could not delete buying agent.";
+      showToast("error", "Delete Failed", errorMsg);
     } finally {
       setIsDeleting(false);
     }
@@ -120,32 +142,32 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
 
   const getSortHeaderName = () => {
     const labels: Record<string, string> = {
-      code: "Buyer Code",
-      name: "Buyer Name",
+      code: "Agent Code",
+      name: "Agent Name",
       country: "Country",
-      brands_count: "Brands Count",
+      commission_rate: "Commission Rate",
       is_active: "Status",
     };
-    const label = labels[sortField] || "Buyer Name";
+    const label = labels[sortField] || "Agent Name";
     return `${label} (${sortDirection.toUpperCase()})`;
   };
 
-  const columns: ColumnDef<Buyer>[] = [
+  const columns: ColumnDef<Agent>[] = [
     {
       key: "code",
-      header: "Buyer Code",
+      header: "Agent Code",
       sortable: true,
-      render: (buyer) => <Badge variant="code">{buyer.code}</Badge>,
+      render: (agent) => <Badge variant="code">{agent.code}</Badge>,
     },
     {
       key: "name",
-      header: "Buyer Name",
+      header: "Agent / Buying House Name",
       sortable: true,
-      render: (buyer) => (
+      render: (agent) => (
         <div>
-          <span className="font-semibold text-slate-900 block">{buyer.name}</span>
-          {buyer.contact_person && (
-            <span className="text-xs text-slate-500">Contact: {buyer.contact_person}</span>
+          <span className="font-semibold text-slate-900 block">{agent.name}</span>
+          {agent.contact_person && (
+            <span className="text-xs text-slate-500">Contact: {agent.contact_person}</span>
           )}
         </div>
       ),
@@ -154,54 +176,41 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
       key: "country",
       header: "Country",
       sortable: true,
-      render: (buyer) => <span className="text-slate-700 font-medium">{buyer.country}</span>,
-    },
-    {
-      key: "buyer_type",
-      header: "Sourcing Type",
-      sortable: false,
-      render: (buyer) => (
-        <div>
-          {buyer.buyer_type === "agent" ? (
-            <div className="space-y-0.5">
-              <span className="inline-flex items-center text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                Via Agent
-              </span>
-              {buyer.agent && (
-                <div
-                  onClick={() => onNavigate(`/master/agents/${buyer.agent?.id}`)}
-                  className="text-xs text-indigo-600 font-medium hover:underline cursor-pointer block"
-                >
-                  {buyer.agent.name}
-                </div>
-              )}
-            </div>
-          ) : (
-            <span className="inline-flex items-center text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-              Direct
-            </span>
-          )}
-        </div>
-      ),
+      render: (agent) => <span className="text-slate-700 font-medium">{agent.country}</span>,
     },
     {
       key: "company",
       header: "Company",
       sortable: false,
-      render: (buyer) => (
+      render: (agent) => (
         <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
-          {buyer.company?.code || "PLT"}
+          {agent.company?.code || "PLT"}
         </span>
       ),
     },
     {
-      key: "brands_count",
-      header: "Brands",
-      align: "center",
+      key: "commission_rate",
+      header: "Commission",
       sortable: true,
-      render: (buyer) => (
-        <Badge variant={buyer.brands_count && buyer.brands_count > 0 ? "neutral" : "warning"}>
-          {buyer.brands_count || 0} Brands
+      render: (agent) => (
+        agent.commission_rate !== null && agent.commission_rate !== undefined ? (
+          <span className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+            <Percent className="w-3 h-3" />
+            {Number(agent.commission_rate).toFixed(2)}%
+          </span>
+        ) : (
+          <span className="text-slate-400 text-xs">—</span>
+        )
+      ),
+    },
+    {
+      key: "buyers_count",
+      header: "Linked Buyers",
+      align: "center",
+      sortable: false,
+      render: (agent) => (
+        <Badge variant={agent.buyers_count && agent.buyers_count > 0 ? "neutral" : "warning"}>
+          {agent.buyers_count || 0} Buyers
         </Badge>
       ),
     },
@@ -209,10 +218,11 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
       key: "phone",
       header: "Contact Info",
       sortable: false,
-      render: (buyer) => (
+      render: (agent) => (
         <div className="text-xs space-y-0.5">
-          {buyer.email && <div className="text-slate-600">{buyer.email}</div>}
-          {buyer.phone && <div className="font-mono text-slate-500">{formatPhoneNumber(buyer.phone)}</div>}
+          {agent.email && <div className="text-slate-600">{agent.email}</div>}
+          {agent.phone && <div className="font-mono text-slate-500">{formatPhoneNumber(agent.phone)}</div>}
+          {!agent.email && !agent.phone && <span className="text-slate-400">—</span>}
         </div>
       ),
     },
@@ -221,9 +231,9 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
       header: "Status",
       align: "center",
       sortable: true,
-      render: (buyer) => (
-        <Badge variant={buyer.is_active ? "success" : "danger"}>
-          {buyer.is_active ? "Active" : "Inactive"}
+      render: (agent) => (
+        <Badge variant={agent.is_active ? "success" : "danger"}>
+          {agent.is_active ? "Active" : "Inactive"}
         </Badge>
       ),
     },
@@ -232,22 +242,22 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
       header: "Actions",
       align: "right",
       sortable: false,
-      render: (buyer) => (
+      render: (agent) => (
         <RowActionsMenu
           primaryActions={[
             {
               icon: <Eye className="w-3.5 h-3.5" />,
               label: "View Profile",
               variant: "secondary",
-              onClick: () => onNavigate(`/master/buyers/${buyer.id}`),
+              onClick: () => onNavigate(`/master/agents/${agent.id}`),
             },
             ...(canEdit
               ? [
                   {
                     icon: <Edit2 className="w-3.5 h-3.5" />,
-                    label: "Edit Buyer",
+                    label: "Edit Agent",
                     variant: "primary" as const,
-                    onClick: () => onNavigate(`/master/buyers/${buyer.id}/edit`),
+                    onClick: () => onNavigate(`/master/agents/${agent.id}/edit`),
                   },
                 ]
               : []),
@@ -256,24 +266,18 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
             ...(canEdit
               ? [
                   {
-                    label: buyer.is_active ? "Deactivate Buyer" : "Activate Buyer",
-                    icon: buyer.is_active ? (
-                      <ToggleLeft className="w-3.5 h-3.5 text-amber-500" />
-                    ) : (
-                      <ToggleRight className="w-3.5 h-3.5 text-emerald-500" />
-                    ),
-                    variant: buyer.is_active ? ("warning" as const) : ("default" as const),
-                    onClick: () => handleToggleStatus(buyer),
+                    label: agent.is_active ? "Deactivate Agent" : "Activate Agent",
+                    onClick: () => handleToggleStatus(agent),
                   },
                 ]
               : []),
             ...(canDelete
               ? [
                   {
-                    label: "Delete Buyer",
+                    label: "Delete Agent",
                     icon: <Trash2 className="w-3.5 h-3.5" />,
                     variant: "danger" as const,
-                    onClick: () => setDeleteTarget(buyer),
+                    onClick: () => setDeleteTarget(agent),
                   },
                 ]
               : []),
@@ -284,7 +288,8 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="p-6 space-y-5 max-w-[1600px] mx-auto">
+      {/* Toast Notification */}
       {toast && (
         <Toast
           type={toast.type}
@@ -296,43 +301,35 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
 
       {/* Tier 1: Sleek Header Row */}
       <PageHeader
-        title="Buyer Directory"
+        title="Buying Agents & Houses"
         badgeCount={total}
-        badgeLabel="Buyers"
+        badgeLabel={total === 1 ? "Agent" : "Agents"}
         actions={
           canCreate ? (
             <Button
               variant="primary"
-              icon={<Plus className="h-3.5 w-3.5" />}
-              onClick={() => onNavigate("/master/buyers/create")}
+              icon={<Plus className="w-4 h-4" />}
+              onClick={() => onNavigate("/master/agents/create")}
             >
-              Create Buyer
+              Register Agent
             </Button>
           ) : undefined
         }
       />
 
-      {/* Tier 2: Filter Toolbar */}
+      {/* Tier 2: Unified Filter Toolbar */}
       <FilterToolbar
+        searchPlaceholder="Search by Agent Code, Name, Country, or Contact..."
         searchValue={search}
         onSearchChange={(val) => {
           setSearch(val);
           setCurrentPage(1);
         }}
-        pageSize={pageSize}
-        onPageSizeChange={(val) => {
-          setPageSize(val);
-          setCurrentPage(1);
-        }}
+        onReset={handleResetFilters}
         activeSortLabel={getSortHeaderName()}
-        searchPlaceholder="Search buyers by code, name, country, or contact..."
-        onFilterSubmit={loadBuyers}
-        onReset={() => {
-          setSearch("");
-          setStatusFilter("");
-          setCompanyFilter("");
-          setSortField("name");
-          setSortDirection("asc");
+        pageSize={pageSize}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
           setCurrentPage(1);
         }}
         filterInputs={
@@ -371,7 +368,7 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
       {/* Tier 3: Standard DataTable Shell */}
       <DataTable
         columns={columns}
-        data={buyers}
+        data={agents}
         totalRecords={total}
         currentPage={currentPage}
         totalPages={totalPages}
@@ -381,27 +378,35 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
         sortField={sortField}
         sortDirection={sortDirection}
         isLoading={isLoading}
-        emptyMessage="No buyers found matching criteria."
+        emptyMessage="No buying agents or sourcing houses registered yet."
       />
 
-      {/* Delete Confirmation Modal */}
+      {/* Confirmation Modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-lg border border-slate-200 shadow-xl max-w-md w-full p-5 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-full bg-rose-50 text-rose-600">
-                <AlertCircle className="h-5 w-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
+            <div className="flex items-center gap-3 text-rose-600 mb-4">
+              <div className="p-2.5 bg-rose-50 rounded-lg">
+                <Trash2 className="w-6 h-6" />
               </div>
-              <div className="space-y-1 flex-1">
-                <h3 className="font-semibold text-slate-900">Confirm Buyer Deletion</h3>
-                <p className="text-sm text-slate-600">
-                  Are you sure you want to soft-delete buyer{" "}
-                  <strong className="text-slate-900 font-semibold">{deleteTarget.name}</strong> (
-                  {deleteTarget.code})? Associated brands and orders will be preserved in history.
-                </p>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Delete Buying Agent</h3>
+                <p className="text-xs text-slate-500">System Traceability Action</p>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+
+            <p className="text-sm text-slate-600 mb-6">
+              Are you sure you want to delete Buying Agent{" "}
+              <strong className="text-slate-900 font-semibold">{deleteTarget.name}</strong> (
+              <span className="font-mono text-xs">{deleteTarget.code}</span>)?
+              {deleteTarget.buyers_count && deleteTarget.buyers_count > 0 ? (
+                <span className="block mt-2 text-rose-600 font-medium text-xs">
+                  Warning: This agent is currently linked to {deleteTarget.buyers_count} registered buyer(s).
+                </span>
+              ) : null}
+            </p>
+
+            <div className="flex items-center justify-end gap-3">
               <Button
                 variant="secondary"
                 onClick={() => setDeleteTarget(null)}

@@ -3,6 +3,21 @@
 return [
     'label' => 'Master Data Management Library',
     'submodules' => [
+        'agents' => [
+            'label' => 'Buying Agents & Houses',
+            'resources' => [
+                'profile' => [
+                    'label' => 'Buying Agent Profile',
+                    'actions' => [
+                        'view' => 'View Buying Agents List and Profile',
+                        'create' => 'Create New Buying Agent',
+                        'update' => 'Update Buying Agent Information',
+                        'delete' => 'Soft Delete Buying Agent',
+                        'export' => 'Export Buying Agents Data to Excel/CSV',
+                    ],
+                ],
+            ],
+        ],
         'buyers' => [
             'label' => 'Buyer & Brand Directory',
             'resources' => [

@@ -8,14 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Buyer extends Model
+class Agent extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'company_id',
-        'buyer_type',
-        'agent_id',
         'code',
         'name',
         'country',
@@ -23,7 +21,7 @@ class Buyer extends Model
         'email',
         'phone',
         'address',
-        'payment_terms',
+        'commission_rate',
         'is_active',
     ];
 
@@ -31,6 +29,7 @@ class Buyer extends Model
     {
         return [
             'is_active' => 'boolean',
+            'commission_rate' => 'float',
         ];
     }
 
@@ -43,26 +42,18 @@ class Buyer extends Model
     }
 
     /**
-     * Associated buying agent (if buyer_type is agent).
+     * Buyers associated through this agent.
      */
-    public function agent(): BelongsTo
+    public function buyers(): HasMany
     {
-        return $this->belongsTo(Agent::class);
+        return $this->hasMany(Buyer::class);
     }
 
     /**
-     * Associated brands under this buyer.
+     * Active buyers associated through this agent.
      */
-    public function brands(): HasMany
+    public function activeBuyers(): HasMany
     {
-        return $this->hasMany(Brand::class);
-    }
-
-    /**
-     * Active brands under this buyer.
-     */
-    public function activeBrands(): HasMany
-    {
-        return $this->hasMany(Brand::class)->where('is_active', true);
+        return $this->hasMany(Buyer::class)->where('is_active', true);
     }
 }

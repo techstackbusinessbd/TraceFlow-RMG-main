@@ -134,6 +134,36 @@ export const BuyerDetailsPage: React.FC<BuyerDetailsPageProps> = ({ buyerId, onN
 
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div>
+              <span className="text-slate-400 block mb-0.5">Sourcing Channel</span>
+              <div className="flex items-center gap-2">
+                {buyer.buyer_type === "agent" ? (
+                  <span className="inline-flex items-center text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    Via Buying Agent
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    Direct Buyer
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-slate-400 block mb-0.5">Buying Agent / House</span>
+              {buyer.buyer_type === "agent" && buyer.agent ? (
+                <div
+                  onClick={() => onNavigate(`/master/agents/${buyer.agent?.id}`)}
+                  className="font-medium text-indigo-600 hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <span>{buyer.agent.name}</span>
+                  <Badge variant="code">{buyer.agent.code}</Badge>
+                </div>
+              ) : (
+                <span className="text-slate-400">None (Direct Engagement)</span>
+              )}
+            </div>
+
+            <div>
               <span className="text-slate-400 block mb-0.5">Country of Origin</span>
               <div className="flex items-center gap-1.5 font-medium text-slate-800">
                 <Globe className="h-3.5 w-3.5 text-slate-500" />

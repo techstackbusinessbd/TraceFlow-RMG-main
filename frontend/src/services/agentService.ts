@@ -34,15 +34,16 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return data;
 }
 
-export interface Brand {
-  id?: number;
-  buyer_id?: number;
-  code?: string;
+export interface AgentBuyerItem {
+  id: number;
+  company_id: number;
+  code: string;
   name: string;
-  is_active?: boolean;
+  country: string;
+  is_active: boolean;
 }
 
-export interface Buyer {
+export interface Agent {
   id: number;
   company_id: number;
   company?: {
@@ -50,13 +51,6 @@ export interface Buyer {
     code: string;
     name: string;
   };
-  buyer_type: "direct" | "agent";
-  agent_id?: number | null;
-  agent?: {
-    id: number;
-    code: string;
-    name: string;
-  } | null;
   code: string;
   name: string;
   country: string;
@@ -64,20 +58,18 @@ export interface Buyer {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
-  payment_terms?: string | null;
+  commission_rate?: number | null;
   is_active: boolean;
-  brands_count?: number;
-  active_brands_count?: number;
-  brands?: Brand[];
+  buyers_count?: number;
+  active_buyers_count?: number;
+  buyers?: AgentBuyerItem[];
   created_at?: string;
   updated_at?: string;
 }
 
-export interface BuyerFilters {
+export interface AgentFilters {
   search?: string;
   company_id?: number | string;
-  buyer_type?: "" | "direct" | "agent";
-  agent_id?: number | string;
   status?: "" | "active" | "inactive";
   sort_field?: string;
   sort_direction?: "asc" | "desc";
@@ -85,9 +77,9 @@ export interface BuyerFilters {
   page?: number;
 }
 
-export interface BuyerListResponse {
+export interface AgentListResponse {
   status: string;
-  data: Buyer[];
+  data: Agent[];
   pagination: {
     current_page: number;
     last_page: number;
@@ -98,84 +90,79 @@ export interface BuyerListResponse {
   };
 }
 
-export interface BuyerFormData {
+export interface AgentFormData {
   company_id: number;
-  buyer_type: "direct" | "agent";
-  agent_id?: number | null;
   name: string;
   country: string;
   contact_person?: string;
   email?: string;
   phone?: string;
   address?: string;
-  payment_terms?: string;
+  commission_rate?: number | null;
   is_active?: boolean;
-  brands?: { id?: number; name: string; code?: string }[];
 }
 
-export const getBuyers = async (params: BuyerFilters = {}): Promise<BuyerListResponse> => {
+export const getAgents = async (params: AgentFilters = {}): Promise<AgentListResponse> => {
   const query = new URLSearchParams();
   if (params.search) query.set("search", params.search);
   if (params.company_id) query.set("company_id", String(params.company_id));
-  if (params.buyer_type) query.set("buyer_type", params.buyer_type);
-  if (params.agent_id) query.set("agent_id", String(params.agent_id));
   if (params.status) query.set("status", params.status);
   if (params.sort_field) query.set("sort_field", params.sort_field);
   if (params.sort_direction) query.set("sort_direction", params.sort_direction);
   if (params.per_page) query.set("per_page", String(params.per_page));
   if (params.page) query.set("page", String(params.page));
 
-  const res = await fetch(`${API_BASE}/api/v1/buyers?${query.toString()}`, {
+  const res = await fetch(`${API_BASE}/api/v1/agents?${query.toString()}`, {
     headers: getHeaders(),
   });
-  return handleResponse<BuyerListResponse>(res);
+  return handleResponse<AgentListResponse>(res);
 };
 
-export const getBuyerNextCode = async (companyId?: number): Promise<{ next_code: string; company_code: string }> => {
+export const getAgentNextCode = async (companyId?: number): Promise<{ next_code: string; company_code: string }> => {
   const query = companyId ? `?company_id=${companyId}` : "";
-  const res = await fetch(`${API_BASE}/api/v1/buyers/next-code${query}`, {
+  const res = await fetch(`${API_BASE}/api/v1/agents/next-code${query}`, {
     headers: getHeaders(),
   });
   const data = await handleResponse<{ status: string; data: { next_code: string; company_code: string } }>(res);
   return data.data;
 };
 
-export const getBuyerById = async (id: number): Promise<Buyer> => {
-  const res = await fetch(`${API_BASE}/api/v1/buyers/${id}`, {
+export const getAgentById = async (id: number): Promise<Agent> => {
+  const res = await fetch(`${API_BASE}/api/v1/agents/${id}`, {
     headers: getHeaders(),
   });
-  const data = await handleResponse<{ status: string; data: Buyer }>(res);
+  const data = await handleResponse<{ status: string; data: Agent }>(res);
   return data.data;
 };
 
-export const createBuyer = async (data: BuyerFormData): Promise<{ status: string; message: string; data: Buyer }> => {
-  const res = await fetch(`${API_BASE}/api/v1/buyers`, {
+export const createAgent = async (data: AgentFormData): Promise<{ status: string; message: string; data: Agent }> => {
+  const res = await fetch(`${API_BASE}/api/v1/agents`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify(data),
   });
-  return handleResponse<{ status: string; message: string; data: Buyer }>(res);
+  return handleResponse<{ status: string; message: string; data: Agent }>(res);
 };
 
-export const updateBuyer = async (id: number, data: Partial<BuyerFormData>): Promise<{ status: string; message: string; data: Buyer }> => {
-  const res = await fetch(`${API_BASE}/api/v1/buyers/${id}`, {
+export const updateAgent = async (id: number, data: Partial<AgentFormData>): Promise<{ status: string; message: string; data: Agent }> => {
+  const res = await fetch(`${API_BASE}/api/v1/agents/${id}`, {
     method: "PUT",
     headers: getHeaders(),
     body: JSON.stringify(data),
   });
-  return handleResponse<{ status: string; message: string; data: Buyer }>(res);
+  return handleResponse<{ status: string; message: string; data: Agent }>(res);
 };
 
-export const deleteBuyer = async (id: number): Promise<{ status: string; message: string }> => {
-  const res = await fetch(`${API_BASE}/api/v1/buyers/${id}`, {
+export const deleteAgent = async (id: number): Promise<{ status: string; message: string }> => {
+  const res = await fetch(`${API_BASE}/api/v1/agents/${id}`, {
     method: "DELETE",
     headers: getHeaders(),
   });
   return handleResponse<{ status: string; message: string }>(res);
 };
 
-export const toggleBuyerStatus = async (id: number): Promise<{ status: string; message: string; data: { id: number; is_active: boolean } }> => {
-  const res = await fetch(`${API_BASE}/api/v1/buyers/${id}/toggle-status`, {
+export const toggleAgentStatus = async (id: number): Promise<{ status: string; message: string; data: { id: number; is_active: boolean } }> => {
+  const res = await fetch(`${API_BASE}/api/v1/agents/${id}/toggle-status`, {
     method: "PATCH",
     headers: getHeaders(),
   });

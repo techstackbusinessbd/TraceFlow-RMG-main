@@ -16,6 +16,9 @@ import { RoleCreatePage } from "./features/Roles/RoleCreatePage";
 import { BuyerListPage } from "./features/Buyers/BuyerListPage";
 import { BuyerFormPage } from "./features/Buyers/BuyerFormPage";
 import { BuyerDetailsPage } from "./features/Buyers/BuyerDetailsPage";
+import { AgentListPage } from "./features/Agents/AgentListPage";
+import { AgentFormPage } from "./features/Agents/AgentFormPage";
+import { AgentDetailsPage } from "./features/Agents/AgentDetailsPage";
 import { useAuthStore } from "./store/authStore";
 
 
@@ -50,6 +53,17 @@ function parseRolePath(path: string): { type: "list" | "create" | "matrix" | nul
   if (path === "/roles/create") return { type: "create" };
   const matrixMatch = path.match(/^\/roles\/(\d+)\/matrix$/);
   if (matrixMatch) return { type: "matrix", id: parseInt(matrixMatch[1]) };
+  return { type: null };
+}
+
+// Helper: parse /master/agents, /master/agents/create, /master/agents/:id, and /master/agents/:id/edit
+function parseAgentPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: number } {
+  if (path === "/master/agents") return { type: "list" };
+  if (path === "/master/agents/create") return { type: "create" };
+  const editMatch = path.match(/^\/master\/agents\/(\d+)\/edit$/);
+  if (editMatch) return { type: "edit", id: parseInt(editMatch[1]) };
+  const viewMatch = path.match(/^\/master\/agents\/(\d+)$/);
+  if (viewMatch) return { type: "view", id: parseInt(viewMatch[1]) };
   return { type: null };
 }
 
@@ -115,6 +129,8 @@ export function App() {
       navigateTo("/dashboard");
     } else if (moduleId === "master-buyers") {
       navigateTo("/master/buyers");
+    } else if (moduleId === "master-agents") {
+      navigateTo("/master/agents");
     } else if (moduleId === "master-companies") {
       navigateTo("/companies");
     } else if (moduleId === "admin-users") {
@@ -134,15 +150,15 @@ export function App() {
   const isUserSection = userRoute.type !== null;
   const roleRoute = parseRolePath(currentPath);
   const isRoleSection = roleRoute.type !== null;
+  const agentRoute = parseAgentPath(currentPath);
+  const isAgentSection = agentRoute.type !== null;
   const buyerRoute = parseBuyerPath(currentPath);
   const isBuyerSection = buyerRoute.type !== null;
-
-
 
   // Map current module/path to Category
   const getActiveCategory = (moduleId: string): string | null => {
     if (["profile", "profile-password", "admin-users", "admin-roles"].includes(moduleId)) return "auth";
-    if (["master-companies", "master-buyers", "master-suppliers", "master-units"].includes(moduleId)) return "governance";
+    if (["master-companies", "master-agents", "master-buyers", "master-suppliers", "master-units"].includes(moduleId)) return "governance";
     if (["inquiries", "styles-costing", "techpacks", "order-pos"].includes(moduleId)) return "merchandising";
     if (["warehouse-rolls", "roll-grn", "shade-lots", "trims-warehouse"].includes(moduleId)) return "materials";
     if (["cad-markers", "spreading-tables", "cutting-bundles", "sewing-lines", "hourly-production"].includes(moduleId)) return "shopfloor";
@@ -163,6 +179,8 @@ export function App() {
     currentModuleId = "admin-users";
   } else if (isRoleSection) {
     currentModuleId = "admin-roles";
+  } else if (isAgentSection) {
+    currentModuleId = "master-agents";
   } else {
     currentModuleId = currentPath.replace(/^\//, "").replace("master/buyers", "master-buyers") || "master-buyers";
   }
@@ -233,6 +251,24 @@ export function App() {
       }
       if (roleRoute.type === "matrix") {
         return [...base, { label: "Roles & Policy Matrix", href: "/roles" }, { label: "Policy Matrix Grid", active: true }];
+      }
+    }
+    if (isAgentSection) {
+      const base = [
+        { label: "Home", href: "/dashboard" },
+        { label: "Master Data", href: "/master/agents" },
+      ];
+      if (agentRoute.type === "list") {
+        return [...base, { label: "Buying Agents & Houses", active: true }];
+      }
+      if (agentRoute.type === "create") {
+        return [...base, { label: "Buying Agents & Houses", href: "/master/agents" }, { label: "Register Agent", active: true }];
+      }
+      if (agentRoute.type === "edit") {
+        return [...base, { label: "Buying Agents & Houses", href: "/master/agents" }, { label: "Edit Agent", active: true }];
+      }
+      if (agentRoute.type === "view") {
+        return [...base, { label: "Buying Agents & Houses", href: "/master/agents" }, { label: "Agent Profile", active: true }];
       }
     }
     if (isBuyerSection) {
@@ -310,6 +346,22 @@ export function App() {
       }
       if (roleRoute.type === "matrix" && roleRoute.id) {
         return <RoleMatrixPage roleId={roleRoute.id} onNavigate={navigateTo} />;
+      }
+    }
+
+    // Agent Section Routes
+    if (isAgentSection) {
+      if (agentRoute.type === "list") {
+        return <AgentListPage onNavigate={navigateTo} />;
+      }
+      if (agentRoute.type === "create") {
+        return <AgentFormPage mode="create" onNavigate={navigateTo} />;
+      }
+      if (agentRoute.type === "edit" && agentRoute.id) {
+        return <AgentFormPage mode="edit" agentId={agentRoute.id} onNavigate={navigateTo} />;
+      }
+      if (agentRoute.type === "view" && agentRoute.id) {
+        return <AgentDetailsPage agentId={agentRoute.id} onNavigate={navigateTo} />;
       }
     }
 

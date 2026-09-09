@@ -20,7 +20,7 @@ class BuyerController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Buyer::query()->with(['company:id,code,name'])->withCount(['brands', 'activeBrands']);
+        $query = Buyer::query()->with(['company:id,code,name', 'agent:id,code,name'])->withCount(['brands', 'activeBrands']);
 
         // Search Filter
         if ($search = trim($request->query('search', ''))) {
@@ -30,13 +30,27 @@ class BuyerController extends Controller
                   ->orWhere('country', 'ilike', "%{$search}%")
                   ->orWhere('contact_person', 'ilike', "%{$search}%")
                   ->orWhere('email', 'ilike', "%{$search}%")
-                  ->orWhere('phone', 'ilike', "%{$search}%");
+                  ->orWhere('phone', 'ilike', "%{$search}%")
+                  ->orWhereHas('agent', function ($aq) use ($search) {
+                      $aq->where('name', 'ilike', "%{$search}%")
+                         ->orWhere('code', 'ilike', "%{$search}%");
+                  });
             });
         }
 
         // Company Filter
         if ($companyId = $request->query('company_id')) {
             $query->where('company_id', $companyId);
+        }
+
+        // Buyer Type Filter ('direct' | 'agent')
+        if ($buyerType = $request->query('buyer_type')) {
+            $query->where('buyer_type', $buyerType);
+        }
+
+        // Agent Filter
+        if ($agentId = $request->query('agent_id')) {
+            $query->where('agent_id', $agentId);
         }
 
         // Status Filter
@@ -115,6 +129,8 @@ class BuyerController extends Controller
 
             $buyer = Buyer::create([
                 'company_id'     => $company->id,
+                'buyer_type'     => $validated['buyer_type'] ?? 'direct',
+                'agent_id'       => ($validated['buyer_type'] ?? 'direct') === 'agent' ? ($validated['agent_id'] ?? null) : null,
                 'code'           => $autoCode,
                 'name'           => trim($validated['name']),
                 'country'        => trim($validated['country']),
@@ -155,7 +171,7 @@ class BuyerController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        $buyer = Buyer::with(['company:id,code,name', 'brands'])->findOrFail($id);
+        $buyer = Buyer::with(['company:id,code,name', 'agent:id,code,name', 'brands'])->findOrFail($id);
 
         return response()->json([
             'status' => 'success',
@@ -173,7 +189,12 @@ class BuyerController extends Controller
         $validated = $request->validated();
 
         return DB::transaction(function () use ($buyer, $validated) {
+            $buyerType = $validated['buyer_type'] ?? $buyer->buyer_type;
+            $agentId = $buyerType === 'agent' ? ($validated['agent_id'] ?? $buyer->agent_id) : null;
+
             $buyer->update([
+                'buyer_type'     => $buyerType,
+                'agent_id'       => $agentId,
                 'name'           => trim($validated['name']),
                 'country'        => trim($validated['country']),
                 'contact_person' => $validated['contact_person'] ?? null,

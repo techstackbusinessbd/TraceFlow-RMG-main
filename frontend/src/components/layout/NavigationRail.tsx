@@ -159,6 +159,12 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
               requiredRoles: ['superadmin', 'admin'],
             },
             {
+              id: 'master-agents',
+              label: 'Buying Agents',
+              requiredPermissions: ['master_data.agents.profile.view'],
+              requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
+            },
+            {
               id: 'master-buyers',
               label: 'Buyers & Brands',
               requiredPermissions: ['master_data.buyers.profile.view'],
