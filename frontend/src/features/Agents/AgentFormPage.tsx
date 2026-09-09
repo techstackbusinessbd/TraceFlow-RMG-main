@@ -188,225 +188,226 @@ export const AgentFormPage: React.FC<AgentFormPageProps> = ({
         }
       />
 
-      {/* Main Form Card */}
-      <form noValidate onSubmit={handleSubmit} className="space-y-6">
-        <div className={`${UI_TOKENS.card.base} p-6 space-y-6`}>
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                1. Basic Identification & Company
-              </h2>
-              <p className="text-[11px] text-slate-500">Legal business entity name and multi-company ownership</p>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-slate-500 hidden sm:inline">Entity Code:</span>
-              <Badge variant="code">{nextCode}</Badge>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Company Selection */}
-            <FormField
-              label="Company"
-              required={mode === "create"}
-              error={errors.company_id}
-              helperText={
-                mode === "edit"
-                  ? "Agent code prefix is permanently tied to origin company."
-                  : "Company entity where this agent's accounts reside."
-              }
-            >
-              <div className="relative">
-                <select
-                  disabled={mode === "edit"}
-                  value={selectedCompanyId}
-                  onChange={handleCompanyChange}
-                  className={`w-full ${UI_TOKENS.input.select} ${
-                    mode === "edit" ? "bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed select-none" : ""
-                  } ${errors.company_id ? UI_TOKENS.input.error : ""}`}
-                >
-                  <option value="">Select Company</option>
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.code}) {c.is_default ? "— Primary" : ""}
-                    </option>
-                  ))}
-                </select>
+      {/* Main Form (Exact 2-Column Golden Layout) */}
+      <form noValidate onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left 2/3 Main Canvas */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Identity Card */}
+            <div className={UI_TOKENS.card.base}>
+              <div className={UI_TOKENS.card.header}>
+                <h2 className={UI_TOKENS.card.title}>Agent Identity</h2>
+                <Badge variant="code">{nextCode}</Badge>
               </div>
-            </FormField>
 
-            {/* System Entity Code (Read Only) */}
-            <FormField
-              label="Agent Code"
-              systemAuto={true}
-              helperText="Intelligent sequential code generated automatically."
-            >
-              <TextInput
-                value={nextCode}
-                readOnly
-                tabIndex={-1}
-                className={`${UI_TOKENS.input.readonly} font-mono font-semibold text-[#0066FF]`}
-              />
-            </FormField>
-
-            {/* Agent Name */}
-            <div className="md:col-span-2">
-              <FormField
-                label="Agent / Buying House Name"
-                required
-                error={errors.name}
-                helperText="Full commercial trade name as registered in contracts."
-              >
-                <TextInput
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Li & Fung Ltd, Asmara International, Tex-Design Sourcing"
-                  isError={!!errors.name}
-                />
-              </FormField>
-            </div>
-
-            {/* Country */}
-            <FormField
-              label="Country of Origin / Headquarter"
-              required
-              error={errors.country}
-              helperText="Principal headquarters or global sourcing origin."
-            >
-              <TextInput
-                value={formData.country}
-                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                placeholder="e.g. Hong Kong, United States, Germany, Bangladesh"
-                isError={!!errors.country}
-              />
-            </FormField>
-
-            {/* Commission Rate (%) */}
-            <FormField
-              label="Default Commission Rate (%)"
-              error={errors.commission_rate}
-              helperText="Agency commission percentage on FOB order value (if applicable)."
-            >
-              <div className="relative">
-                <TextInput
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={formData.commission_rate !== null && formData.commission_rate !== undefined ? String(formData.commission_rate) : ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      commission_rate: e.target.value === "" ? null : Number(e.target.value),
-                    })
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Company Selection */}
+                <FormField
+                  label="Company"
+                  required={mode === "create"}
+                  error={errors.company_id}
+                  helperText={
+                    mode === "edit"
+                      ? "Agent code prefix is permanently tied to origin company."
+                      : "Company entity where this agent's accounts reside."
                   }
-                  placeholder="e.g. 5.00"
-                  isError={!!errors.commission_rate}
-                />
-                <Percent className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </FormField>
-          </div>
-        </div>
+                >
+                  <select
+                    disabled={mode === "edit"}
+                    value={selectedCompanyId}
+                    onChange={handleCompanyChange}
+                    className={`w-full ${UI_TOKENS.input.select} ${
+                      mode === "edit" ? "bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed select-none" : ""
+                    } ${errors.company_id ? UI_TOKENS.input.error : ""}`}
+                  >
+                    <option value="">Select Company</option>
+                    {companies.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.code}) {c.is_default ? "— Primary" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
 
-        {/* Section 2: Contact Information */}
-        <div className={`${UI_TOKENS.card.base} p-6 space-y-6`}>
-          <div className="border-b border-slate-200 pb-3">
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              2. Contact & Regional Liaison
-            </h2>
-            <p className="text-[11px] text-slate-500">Representative contact details and correspondence address</p>
-          </div>
+                {/* System Entity Code (Read Only) */}
+                <FormField
+                  label="Agent Code"
+                  systemAuto={true}
+                  helperText="Intelligent sequential code generated automatically."
+                >
+                  <TextInput
+                    value={nextCode}
+                    readOnly
+                    tabIndex={-1}
+                    className={`${UI_TOKENS.input.readonly} font-mono font-semibold text-[#0066FF]`}
+                  />
+                </FormField>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Contact Person */}
-            <FormField
-              label="Key Account Manager / Contact Person"
-              helperText="Designated liaison officer or merchandising head."
-            >
-              <TextInput
-                value={formData.contact_person || ""}
-                onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
-                placeholder="e.g. John Doe / Country Manager"
-              />
-            </FormField>
+                {/* Agent Name */}
+                <FormField
+                  label="Agent / Buying House Name"
+                  required
+                  error={errors.name}
+                  helperText="Full commercial trade name as registered in contracts."
+                >
+                  <TextInput
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g. Li & Fung Bangladesh, Asmara Group"
+                    isError={!!errors.name}
+                  />
+                </FormField>
 
-            {/* Email */}
-            <FormField
-              label="Official Email"
-              error={errors.email}
-              helperText="Official corporate inbox for purchase orders & notices."
-            >
-              <TextInput
-                type="email"
-                value={formData.email || ""}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="e.g. sourcing@agent.com"
-                isError={!!errors.email}
-              />
-            </FormField>
-
-            {/* Phone */}
-            <FormField
-              label="Phone / Hotline"
-              helperText="Primary business telephone or mobile number."
-            >
-              <TextInput
-                value={formData.phone || ""}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="e.g. +880 1700-000000"
-              />
-            </FormField>
-
-            {/* Active Status */}
-            <div>
-              <label className="text-xs font-semibold text-slate-800 block mb-2">Operational Status</label>
-              <div className="mt-2">
-                <Toggle
-                  checked={formData.is_active}
-                  onChange={(val) => setFormData({ ...formData, is_active: val })}
-                  activeText="Active & Operational"
-                  inactiveText="Inactive / Suspended"
-                  description="Active agents are selectable when registering new buyers."
-                />
+                {/* Country */}
+                <FormField
+                  label="Headquarters Country"
+                  required
+                  error={errors.country}
+                  helperText="Principal headquarters or global sourcing office."
+                >
+                  <TextInput
+                    value={formData.country}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    placeholder="e.g. Bangladesh, Hong Kong, Singapore"
+                    isError={!!errors.country}
+                  />
+                </FormField>
               </div>
             </div>
 
-            {/* Address */}
-            <div className="md:col-span-2">
-              <FormField
-                label="Office Address"
-                helperText="Physical office or liaison address."
-              >
-                <textarea
-                  rows={3}
-                  value={formData.address || ""}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="e.g. Level 7, Sourcing Tower, Gulshan-2, Dhaka"
-                  className={`w-full ${UI_TOKENS.input.base}`}
-                />
-              </FormField>
+            {/* Contact & Terms Card */}
+            <div className={UI_TOKENS.card.base}>
+              <div className={UI_TOKENS.card.header}>
+                <h2 className={UI_TOKENS.card.title}>Contact & Liaison Office</h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Contact Person */}
+                <FormField
+                  label="Contact Person"
+                  helperText="Designated liaison officer or merchandising head."
+                >
+                  <TextInput
+                    value={formData.contact_person || ""}
+                    onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
+                    placeholder="e.g. John Doe / Country Manager"
+                  />
+                </FormField>
+
+                {/* Email */}
+                <FormField
+                  label="Official Email"
+                  error={errors.email}
+                  helperText="Corporate inbox for purchase orders & notices."
+                >
+                  <TextInput
+                    type="email"
+                    value={formData.email || ""}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="e.g. sourcing@agent.com"
+                    isError={!!errors.email}
+                  />
+                </FormField>
+
+                {/* Phone */}
+                <FormField
+                  label="Phone / Hotline"
+                  helperText="Primary business telephone or mobile number."
+                >
+                  <TextInput
+                    value={formData.phone || ""}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="e.g. +880 1700-000000"
+                  />
+                </FormField>
+
+                {/* Commission Rate */}
+                <FormField
+                  label="Commission Rate (% FOB)"
+                  error={errors.commission_rate}
+                  helperText="Standard agency commission rate on FOB order value."
+                >
+                  <div className="relative">
+                    <TextInput
+                      type="number"
+                      step="0.01"
+                      value={formData.commission_rate === null ? "" : formData.commission_rate}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          commission_rate: e.target.value === "" ? null : Number(e.target.value),
+                        })
+                      }
+                      placeholder="e.g. 5.00"
+                      isError={!!errors.commission_rate}
+                    />
+                    <Percent className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </FormField>
+
+                {/* Office Address */}
+                <div className="md:col-span-2">
+                  <FormField
+                    label="Office Address"
+                    helperText="Physical office or liaison address."
+                  >
+                    <textarea
+                      rows={3}
+                      value={formData.address || ""}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      placeholder="e.g. Level 7, Sourcing Tower, Gulshan-2, Dhaka"
+                      className={`w-full ${UI_TOKENS.input.base} resize-none`}
+                    />
+                  </FormField>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Bottom Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => onNavigate("/master/agents")}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            icon={<Save className="w-4 h-4" />}
-            disabled={isSubmitting}
-          >
-            {mode === "create" ? "Save Buying Agent" : "Save Changes"}
-          </Button>
+          {/* Right 1/3 Sidebar (Settings & Status) */}
+          <div className="space-y-4">
+            {/* Operational Status Card */}
+            <div className={UI_TOKENS.card.base}>
+              <div className={UI_TOKENS.card.header}>
+                <h2 className={UI_TOKENS.card.title}>Operational Status</h2>
+                <Badge variant={formData.is_active ? "success" : "neutral"}>
+                  {formData.is_active ? "Active" : "Suspended"}
+                </Badge>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Active agents are immediately selectable in buyer creation and merchandising inquiries.
+                </p>
+
+                <div className="pt-2">
+                  <Toggle
+                    checked={formData.is_active}
+                    onChange={(val) => setFormData({ ...formData, is_active: val })}
+                    activeText="Active & Operational"
+                    inactiveText="Inactive / Suspended"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Summary Card */}
+            <div className={UI_TOKENS.card.base}>
+              <div className={UI_TOKENS.card.header}>
+                <h2 className={UI_TOKENS.card.title}>System Lineage</h2>
+              </div>
+              <div className="space-y-2 text-xs text-slate-600">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Target Code:</span>
+                  <Badge variant="code">{nextCode}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Mode:</span>
+                  <span className="font-semibold text-slate-800 uppercase">{mode}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </form>
     </div>

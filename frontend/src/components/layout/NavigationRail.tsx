@@ -69,28 +69,51 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
   const collapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
   const toggleRail = onToggleCollapse || (() => setInternalCollapsed(!internalCollapsed));
 
+  // Helper to find which category and parent contain the current module
+  const findActiveCategoryAndParent = (modId: string) => {
+    for (const cat of categories) {
+      for (const item of cat.items) {
+        if (item.id === modId) {
+          return { catId: cat.id, parentId: null };
+        }
+        if (item.subItems) {
+          for (const sub of item.subItems) {
+            if (sub.id === modId) {
+              return { catId: cat.id, parentId: item.id };
+            }
+          }
+        }
+      }
+    }
+    return { catId: 'governance', parentId: 'master-setup' };
+  };
+
+  const initialActive = findActiveCategoryAndParent(currentModuleId);
+
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-    auth: true,
-    governance: true,
-    merchandising: true,
-    materials: true,
-    shopfloor: true,
-    quality: true,
-    shipping: true,
-    profile: true,
+    [initialActive.catId]: true,
   });
 
   const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({
-    'auth-group': true,
-    'master-setup': true,
-    'merchandising-group': true,
-    'warehouse-group': true,
-    'cutting-group': true,
-    'sewing-group': true,
-    'qc-group': true,
-    'commercial-group': true,
-    'profile-group': true,
+    ...(initialActive.parentId ? { [initialActive.parentId]: true } : {}),
   });
+
+  // Automatically keep current module's category open when route changes
+  React.useEffect(() => {
+    const active = findActiveCategoryAndParent(currentModuleId);
+    if (active.catId) {
+      setOpenCategories((prev) => ({
+        ...prev,
+        [active.catId]: true,
+      }));
+    }
+    if (active.parentId) {
+      setExpandedParents((prev) => ({
+        ...prev,
+        [active.parentId!]: true,
+      }));
+    }
+  }, [currentModuleId]);
 
   const toggleCategory = (catId: string) => {
     setOpenCategories((prev) => ({ ...prev, [catId]: !prev[catId] }));
