@@ -165,14 +165,15 @@ export const AgentFormPage: React.FC<AgentFormPageProps> = ({
 
       {/* Page Header */}
       <PageHeader
-        title={mode === "create" ? "Register Buying Agent / House" : "Edit Buying Agent Profile"}
+        title={mode === "create" ? "Create New Buying Agent" : `Edit Buying Agent: ${formData.name}`}
         badgeCount={mode === "create" ? "New" : nextCode}
-        badgeLabel={mode === "create" ? "Agent" : ""}
+        badgeLabel={mode === "create" ? "Agent" : "Agent Code"}
         actions={
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
-              onClick={() => onNavigate("/master/agents")}
+              onClick={() => onNavigate(mode === "edit" && agentId ? `/master/agents/${agentId}` : "/master/agents")}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
@@ -182,7 +183,7 @@ export const AgentFormPage: React.FC<AgentFormPageProps> = ({
               disabled={isSubmitting}
               onClick={handleSubmit}
             >
-              {mode === "create" ? "Save Buying Agent" : "Save Changes"}
+              {isSubmitting ? "Saving..." : mode === "create" ? "Save Agent" : "Update Agent"}
             </Button>
           </div>
         }

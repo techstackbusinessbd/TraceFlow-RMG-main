@@ -93,7 +93,9 @@ export const CompanyDetailsPage: React.FC<CompanyDetailsPageProps> = ({
     <div className={UI_TOKENS.appLayout.mainContent}>
       {/* Tier 1: Header */}
       <PageHeader
-        title="Company Profile"
+        title={company.name}
+        badgeCount={company.code}
+        badgeLabel="Company Code"
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -101,7 +103,7 @@ export const CompanyDetailsPage: React.FC<CompanyDetailsPageProps> = ({
               icon={<ArrowLeft className="h-3.5 w-3.5" />}
               onClick={() => onNavigate("/companies")}
             >
-              Back to List
+              Back to Directory
             </Button>
             {!company.is_default && (
               <Button

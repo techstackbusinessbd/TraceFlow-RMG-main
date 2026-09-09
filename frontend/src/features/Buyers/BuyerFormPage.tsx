@@ -222,17 +222,18 @@ export const BuyerFormPage: React.FC<BuyerFormPageProps> = ({ mode, buyerId, onN
 
       {/* Tier 1: Page Header */}
       <PageHeader
-        title={mode === "create" ? "Register New Buyer" : `Edit Buyer: ${formData.name}`}
-        badgeLabel="Company"
-        badgeCount={selectedCompany ? selectedCompany.code : "Master Setup"}
+        title={mode === "create" ? "Create New Buyer" : `Edit Buyer: ${formData.name}`}
+        badgeLabel={mode === "create" ? "Company" : "Buyer Code"}
+        badgeCount={mode === "create" ? (selectedCompany ? selectedCompany.code : "Master Setup") : nextCode}
         actions={
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
               icon={<ArrowLeft className="h-3.5 w-3.5" />}
-              onClick={() => onNavigate("/master/buyers")}
+              onClick={() => onNavigate(mode === "edit" && buyerId ? `/master/buyers/${buyerId}` : "/master/buyers")}
+              disabled={isSubmitting}
             >
-              Back to Directory
+              Cancel
             </Button>
             <Button
               variant="primary"

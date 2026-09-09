@@ -301,7 +301,7 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
 
       {/* Tier 1: Sleek Header Row */}
       <PageHeader
-        title="Buying Agents Directory"
+        title="Buying Agent Directory"
         badgeCount={total}
         badgeLabel={total === 1 ? "Agent" : "Agents"}
         actions={
@@ -311,7 +311,7 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
               icon={<Plus className="w-4 h-4" />}
               onClick={() => onNavigate("/master/agents/create")}
             >
-              Register Agent
+              Create Agent
             </Button>
           ) : undefined
         }

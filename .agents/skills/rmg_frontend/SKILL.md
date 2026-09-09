@@ -96,6 +96,12 @@ Every entity details/view page MUST use `<div className={UI_TOKENS.appLayout.mai
    - Placing custom styled cards, shaded boxes, or borders inside another card is strictly prohibited. Keep form layouts clean, flat, and organized using 2-column `<FormField>` grids.
 4. **Strict Entity Naming Standard: "Company"**:
    - In all labels, headings, dropdowns, and microcopy, ALWAYS use the clean term **"Company"** or **"Company *"**. Phrases like "Sister Company", "Affiliated Unit", etc. are strictly prohibited.
+5. **System-Wide Uniform Naming, PageHeader, and Action Consistency Standard**:
+   - All directory views across the entire ERP MUST be suffixed with **"Directory"** (e.g. `User Directory`, `Company Directory`, `Buyer Directory`, `Buying Agent Directory`, `Supplier Directory`).
+   - The Sidebar Navigation Rail, Top Pinned Breadcrumb, and `<PageHeader>` Title MUST use the exact same directory name without discrepancies.
+   - PageHeader Counter Badge: `{total} <Entities>` (e.g., `{total} Users`, `{total} Companies`, `{total} Buyers`, `{total} Agents`).
+   - PageHeader Action Buttons: Primary action is always `"Create <Entity>"` (with Plus icon). Secondary export action is always `"Export Directory"` (with Download icon). Create/Edit action is always `"Cancel"` and `"Save <Entity>"`. Details action is always `"Back to Directory"` and `"Edit <Entity>"`.
+
 
 ---
 

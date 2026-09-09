@@ -210,16 +210,16 @@ export function App() {
         { label: "Governance & Setup", href: "/companies" },
       ];
       if (companyRoute.type === "list") {
-        return [...base, { label: "Companies", active: true }];
+        return [...base, { label: "Company Directory", active: true }];
       }
       if (companyRoute.type === "create") {
-        return [...base, { label: "Companies", href: "/companies" }, { label: "Register Company", active: true }];
+        return [...base, { label: "Company Directory", href: "/companies" }, { label: "Create Company", active: true }];
       }
       if (companyRoute.type === "edit") {
-        return [...base, { label: "Companies", href: "/companies" }, { label: "Edit Company", active: true }];
+        return [...base, { label: "Company Directory", href: "/companies" }, { label: "Edit Company", active: true }];
       }
       if (companyRoute.type === "view") {
-        return [...base, { label: "Companies", href: "/companies" }, { label: "Company Profile", active: true }];
+        return [...base, { label: "Company Directory", href: "/companies" }, { label: "Company Profile", active: true }];
       }
     }
     if (isUserSection) {
@@ -261,16 +261,16 @@ export function App() {
         { label: "Master Data", href: "/master/agents" },
       ];
       if (agentRoute.type === "list") {
-        return [...base, { label: "Buying Agents Directory", active: true }];
+        return [...base, { label: "Buying Agent Directory", active: true }];
       }
       if (agentRoute.type === "create") {
-        return [...base, { label: "Buying Agents Directory", href: "/master/agents" }, { label: "Register Agent", active: true }];
+        return [...base, { label: "Buying Agent Directory", href: "/master/agents" }, { label: "Create Agent", active: true }];
       }
       if (agentRoute.type === "edit") {
-        return [...base, { label: "Buying Agents Directory", href: "/master/agents" }, { label: "Edit Agent", active: true }];
+        return [...base, { label: "Buying Agent Directory", href: "/master/agents" }, { label: "Edit Agent", active: true }];
       }
       if (agentRoute.type === "view") {
-        return [...base, { label: "Buying Agents Directory", href: "/master/agents" }, { label: "Agent Profile", active: true }];
+        return [...base, { label: "Buying Agent Directory", href: "/master/agents" }, { label: "Agent Profile", active: true }];
       }
     }
     if (isBuyerSection) {
@@ -279,16 +279,16 @@ export function App() {
         { label: "Master Data", href: "/master/buyers" },
       ];
       if (buyerRoute.type === "list") {
-        return [...base, { label: "Buyers & Brands", active: true }];
+        return [...base, { label: "Buyer Directory", active: true }];
       }
       if (buyerRoute.type === "create") {
-        return [...base, { label: "Buyers & Brands", href: "/master/buyers" }, { label: "Register Buyer", active: true }];
+        return [...base, { label: "Buyer Directory", href: "/master/buyers" }, { label: "Create Buyer", active: true }];
       }
       if (buyerRoute.type === "edit") {
-        return [...base, { label: "Buyers & Brands", href: "/master/buyers" }, { label: "Edit Buyer", active: true }];
+        return [...base, { label: "Buyer Directory", href: "/master/buyers" }, { label: "Edit Buyer", active: true }];
       }
       if (buyerRoute.type === "view") {
-        return [...base, { label: "Buyers & Brands", href: "/master/buyers" }, { label: "Buyer Profile", active: true }];
+        return [...base, { label: "Buyer Directory", href: "/master/buyers" }, { label: "Buyer Profile", active: true }];
       }
     }
     return [

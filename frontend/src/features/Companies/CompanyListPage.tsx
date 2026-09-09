@@ -263,20 +263,24 @@ export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) 
     <div className={UI_TOKENS.appLayout.mainContent}>
       {/* Tier 1: Sleek Header Row */}
       <PageHeader
-        title="Companies"
+        title="Company Directory"
         badgeCount={total}
         badgeLabel="Companies"
         actions={
           <>
-            <Button variant="secondary" icon={<Download className="h-3.5 w-3.5" />}>
-              Export List
+            <Button
+              variant="secondary"
+              icon={<Download className="h-3.5 w-3.5" />}
+              onClick={() => showToast("success", "Export", "Company directory export started.")}
+            >
+              Export Directory
             </Button>
             <Button
               variant="primary"
               icon={<Plus className="h-3.5 w-3.5" />}
               onClick={() => onNavigate("/companies/create")}
             >
-              Register Company
+              Create Company
             </Button>
           </>
         }

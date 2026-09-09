@@ -58,6 +58,15 @@ Your job is to assume the required engineering roles to build this system.
   2. **Uniform Shell & Typography**: Header row styling, border-colors, hover transitions, and alternating background tokens must strictly come from `UI_TOKENS.table.*`.
   3. **Standard Footer & Pagination**: Every table must feature the fixed footer showing record range summary on the left ("Showing X to Y of Z records", per-page selector) and pagination on the right ("Page X of Y", `< Previous`, `> Next` flat buttons).
   4. **Dynamic Column Definitions**: Each page specifies its domain-specific data through strongly-typed `ColumnDef<T>[]` (e.g., entity codes in mono font, status pills using `<Badge>`, avatars/identifiers, and actions using `<TableActionButton>`).
+- **System-Wide Uniform Naming, PageHeader, and Action Consistency Standard (STRICT & FINAL)**: Across the entire application, all data entities MUST follow 100% identical naming convention, breadcrumb structure, and PageHeader action button patterns. The layout format is immutable and strictly uniform; only the specific entity content changes:
+  1. **Uniform Entity Directory Naming**: All directory/list views MUST use the suffix **"Directory"** (e.g., `User Directory`, `Company Directory`, `Buyer Directory`, `Buying Agent Directory`, `Supplier Directory`). In Navigation Rail, Sub-items, and Pinned Breadcrumbs, the exact same directory name MUST match 1-to-1 without discrepancies.
+  2. **Uniform Item Counter Badge**: In `<PageHeader>`, the count badge label MUST always be the pluralized entity name (e.g., `{total} Users`, `{total} Companies`, `{total} Buyers`, `{total} Agents`).
+  3. **Uniform Header Action Buttons**:
+     - **List Page Primary Action**: ALWAYS use the flat, crisp format `"Create <Entity>"` (e.g., `Create User`, `Create Company`, `Create Buyer`, `Create Agent`) with a `Plus` icon (`<Button variant="primary" icon={<Plus className="w-4 h-4" />}>Create Buyer</Button>`).
+     - **List Page Secondary Action**: When exporting is supported, ALWAYS use `"Export Directory"` with a `Download` icon (`<Button variant="secondary" icon={<Download className="w-4 h-4" />}>Export Directory</Button>`).
+     - **Create/Edit Page Header Actions**: ALWAYS provide `"Cancel"` or `"Back to Directory"` (`<Button variant="secondary">`) on the left and `"Save <Entity>"` / `"Save Changes"` (`<Button variant="primary">`) on the right.
+     - **Details Page Header Actions**: ALWAYS provide `"Back to Directory"` (`<Button variant="secondary">`) on the left and `"Edit <Entity>"` (`<Button variant="primary">`) on the right.
+
 
 ## Communication Rules
 - **Language**: You MUST always communicate with the user in Bengali (Bangla).

@@ -122,19 +122,19 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
           subItems: [
             {
               id: 'master-companies',
-              label: 'Companies',
+              label: 'Company Directory',
               requiredPermissions: ['system_admin.companies.profile.view'],
               requiredRoles: ['superadmin', 'admin'],
             },
             {
               id: 'master-agents',
-              label: 'Buying Agents',
+              label: 'Buying Agent Directory',
               requiredPermissions: ['master_data.agents.profile.view'],
               requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
             },
             {
               id: 'master-buyers',
-              label: 'Buyers & Brands',
+              label: 'Buyer Directory',
               requiredPermissions: ['master_data.buyers.profile.view'],
               requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
             },

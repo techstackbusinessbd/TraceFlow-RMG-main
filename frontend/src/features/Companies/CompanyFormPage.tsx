@@ -157,8 +157,6 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
     }
   };
 
-  const pageTitle = isEditMode ? "Edit Company" : "Register Company";
-
   if (isLoadingData) {
     return (
       <div className={UI_TOKENS.appLayout.mainContent}>
@@ -176,15 +174,28 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
     <div className={UI_TOKENS.appLayout.mainContent}>
       {/* Tier 1: Page Header */}
       <PageHeader
-        title={pageTitle}
+        title={isEditMode ? `Edit Company: ${name}` : "Create New Company"}
+        badgeCount={isEditMode ? code : "New"}
+        badgeLabel={isEditMode ? "Company Code" : "Company"}
         actions={
-          <Button
-            variant="secondary"
-            icon={<ArrowLeft className="h-3.5 w-3.5" />}
-            onClick={() => onNavigate(isEditMode && companyId ? `/companies/${companyId}` : "/companies")}
-          >
-            Back to List
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              icon={<ArrowLeft className="h-3.5 w-3.5" />}
+              onClick={() => onNavigate(isEditMode && companyId ? `/companies/${companyId}` : "/companies")}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              icon={<Save className="h-3.5 w-3.5" />}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Saving..." : isEditMode ? "Update Company" : "Save Company"}
+            </Button>
+          </div>
         }
       />
 
