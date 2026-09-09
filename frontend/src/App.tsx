@@ -19,6 +19,7 @@ import { BuyerDetailsPage } from "./features/Buyers/BuyerDetailsPage";
 import { AgentListPage } from "./features/Agents/AgentListPage";
 import { AgentFormPage } from "./features/Agents/AgentFormPage";
 import { AgentDetailsPage } from "./features/Agents/AgentDetailsPage";
+import { NotFoundPage } from "./components/common/NotFoundPage";
 import { useAuthStore } from "./store/authStore";
 
 
@@ -293,8 +294,7 @@ export function App() {
     }
     return [
       { label: "Home", href: "/dashboard" },
-      { label: "Master Data", href: "/master/buyers" },
-      { label: "Buyer Directory", active: true },
+      { label: "Page Not Found", active: true },
     ];
   };
 
@@ -383,8 +383,8 @@ export function App() {
       }
     }
 
-    // Default Fallback: Live Dynamic Buyer List Page
-    return <BuyerListPage onNavigate={navigateTo} />;
+    // Standard 404 Fallback for unmapped/wrong routes
+    return <NotFoundPage currentPath={currentPath} onNavigate={navigateTo} />;
   };
 
   return (
