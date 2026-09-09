@@ -84,10 +84,9 @@ export function App() {
   const { isAuthenticated, canAccessWidget } = useAuthStore();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
-  const canViewDashboard = canAccessWidget(
-    ['dashboard.view', 'executive.dashboard.view'],
-    ['superadmin', 'admin', 'executive', 'management']
-  );
+  // Dashboard is accessible to all authenticated users; inner widgets are permission-dependent
+  const canViewDashboard = isAuthenticated;
+
   const canViewMasterBuyers = canAccessWidget(
     ['master_data.buyers.profile.view'],
     ['superadmin', 'admin', 'standarduser', 'merchandiser']
@@ -109,7 +108,7 @@ export function App() {
     ['superadmin', 'admin', 'standarduser', 'merchandiser']
   );
 
-  const defaultLandingPath = canViewDashboard ? "/dashboard" : "/master/buyers";
+  const defaultLandingPath = "/dashboard";
 
   useEffect(() => {
     const handlePopState = () => setCurrentPath(window.location.pathname);
@@ -122,12 +121,9 @@ export function App() {
       if (currentPath === "/" || currentPath === "/login") {
         window.history.replaceState({}, "", defaultLandingPath);
         setCurrentPath(defaultLandingPath);
-      } else if (currentPath === "/dashboard" && !canViewDashboard && canViewMasterBuyers) {
-        window.history.replaceState({}, "", "/master/buyers");
-        setCurrentPath("/master/buyers");
       }
     }
-  }, [isAuthenticated, currentPath, canViewDashboard, canViewMasterBuyers, defaultLandingPath]);
+  }, [isAuthenticated, currentPath, defaultLandingPath]);
 
   if (!isAuthenticated) {
     return <LoginPage />;

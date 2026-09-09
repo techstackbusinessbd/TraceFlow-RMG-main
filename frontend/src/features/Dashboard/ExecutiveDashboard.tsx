@@ -312,6 +312,24 @@ export const ExecutiveDashboard: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Graceful Fallback if User has no active widgets assigned */}
+      {visibleCardsCount === 0 && !hasAnyBottomSection && (
+        <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-lg border border-slate-200/90 text-center shadow-xs">
+          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-[#0066FF] mb-3 border border-blue-100">
+            <Activity className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-semibold text-slate-900 mb-1">
+            Welcome to TraceFlow RMG
+          </h3>
+          <p className="text-xs text-slate-500 max-w-md mb-4">
+            You are logged in, but there are currently no operational KPI widgets or floor feeds assigned to your role permissions.
+          </p>
+          <div className="flex items-center gap-2">
+            <Badge variant="neutral">Role-Based Dashboard Active</Badge>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
