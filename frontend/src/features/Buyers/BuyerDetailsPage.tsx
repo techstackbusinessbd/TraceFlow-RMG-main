@@ -138,10 +138,20 @@ export const BuyerDetailsPage: React.FC<BuyerDetailsPageProps> = ({ buyerId, onN
               </Badge>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-slate-400 block mb-0.5">Sourcing Channel</span>
-                <div className="flex items-center gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Buyer Code</p>
+                <Badge variant="code">{buyer.code}</Badge>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Buyer Legal Name</p>
+                <p className="text-sm font-bold text-slate-900">{buyer.name}</p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Sourcing Channel</p>
+                <div className="mt-0.5">
                   {buyer.buyer_type === "agent" ? (
                     <Badge variant="info">Via Buying Agent</Badge>
                   ) : (
@@ -150,83 +160,87 @@ export const BuyerDetailsPage: React.FC<BuyerDetailsPageProps> = ({ buyerId, onN
                 </div>
               </div>
 
-              <div>
-                <span className="text-slate-400 block mb-0.5">Buying Agent / House</span>
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Buying Agent / House</p>
                 {buyer.buyer_type === "agent" && buyer.agent ? (
                   <div
                     onClick={() => onNavigate(`/master/agents/${buyer.agent?.id}`)}
-                    className="font-medium text-[#0066FF] hover:underline cursor-pointer flex items-center gap-1.5"
+                    className="font-medium text-sm text-[#0066FF] hover:underline cursor-pointer flex items-center gap-1.5 mt-0.5"
                   >
                     <span>{buyer.agent.name}</span>
                     <Badge variant="code">{buyer.agent.code}</Badge>
                   </div>
                 ) : (
-                  <span className="text-slate-400">None (Direct Engagement)</span>
+                  <p className="text-sm text-slate-400">None (Direct Engagement)</p>
                 )}
               </div>
 
-              <div>
-                <span className="text-slate-400 block mb-0.5">Company</span>
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Company</p>
                 <div className="mt-0.5">
-                  <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
-                    {buyer.company?.name || "Platform Owner"} ({buyer.company?.code || "PLT"})
-                  </span>
+                  <Badge variant="neutral">{buyer.company?.name || "Platform Unit"} ({buyer.company?.code || "PLT"})</Badge>
                 </div>
               </div>
 
-              <div>
-                <span className="text-slate-400 block mb-0.5">Country of Origin</span>
-                <div className="flex items-center gap-1.5 font-medium text-slate-800">
-                  <Globe className="h-3.5 w-3.5 text-slate-500" />
-                  {buyer.country}
-                </div>
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                  <Globe className="w-3 h-3" /> Country of Origin
+                </p>
+                <p className="text-sm font-medium text-slate-800">{buyer.country}</p>
               </div>
 
-              <div>
-                <span className="text-slate-400 block mb-0.5">Payment Terms</span>
-                <span className="font-medium text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 inline-block">
-                  {buyer.payment_terms || "Not Specified"}
-                </span>
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Payment Terms</p>
+                <p className="text-sm font-medium text-slate-800">{buyer.payment_terms || <span className="text-slate-400">Not Specified</span>}</p>
               </div>
 
-              <div>
-                <span className="text-slate-400 block mb-0.5">Contact Person</span>
-                <span className="font-medium text-slate-800">{buyer.contact_person || "—"}</span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block mb-0.5">Official Email</span>
-                <div className="flex items-center gap-1.5 text-slate-700">
-                  <Mail className="h-3.5 w-3.5 text-slate-400" />
-                  {buyer.email || "—"}
-                </div>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block mb-0.5">Telephone</span>
-                <div className="flex items-center gap-1.5 text-slate-700">
-                  <Phone className="h-3.5 w-3.5 text-slate-400" />
-                  {buyer.phone ? formatPhoneNumber(buyer.phone) : "—"}
-                </div>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block mb-0.5">Registered On</span>
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                  {buyer.created_at ? new Date(buyer.created_at).toLocaleDateString() : "—"}
-                </div>
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                  <Calendar className="w-3 h-3" /> Registered On
+                </p>
+                <p className="text-sm text-slate-700">
+                  {buyer.created_at ? new Date(buyer.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+                </p>
               </div>
             </div>
 
-            {buyer.address && (
-              <div className="pt-3 mt-3 border-t border-slate-100">
-                <span className="text-slate-400 text-xs block mb-1">Headquarters / Regional Office</span>
-                <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-md border border-slate-200">
-                  {buyer.address}
-                </p>
+            {/* Contact Information in Buyer Profile */}
+            <div className="pt-4 mt-4 border-t border-slate-100">
+              <h3 className="text-xs font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-[#0066FF]" />
+                Buyer Contact Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Contact Person</p>
+                  <p className="text-sm font-medium text-slate-800">{buyer.contact_person || <span className="text-slate-400">Not provided</span>}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Official Email</p>
+                  {buyer.email ? (
+                    <a href={`mailto:${buyer.email}`} className="text-sm text-[#0066FF] hover:underline font-medium block truncate">
+                      {buyer.email}
+                    </a>
+                  ) : (
+                    <p className="text-sm text-slate-400">Not provided</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                    <Phone className="w-3 h-3" /> Phone Number
+                  </p>
+                  <p className="text-sm font-mono text-slate-800">
+                    {buyer.phone ? formatPhoneNumber(buyer.phone) : <span className="text-slate-400 font-sans">Not provided</span>}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Office Address</p>
+                  <p className="text-sm text-slate-800 leading-relaxed bg-slate-50 p-2 rounded-md border border-slate-200">
+                    {buyer.address || <span className="text-slate-400">No office address registered.</span>}
+                  </p>
+                </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Brands Card */}
@@ -246,13 +260,13 @@ export const BuyerDetailsPage: React.FC<BuyerDetailsPageProps> = ({ buyerId, onN
                 {buyer.brands.map((b) => (
                   <div
                     key={b.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-md border border-slate-200"
+                    className="p-2.5 bg-slate-50 rounded-md border border-slate-200 flex items-center justify-between"
                   >
                     <div>
                       <span className="text-xs font-semibold text-slate-900 block">{b.name}</span>
                       {b.code && <span className="text-[10px] font-mono text-slate-500">Code: {b.code}</span>}
                     </div>
-                    <Badge variant={b.is_active ? "neutral" : "danger"}>
+                    <Badge variant={b.is_active ? "success" : "danger"}>
                       {b.is_active ? "Active" : "Inactive"}
                     </Badge>
                   </div>
@@ -272,13 +286,20 @@ export const BuyerDetailsPage: React.FC<BuyerDetailsPageProps> = ({ buyerId, onN
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-md border border-slate-100">
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
                 <span className="text-xs text-slate-600">Assigned Brands</span>
-                <span className="text-base font-bold text-[#0066FF]">{buyer.brands?.length || 0}</span>
+                <Badge variant="neutral">{buyer.brands?.length || 0} Brands</Badge>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-md border border-slate-100">
-                <span className="text-xs text-slate-600">Operational Status</span>
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <span className="text-xs text-slate-600">Sourcing Model</span>
+                <span className="text-xs font-semibold text-slate-800">
+                  {buyer.buyer_type === "agent" ? "Buying Agent" : "Direct Buyer"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs text-slate-600">PO Eligibility</span>
                 {buyer.is_active ? (
                   <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
                     <CheckCircle2 className="h-3.5 w-3.5" />
