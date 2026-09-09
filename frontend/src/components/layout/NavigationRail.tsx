@@ -447,30 +447,33 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
     ...(initialActive.parentId ? { [initialActive.parentId]: true } : {}),
   });
 
-  // Automatically keep current module's category open when route changes
+  // Strictly open ONLY the active parent group, close all others
   React.useEffect(() => {
     const active = findActiveCategoryAndParent(currentModuleId);
     if (active.catId) {
-      setOpenCategories((prev) => ({
-        ...prev,
-        [active.catId]: true,
-      }));
+      setOpenCategories({ [active.catId]: true });
     }
     if (active.parentId) {
-      setExpandedParents((prev) => ({
-        ...prev,
-        [active.parentId!]: true,
-      }));
+      setExpandedParents({ [active.parentId]: true });
+    } else {
+      setExpandedParents({});
     }
   }, [currentModuleId]);
 
   const toggleCategory = (catId: string) => {
-    setOpenCategories((prev) => ({ ...prev, [catId]: !prev[catId] }));
+    setOpenCategories((prev) => ({
+      // Accordion behavior: close others if opening a new category
+      [catId]: !prev[catId],
+    }));
   };
 
   const toggleParent = (parentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpandedParents((prev) => ({ ...prev, [parentId]: !prev[parentId] }));
+    setExpandedParents((prev) => {
+      // Accordion behavior: if already open, toggle off; if closed, close all others and open this one
+      const wasOpen = !!prev[parentId];
+      return wasOpen ? {} : { [parentId]: true };
+    });
   };
 
   return (
