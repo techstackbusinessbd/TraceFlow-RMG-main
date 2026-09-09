@@ -284,7 +284,7 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className={UI_TOKENS.appLayout.mainContent}>
       {toast && (
         <Toast
           type={toast.type}

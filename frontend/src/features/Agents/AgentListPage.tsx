@@ -288,7 +288,7 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <div className="p-6 space-y-5 max-w-[1600px] mx-auto">
+    <div className={UI_TOKENS.appLayout.mainContent}>
       {/* Toast Notification */}
       {toast && (
         <Toast

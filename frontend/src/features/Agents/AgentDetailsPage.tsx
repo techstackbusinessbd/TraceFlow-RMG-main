@@ -8,9 +8,13 @@ import {
   User,
   Percent,
   Layers,
+  Building2,
+  RefreshCw,
 } from "lucide-react";
+import { PageHeader } from "../../components/common/PageHeader";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
+import { UI_TOKENS } from "../../config/designTokens";
 import { getAgentById, type Agent } from "../../services/agentService";
 import { useAuthStore } from "../../store/authStore";
 
@@ -48,73 +52,71 @@ export const AgentDetailsPage: React.FC<AgentDetailsPageProps> = ({
 
   if (loading) {
     return (
-      <div className="p-12 text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-300 border-t-slate-900 mb-4" />
-        <p className="text-sm text-slate-500">Loading buying agent profile...</p>
+      <div className={UI_TOKENS.appLayout.mainContent}>
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center gap-2 text-slate-500 text-sm">
+            <RefreshCw className="w-4 h-4 animate-spin" />
+            Loading buying agent profile...
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error || !agent) {
     return (
-      <div className="p-12 text-center max-w-md mx-auto">
-        <div className="p-4 bg-rose-50 text-rose-700 rounded-lg text-sm mb-4">
-          {error || "Buying agent profile not found."}
+      <div className={UI_TOKENS.appLayout.mainContent}>
+        <div className="flex flex-col items-center justify-center h-64 gap-3">
+          <Building2 className="w-10 h-10 text-slate-300" />
+          <p className="text-sm text-slate-600">{error || "Buying agent profile not found."}</p>
+          <Button variant="secondary" icon={<ArrowLeft className="h-3.5 w-3.5" />} onClick={() => onNavigate("/master/agents")}>
+            Back to Agents
+          </Button>
         </div>
-        <Button variant="secondary" onClick={() => onNavigate("/master/agents")}>
-          Back to Agents Directory
-        </Button>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      {/* Header Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="secondary"
-            icon={<ArrowLeft className="h-4 w-4" />}
-            onClick={() => onNavigate("/master/agents")}
-          >
-            Back
-          </Button>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-xl font-bold text-slate-900">{agent.name}</h1>
-              <Badge variant="code">{agent.code}</Badge>
+    <div className={UI_TOKENS.appLayout.mainContent}>
+      {/* Tier 1: Page Header */}
+      <PageHeader
+        title={agent.name}
+        badgeCount={agent.code}
+        badgeLabel="Agent Code"
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              icon={<ArrowLeft className="h-3.5 w-3.5" />}
+              onClick={() => onNavigate("/master/agents")}
+            >
+              Back to List
+            </Button>
+            {canEdit && (
+              <Button
+                variant="primary"
+                icon={<Edit2 className="h-3.5 w-3.5" />}
+                onClick={() => onNavigate(`/master/agents/${agent.id}/edit`)}
+              >
+                Edit Agent
+              </Button>
+            )}
+          </div>
+        }
+      />
+
+      {/* Grid: Details & Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left 2 Columns: Core Profile Information */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className={UI_TOKENS.card.base}>
+            <div className={UI_TOKENS.card.header}>
+              <h2 className={UI_TOKENS.card.title}>Corporate Details</h2>
               <Badge variant={agent.is_active ? "success" : "danger"}>
                 {agent.is_active ? "Active" : "Inactive"}
               </Badge>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Company: {agent.company?.name || "Platform Owner"} ({agent.company?.code || "PLT"})
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {canEdit && (
-            <Button
-              variant="primary"
-              icon={<Edit2 className="w-3.5 h-3.5" />}
-              onClick={() => onNavigate(`/master/agents/${agent.id}/edit`)}
-            >
-              Edit Agent
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Grid: Details & Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Left 2 Columns: Core Profile Information */}
-        <div className="md:col-span-2 space-y-5">
-          <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-2">
-              Corporate Details
-            </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
@@ -126,7 +128,7 @@ export const AgentDetailsPage: React.FC<AgentDetailsPageProps> = ({
                 <span className="font-semibold text-slate-800">{agent.country}</span>
               </div>
               <div>
-                <span className="text-slate-400 block mb-0.5">Company Affiliation</span>
+                <span className="text-slate-400 block mb-0.5">Company</span>
                 <div className="mt-0.5">
                   <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
                     {agent.company?.code || "PLT"}
@@ -148,10 +150,10 @@ export const AgentDetailsPage: React.FC<AgentDetailsPageProps> = ({
           </div>
 
           {/* Contact Details Card */}
-          <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-2">
-              Contact & Liaison Office
-            </h2>
+          <div className={UI_TOKENS.card.base}>
+            <div className={UI_TOKENS.card.header}>
+              <h2 className={UI_TOKENS.card.title}>Contact & Liaison Office</h2>
+            </div>
 
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-xs text-slate-700">
@@ -167,7 +169,7 @@ export const AgentDetailsPage: React.FC<AgentDetailsPageProps> = ({
                 <div>
                   <span className="text-slate-400 block">Official Email</span>
                   {agent.email ? (
-                    <a href={`mailto:${agent.email}`} className="text-blue-600 hover:underline">
+                    <a href={`mailto:${agent.email}`} className="text-[#0066FF] hover:underline">
                       {agent.email}
                     </a>
                   ) : (
@@ -196,10 +198,10 @@ export const AgentDetailsPage: React.FC<AgentDetailsPageProps> = ({
         </div>
 
         {/* Right 1 Column: Associated Buyers Under This Agent */}
-        <div className="space-y-5">
-          <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+        <div className="space-y-4">
+          <div className={UI_TOKENS.card.base}>
+            <div className={UI_TOKENS.card.header}>
+              <h2 className={`${UI_TOKENS.card.title} flex items-center gap-2`}>
                 <Layers className="w-4 h-4 text-slate-500" />
                 Linked Buyers
               </h2>
@@ -214,7 +216,7 @@ export const AgentDetailsPage: React.FC<AgentDetailsPageProps> = ({
                   <div
                     key={b.id}
                     onClick={() => onNavigate(`/master/buyers/${b.id}`)}
-                    className="p-3 border border-slate-200 rounded-lg hover:border-slate-400 hover:bg-slate-50 cursor-pointer transition-colors"
+                    className="p-3 border border-slate-200 rounded-md hover:border-blue-300 hover:bg-slate-50 cursor-pointer transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono font-semibold text-slate-700">{b.code}</span>
@@ -228,7 +230,7 @@ export const AgentDetailsPage: React.FC<AgentDetailsPageProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="p-4 bg-slate-50 rounded-lg text-center text-xs text-slate-500">
+              <div className="p-4 bg-slate-50 rounded-md text-center text-xs text-slate-500">
                 No buyers are currently registered via this agent.
               </div>
             )}

@@ -209,7 +209,7 @@ export const BuyerFormPage: React.FC<BuyerFormPageProps> = ({ mode, buyerId, onN
   const selectedCompany = companies.find((c) => c.id === selectedCompanyId);
 
   return (
-    <div className="space-y-5 max-w-7xl mx-auto pb-16 font-sans">
+    <div className={UI_TOKENS.appLayout.mainContent}>
       {toast && (
         <Toast
           type={toast.type}
@@ -219,10 +219,10 @@ export const BuyerFormPage: React.FC<BuyerFormPageProps> = ({ mode, buyerId, onN
         />
       )}
 
-      {/* Tier 1: Power Automate Fluent 2 Page Header */}
+      {/* Tier 1: Page Header */}
       <PageHeader
         title={mode === "create" ? "Register New Buyer" : `Edit Buyer: ${formData.name}`}
-        badgeLabel="Origin Entity"
+        badgeLabel="Company"
         badgeCount={selectedCompany ? selectedCompany.code : "Master Setup"}
         actions={
           <div className="flex items-center gap-2">
@@ -246,9 +246,9 @@ export const BuyerFormPage: React.FC<BuyerFormPageProps> = ({ mode, buyerId, onN
       />
 
       <form noValidate onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Main 2-Column Work Surface */}
-          <div className="lg:col-span-2 space-y-5">
+          <div className="lg:col-span-2 space-y-4">
             {/* Card 1: Core Buyer Identity */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>

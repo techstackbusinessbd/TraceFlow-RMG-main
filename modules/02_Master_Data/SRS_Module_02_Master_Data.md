@@ -120,8 +120,26 @@ graph TB
 - **REQ-MST-BYR-003 (Brand Hierarchy):**
   - একটি বায়ারের অধীনে একাধিক সাব-ব্র্যান্ড বা ডিভিশন থাকতে পারে (যেমন: Buyer: Inditex -> Brands: Zara, Massimo Dutti, Pull&Bear, Bershka)।
   - প্রতিটি ব্র্যান্ড বায়ারের সাথে ফরেন-কি রিলেশনশিপে যুক্ত থাকবে।
-- **REQ-MST-BYR-004 (Active/Inactive Toggle & Cache Sync):**
+- **REQ-MST-BYR-004 (Buyer Type & Sourcing Channel):**
+  - প্রতিটি বায়ারের একটি সোর্সিং চ্যানেল বা টাইপ থাকবে (`buyer_type` ENUM: `'direct'`, `'agent'`)।
+  - **Direct Buyer (`direct`):** বায়ার সরাসরি ফ্যাক্টরির সাথে চুক্তিবদ্ধ। কোনো এজেন্ট কমিশন বা মিডলম্যান ইনভলভড নয়।
+  - **Via Buying Agent / House (`agent`):** বায়ার একটি স্বীকৃত বায়িং এজেন্ট/হাউজের মাধ্যমে অর্ডার প্লেস করে। এই ক্ষেত্রে বাধ্যতামূলকভাবে সিস্টেম থেকে পূর্ব-নিবন্ধিত একটি `agent_id` সিলেক্ট করতে হবে।
+- **REQ-MST-BYR-005 (Active/Inactive Toggle & Cache Sync):**
   - কোনো বায়ারকে `Inactive` করা হলে নতুন কোনো Purchase Order (PO) তৈরির সময় ওই বায়ার ড্রপডাউনে আসবে না। কিন্তু পূর্ববর্তী সকল অর্ডারে বায়ারের হিস্টোরিক্যাল নাম অক্ষুণ্ণ থাকবে।
+
+---
+
+### ৫.১.বি সাব-মডিউল: বায়িং এজেন্ট ও সোর্সিং হাউজ লাইব্রেরি (Buying Agents & Houses Master)
+
+#### ৫.১.বি.১ স্পেসিফিকেশন ও বিজনেস লজিক
+- **REQ-MST-AGT-001 (Auto-Generated System Code Standard):**
+  - প্রতিটি বায়িং এজেন্টের একটি ইউনিক, ইন্টেলিজেন্ট কোড থাকবে যা কোম্পানি প্রিফিক্স সহযোগে ব্যাকএন্ড থেকে স্বয়ংক্রিয়ভাবে জেনারেট হবে (যেমন: `AWL-AGT-0001`)। ইউজার কোনো ম্যানুয়াল কোড টাইপ করতে পারবে না (`readOnly={true}`)।
+- **REQ-MST-AGT-002 (Agent Legal Entity & Sourcing Scope):**
+  - এজেন্টের লিগ্যাল কর্পোরেট নাম, হেডকোয়ার্টার দেশ (Country of Origin), মূল লিয়াজোঁ কন্টাক্ট পারসন, অফিসিয়াল ইমেইল, হটলাইন/মোবাইল এবং ফিজিক্যাল অফিস এড্রেস সংরক্ষিত থাকবে।
+- **REQ-MST-AGT-003 (Agency Commission & Terms):**
+  - প্রতি এজেন্ট অনুযায়ী স্ট্যান্ডার্ড এফওবি কমিশন পার্সেন্টেজ (`commission_rate` NUMERIC(5,2), e.g. `5.00%`) কনফিগারেশন রাখা যাবে, যা পরবর্তীতে কস্টিং এবং কমার্শিয়াল বিলিংয়ে রেফারেন্স হিসেবে ব্যবহৃত হবে।
+- **REQ-MST-AGT-004 (Referential Integrity with Buyers):**
+  - যদি কোনো বায়িং এজেন্টের অধীনে এক বা একাধিক বায়ার নিবন্ধিত থাকে (`buyers_count > 0`), তবে ওই এজেন্টকে কোনো অবস্থাতেই পার্মানেন্ট ডিলিট করা যাবে না (`409 Conflict: Cannot delete agent with linked buyers`)। শুধুমাত্র সফট ডিলিট অথবা ইন-অ্যাক্টিভ টগল অনুমোদিত।
 
 ---
 
@@ -241,27 +259,59 @@ graph TB
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ----------------------------------------------------------------------
--- 1. Table: buyers (Buyer Master)
+-- 1. Table: agents (Buying Agents & Houses Master)
+-- ----------------------------------------------------------------------
+CREATE TABLE agents (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
+    code VARCHAR(30) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    country VARCHAR(100) NOT NULL DEFAULT 'Bangladesh',
+    contact_person VARCHAR(100),
+    email VARCHAR(150),
+    phone VARCHAR(30),
+    address TEXT,
+    commission_rate NUMERIC(5, 2),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE UNIQUE INDEX uq_agents_code_active ON agents (UPPER(code)) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_agents_name_company ON agents (company_id, UPPER(name)) WHERE deleted_at IS NULL;
+CREATE INDEX idx_agents_company_id ON agents (company_id);
+CREATE INDEX idx_agents_is_active ON agents (is_active);
+
+-- ----------------------------------------------------------------------
+-- 2. Table: buyers (Buyer Master)
 -- ----------------------------------------------------------------------
 CREATE TABLE buyers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
     code VARCHAR(30) NOT NULL,
     name VARCHAR(120) NOT NULL,
+    buyer_type VARCHAR(20) NOT NULL DEFAULT 'direct', -- 'direct', 'agent'
+    agent_id BIGINT REFERENCES agents(id) ON DELETE RESTRICT,
     country VARCHAR(100) NOT NULL,
     currency VARCHAR(10) NOT NULL DEFAULT 'USD',
     payment_terms VARCHAR(100),
     contact_person VARCHAR(100),
     contact_email VARCHAR(150),
     contact_phone VARCHAR(30),
+    address TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMPTZ
 );
 
 CREATE UNIQUE INDEX uq_buyers_code_active ON buyers (UPPER(code)) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX uq_buyers_name_active ON buyers (UPPER(name)) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_buyers_name_company ON buyers (company_id, UPPER(name)) WHERE deleted_at IS NULL;
+CREATE INDEX idx_buyers_company_id ON buyers (company_id);
+CREATE INDEX idx_buyers_agent_id ON buyers (agent_id);
+CREATE INDEX idx_buyers_buyer_type ON buyers (buyer_type);
 CREATE INDEX idx_buyers_is_active ON buyers (is_active);
 CREATE INDEX idx_buyers_deleted_at ON buyers (deleted_at);
 
