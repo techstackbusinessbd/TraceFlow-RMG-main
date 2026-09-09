@@ -53,6 +53,16 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [newItemInput, setNewItemInput] = useState("");
+  const [itemError, setItemError] = useState<string | null>(null);
+
+  // Store user-added custom garment items grouped by category
+  const [customItemsMap, setCustomItemsMap] = useState<Record<string, string[]>>(() => {
+    const saved = localStorage.getItem("traceflow_style_custom_items");
+    return saved ? JSON.parse(saved) : {};
+  });
+
   const [isAddingSize, setIsAddingSize] = useState(false);
   const [newSizeInput, setNewSizeInput] = useState("");
   const [sizeModalError, setSizeModalError] = useState<string | null>(null);
@@ -113,6 +123,24 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
     // EU & International buyers (H&M, Inditex, Next, M&S, etc.)
     return metadata.seasons.eu;
   }, [formData.buyer_id, buyers, metadata]);
+
+  // Dynamically derive available Garment Items based on the selected Product Category
+  const availableGarmentItems: string[] = React.useMemo(() => {
+    const selectedCategory = formData.product_category;
+    const backendCategoryItems =
+      metadata.category_items?.[selectedCategory] ||
+      DEFAULT_MASTER_METADATA.category_items?.[selectedCategory] ||
+      [];
+    const userCustomItems = customItemsMap[selectedCategory] || [];
+
+    // Merge and de-duplicate
+    const combined = Array.from(new Set([...backendCategoryItems, ...userCustomItems]));
+    if (combined.length > 0) {
+      return combined;
+    }
+    // Fallback if custom/new category has no items yet
+    return metadata.garment_items || DEFAULT_MASTER_METADATA.garment_items;
+  }, [formData.product_category, metadata, customItemsMap]);
 
   // Keep combined formData.season synchronized when seasonName or seasonYear changes
   useEffect(() => {
@@ -384,6 +412,77 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
     showToast("success", "Category Added", `"${formatted}" has been added and selected.`);
   };
 
+  // Real-time suggestions for identical or closely matching items within current category
+  const itemSuggestions = React.useMemo(() => {
+    const input = newItemInput.trim();
+    if (!input || input.length < 2) return [];
+
+    const normInput = normalizeCategory(input);
+    const tokens = input.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
+
+    return availableGarmentItems.filter((item) => {
+      const normItem = normalizeCategory(item);
+      if (normItem.includes(normInput) || normInput.includes(normItem)) return true;
+      return tokens.some((token) => normItem.includes(token));
+    });
+  }, [newItemInput, availableGarmentItems]);
+
+  // Anti-Garbage Garment Item Addition with Duplicate & Formatting Guards
+  const handleSaveNewItem = () => {
+    const trimmed = newItemInput.trim().replace(/\s+/g, " ");
+    if (!trimmed) {
+      setItemError("Please enter a garment item name.");
+      return;
+    }
+
+    if (trimmed.length < 3) {
+      setItemError("Item name must be at least 3 characters.");
+      return;
+    }
+
+    // Auto Title-Case formatting (e.g. "combat tactical pants" -> "Combat Tactical Pants")
+    const formatted = trimmed
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+    // Check duplicate in current category items
+    const isDuplicate = availableGarmentItems.some(
+      (item) => normalizeCategory(item) === normalizeCategory(formatted)
+    );
+
+    if (isDuplicate) {
+      const existing = availableGarmentItems.find(
+        (item) => normalizeCategory(item) === normalizeCategory(formatted)
+      );
+      setItemError(`This item already exists as "${existing}" in this category.`);
+      return;
+    }
+
+    const currentCat = formData.product_category;
+    const existingList = customItemsMap[currentCat] || [];
+    const updatedMap = {
+      ...customItemsMap,
+      [currentCat]: [...existingList, formatted],
+    };
+
+    setCustomItemsMap(updatedMap);
+    localStorage.setItem("traceflow_style_custom_items", JSON.stringify(updatedMap));
+    setFormData((prev) => ({ ...prev, garment_item: formatted }));
+    setNewItemInput("");
+    setItemError(null);
+    setIsAddingItem(false);
+    showToast("success", "Item Added", `"${formatted}" added to ${currentCat}.`);
+  };
+
+  const handleSelectExistingItemSuggestion = (existingItem: string) => {
+    setFormData((prev) => ({ ...prev, garment_item: existingItem }));
+    setNewItemInput("");
+    setItemError(null);
+    setIsAddingItem(false);
+    showToast("success", "Item Selected", `"${existingItem}" selected from item library.`);
+  };
+
   const handleSelectExistingSuggestion = (existingCat: string) => {
     setFormData((prev) => ({ ...prev, product_category: existingCat }));
     setNewCategoryInput("");
@@ -632,7 +731,16 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                           setIsAddingCategory(true);
                           setCategoryError(null);
                         } else {
-                          setFormData((prev) => ({ ...prev, product_category: e.target.value }));
+                          const newCat = e.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            product_category: newCat,
+                            // Auto-select first item of newly selected category if available
+                            garment_item:
+                              (metadata.category_items?.[newCat] && metadata.category_items[newCat][0]) ||
+                              (DEFAULT_MASTER_METADATA.category_items?.[newCat] && DEFAULT_MASTER_METADATA.category_items[newCat][0]) ||
+                              "",
+                          }));
                         }
                       }}
                     >
@@ -663,19 +771,43 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                   label="Garment Item"
                   required
                   error={errors.garment_item}
-                  helperText="Specific garment article (e.g. Chino Pant, 5-Pocket Jeans)."
+                  helperText={`Articles under "${formData.product_category}".`}
                 >
-                  <TextInput
-                    list="garment-presets"
-                    placeholder="e.g. Casual Chino Pant, Formal Shirt, Cargo Pant"
-                    value={formData.garment_item}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, garment_item: e.target.value }))}
-                  />
-                  <datalist id="garment-presets">
-                    {(metadata.garment_items || []).map((item) => (
-                      <option key={item} value={item} />
-                    ))}
-                  </datalist>
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      className={`flex-1 ${UI_TOKENS.input.select} ${errors.garment_item ? UI_TOKENS.input.error : ""}`}
+                      value={formData.garment_item}
+                      onChange={(e) => {
+                        if (e.target.value === "__ADD_NEW_ITEM__") {
+                          setIsAddingItem(true);
+                          setItemError(null);
+                        } else {
+                          setFormData((prev) => ({ ...prev, garment_item: e.target.value }));
+                        }
+                      }}
+                    >
+                      <option value="">Select Garment Item...</option>
+                      {availableGarmentItems.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                      <option value="__ADD_NEW_ITEM__" className="text-blue-600 font-bold bg-blue-50">
+                        + Add New Item to {formData.product_category}...
+                      </option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingItem(true);
+                        setItemError(null);
+                      }}
+                      className="p-2 text-[#0066FF] hover:bg-blue-50 border border-blue-200 rounded-md transition-colors cursor-pointer shadow-2xs shrink-0"
+                      title={`Add New Item to ${formData.product_category}`}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </FormField>
 
                 <FormField label="Fabric Construction" required error={errors.fabric_type} helperText="Select popular weave/composition or type custom.">
@@ -1122,6 +1254,117 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                 onClick={handleSaveCustomSize}
               >
                 Add Size
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Anti-Garbage Quick Add Garment Item Modal Dialog */}
+      {isAddingItem && (
+        <div className={UI_TOKENS.launcherModal.backdrop} onClick={() => setIsAddingItem(false)}>
+          <div
+            className="w-full max-w-md bg-white rounded-xl shadow-2xl border border-slate-200 p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Add Garment Item</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Target Category: <span className="font-semibold text-slate-800">{formData.product_category}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddingItem(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {itemError && (
+              <div className="p-2.5 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-1.5">
+                <span className="font-bold shrink-0">⚠️ Alert:</span>
+                <span>{itemError}</span>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className={UI_TOKENS.form.label}>Garment Item Name</label>
+              <TextInput
+                placeholder="e.g. Utility Cargo Pant, Flannel Overshirt"
+                value={newItemInput}
+                onChange={(e) => {
+                  setNewItemInput(e.target.value);
+                  if (itemError) setItemError(null);
+                }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSaveNewItem();
+                  }
+                }}
+              />
+              <p className="text-[11px] text-slate-400">
+                Auto-formats title case and checks duplicates under this category.
+              </p>
+            </div>
+
+            {/* Smart Similar / Existing Items Suggestion Panel */}
+            {itemSuggestions.length > 0 && (
+              <div className="p-3 bg-amber-50/80 rounded-lg border border-amber-200 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Similar / Existing Items in This Category:</span>
+                </div>
+                <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+                  {itemSuggestions.map((sug) => (
+                    <div
+                      key={sug}
+                      onClick={() => handleSelectExistingItemSuggestion(sug)}
+                      className="flex items-center justify-between p-2 rounded bg-white hover:bg-amber-100/60 border border-amber-100 hover:border-amber-300 transition-colors cursor-pointer group text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Tag className="w-3 h-3 text-amber-500" />
+                        <span className="font-medium text-slate-800 group-hover:text-amber-900">{sug}</span>
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0066FF] group-hover:text-blue-700">
+                        Use this <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10.5px] text-amber-700">
+                  💡 Click <strong>"Use this"</strong> to select an existing item instead of creating a duplicate.
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setIsAddingItem(false);
+                  setNewItemInput("");
+                  setItemError(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleSaveNewItem}
+              >
+                Verify & Add Item
               </Button>
             </div>
           </div>

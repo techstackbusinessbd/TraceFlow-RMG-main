@@ -4,6 +4,7 @@ const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 export interface MasterMetadata {
   woven_categories: string[];
+  category_items?: Record<string, string[]>;
   garment_items: string[];
   fabric_constructions: string[];
   wash_types: string[];
@@ -32,6 +33,43 @@ export const DEFAULT_MASTER_METADATA: MasterMetadata = {
     "Cargo & Utility Shorts",
     "Outerwear / Woven Jackets",
   ],
+  category_items: {
+    "Woven Tops (Shirts/Blouses)": [
+      "Formal Dress Shirt",
+      "Casual Button-Down Shirt",
+      "Flannel Overshirt",
+      "Short-Sleeve Resort Shirt",
+      "Woven Tunic / Blouse",
+    ],
+    "Woven Bottoms (Trousers/Chinos)": [
+      "Casual Chino Pant",
+      "Slim Fit Stretch Chino",
+      "Tailored Dress Trouser",
+      "Pleated Work Trouser",
+      "Jogger Woven Pant",
+    ],
+    "Denim & Jeans": [
+      "5-Pocket Denim Jeans",
+      "Slim Tapered Denim Pant",
+      "Relaxed Fit Denim Jeans",
+      "Denim Trucker Jacket",
+      "Denim Carpenter Pant",
+    ],
+    "Cargo & Utility Shorts": [
+      "Cargo Utility Pant",
+      "Multi-Pocket Cargo Shorts",
+      "Bermuda Shorts",
+      "Chino Casual Shorts",
+      "Tactical Field Shorts",
+    ],
+    "Outerwear / Woven Jackets": [
+      "Woven Blazer / Suit Jacket",
+      "Harrington Cotton Jacket",
+      "Field Parka / Windbreaker",
+      "Safari Utility Overshirt",
+      "Puffer Woven Vest",
+    ],
+  },
   garment_items: [
     "Casual Chino Pant",
     "5-Pocket Denim Jeans",

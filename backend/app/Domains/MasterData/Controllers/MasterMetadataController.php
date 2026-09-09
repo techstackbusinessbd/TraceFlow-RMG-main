@@ -18,6 +18,7 @@ class MasterMetadataController extends Controller
         $metadata = Cache::remember('rmg_master_metadata', 86400, function () {
             return [
                 'woven_categories' => config('rmg_master.woven_categories', []),
+                'category_items' => config('rmg_master.category_items', []),
                 'garment_items' => config('rmg_master.garment_items', []),
                 'fabric_constructions' => config('rmg_master.fabric_constructions', []),
                 'wash_types' => config('rmg_master.wash_types', []),

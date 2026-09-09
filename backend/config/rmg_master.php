@@ -19,7 +19,46 @@ return [
         'Outerwear / Woven Jackets',
     ],
 
-    // Common Woven Garment Items
+    // Category-Dependent Woven Garment Items
+    'category_items' => [
+        'Woven Tops (Shirts/Blouses)' => [
+            'Formal Dress Shirt',
+            'Casual Button-Down Shirt',
+            'Flannel Overshirt',
+            'Short-Sleeve Resort Shirt',
+            'Woven Tunic / Blouse',
+        ],
+        'Woven Bottoms (Trousers/Chinos)' => [
+            'Casual Chino Pant',
+            'Slim Fit Stretch Chino',
+            'Tailored Dress Trouser',
+            'Pleated Work Trouser',
+            'Jogger Woven Pant',
+        ],
+        'Denim & Jeans' => [
+            '5-Pocket Denim Jeans',
+            'Slim Tapered Denim Pant',
+            'Relaxed Fit Denim Jeans',
+            'Denim Trucker Jacket',
+            'Denim Carpenter Pant',
+        ],
+        'Cargo & Utility Shorts' => [
+            'Cargo Utility Pant',
+            'Multi-Pocket Cargo Shorts',
+            'Bermuda Shorts',
+            'Chino Casual Shorts',
+            'Tactical Field Shorts',
+        ],
+        'Outerwear / Woven Jackets' => [
+            'Woven Blazer / Suit Jacket',
+            'Harrington Cotton Jacket',
+            'Field Parka / Windbreaker',
+            'Safari Utility Overshirt',
+            'Puffer Woven Vest',
+        ],
+    ],
+
+    // Flat fallback list of all unique garment items
     'garment_items' => [
         'Casual Chino Pant',
         '5-Pocket Denim Jeans',
