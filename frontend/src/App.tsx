@@ -215,10 +215,11 @@ export function App() {
   // Map current module/path to Category
   const getActiveCategory = (moduleId: string): string | null => {
     if (["profile", "profile-password", "admin-users", "admin-roles"].includes(moduleId)) return "auth";
-    if (["master-companies", "master-agents", "master-buyers", "master-styles", "master-suppliers", "master-units"].includes(moduleId)) return "governance";
-    if (["inquiries", "styles-costing", "techpacks", "order-pos"].includes(moduleId)) return "merchandising";
+    if (["master-companies"].includes(moduleId)) return "governance";
+    if (["master-buyers", "master-agents", "master-styles", "inquiries", "styles-costing", "techpacks", "order-pos"].includes(moduleId)) return "merchandising";
+    if (["master-suppliers"].includes(moduleId)) return "sourcing";
     if (["warehouse-rolls", "roll-grn", "shade-lots", "trims-warehouse"].includes(moduleId)) return "materials";
-    if (["cad-markers", "spreading-tables", "cutting-bundles", "sewing-lines", "hourly-production"].includes(moduleId)) return "shopfloor";
+    if (["master-units", "cad-markers", "spreading-tables", "cutting-bundles", "sewing-lines", "hourly-production"].includes(moduleId)) return "shopfloor";
     if (["qc-inspection", "cutting-qc", "endline-qc"].includes(moduleId)) return "quality";
     if (["finishing-packing", "export-shipment"].includes(moduleId)) return "shipping";
     return null;
