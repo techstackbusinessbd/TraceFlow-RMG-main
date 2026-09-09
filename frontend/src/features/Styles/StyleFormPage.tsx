@@ -54,6 +54,37 @@ const WASH_TYPES = [
   "Resin 3D Crinkle",
 ];
 
+const COMMON_SEASONS = [
+  "Spring/Summer 2026",
+  "Autumn/Winter 2026",
+  "Pre-Fall 2026",
+  "Spring/Summer 2027",
+  "Autumn/Winter 2027",
+  "All Seasons / Carry Over",
+];
+
+const COMMON_GARMENT_ITEMS = [
+  "Casual Chino Pant",
+  "5-Pocket Denim Jeans",
+  "Cargo Utility Pant",
+  "Bermuda Shorts",
+  "Formal Dress Shirt",
+  "Casual Button-Down Shirt",
+  "Flannel Overshirt",
+  "Woven Blazer / Jacket",
+];
+
+const COMMON_FABRICS = [
+  "100% Cotton Twill (240 GSM)",
+  "98% Cotton 2% Spandex Stretch Twill",
+  "100% Cotton Poplin (120 GSM)",
+  "100% Cotton Oxford Weave",
+  "100% Cotton Indigo Denim (12 oz)",
+  "99% Cotton 1% Elastane Denim",
+  "65% Polyester 35% Cotton (TC) Twill",
+  "100% Linen Plain Weave",
+];
+
 const PRESET_SIZE_SCALES = {
   "Men's Tops": ["XS", "S", "M", "L", "XL", "XXL", "3XL"],
   "Waist (Inches)": ["28", "30", "32", "34", "36", "38", "40"],
@@ -354,20 +385,32 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                   </select>
                 </FormField>
 
-                <FormField label="Season" required error={errors.season}>
+                <FormField label="Season" required error={errors.season} helperText="Select standard season or type custom.">
                   <TextInput
+                    list="season-presets"
                     placeholder="e.g. Spring/Summer 2026"
                     value={formData.season}
                     onChange={(e) => setFormData((prev) => ({ ...prev, season: e.target.value }))}
                   />
+                  <datalist id="season-presets">
+                    {COMMON_SEASONS.map((s) => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
                 </FormField>
 
-                <FormField label="Garment Item" required error={errors.garment_item}>
+                <FormField label="Garment Item" required error={errors.garment_item} helperText="Select standard garment or type custom item.">
                   <TextInput
-                    placeholder="e.g. 5-Pocket Denim Pant, Flannel Shirt"
+                    list="garment-presets"
+                    placeholder="e.g. Casual Chino Pant, Formal Shirt"
                     value={formData.garment_item}
                     onChange={(e) => setFormData((prev) => ({ ...prev, garment_item: e.target.value }))}
                   />
+                  <datalist id="garment-presets">
+                    {COMMON_GARMENT_ITEMS.map((item) => (
+                      <option key={item} value={item} />
+                    ))}
+                  </datalist>
                 </FormField>
               </div>
             </div>
@@ -413,12 +456,18 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                   </select>
                 </FormField>
 
-                <FormField label="Fabric Construction" required error={errors.fabric_type} helperText="e.g. 100% Cotton Twill, 12 oz Denim">
+                <FormField label="Fabric Construction" required error={errors.fabric_type} helperText="Select popular weave/composition or type custom.">
                   <TextInput
-                    placeholder="e.g. 100% Cotton Twill, Denim"
+                    list="fabric-presets"
+                    placeholder="e.g. 100% Cotton Twill, 12 oz Denim"
                     value={formData.fabric_type}
                     onChange={(e) => setFormData((prev) => ({ ...prev, fabric_type: e.target.value }))}
                   />
+                  <datalist id="fabric-presets">
+                    {COMMON_FABRICS.map((f) => (
+                      <option key={f} value={f} />
+                    ))}
+                  </datalist>
                 </FormField>
 
                 <FormField label="Base SMV (Minutes)" required error={errors.base_smv} helperText="Standard Minute Value calculated by IE team.">
