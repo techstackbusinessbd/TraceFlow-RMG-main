@@ -96,6 +96,13 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<number>(1);
   const [nextCode, setNextCode] = useState<string>("Loading...");
+  const [categoriesList, setCategoriesList] = useState<string[]>(() => {
+    const saved = localStorage.getItem("traceflow_style_categories");
+    return saved ? JSON.parse(saved) : WOVEN_CATEGORIES;
+  });
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState("");
+  const [categoryError, setCategoryError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<StyleFormData>({
     company_id: 1,
@@ -259,6 +266,48 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
       ...prev,
       sizes: sizes.map((s, idx) => ({ size_name: s, sort_order: idx + 1 })),
     }));
+  };
+
+  // Anti-Garbage Category Addition with Duplicate & Formatting Guards
+  const handleSaveNewCategory = () => {
+    const trimmed = newCategoryInput.trim().replace(/\s+/g, " ");
+    if (!trimmed) {
+      setCategoryError("Please enter a category name.");
+      return;
+    }
+
+    if (trimmed.length < 3) {
+      setCategoryError("Category name must be at least 3 characters.");
+      return;
+    }
+
+    // Auto Title-Case formatting (e.g. "workwear overalls" -> "Workwear Overalls")
+    const formatted = trimmed
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+    // Check duplicate case-insensitively
+    const isDuplicate = categoriesList.some(
+      (cat) => cat.toLowerCase().replace(/[^a-z0-9]/g, "") === formatted.toLowerCase().replace(/[^a-z0-9]/g, "")
+    );
+
+    if (isDuplicate) {
+      const existing = categoriesList.find(
+        (cat) => cat.toLowerCase().replace(/[^a-z0-9]/g, "") === formatted.toLowerCase().replace(/[^a-z0-9]/g, "")
+      );
+      setCategoryError(`This category already exists as "${existing}". Please select it from the list.`);
+      return;
+    }
+
+    const updated = [...categoriesList, formatted];
+    setCategoriesList(updated);
+    localStorage.setItem("traceflow_style_categories", JSON.stringify(updated));
+    setFormData((prev) => ({ ...prev, product_category: formatted }));
+    setNewCategoryInput("");
+    setCategoryError(null);
+    setIsAddingCategory(false);
+    showToast("success", "Category Added", `"${formatted}" has been added and selected.`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -442,18 +491,46 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                   />
                 </FormField>
 
-                <FormField label="Woven Category" required error={errors.product_category}>
-                  <select
-                    className={UI_TOKENS.input.select}
-                    value={formData.product_category}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, product_category: e.target.value }))}
-                  >
-                    {WOVEN_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
+                <FormField
+                  label="Woven Category"
+                  required
+                  error={errors.product_category}
+                  helperText="Choose standard or add verified custom category."
+                >
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      className={`flex-1 ${UI_TOKENS.input.select}`}
+                      value={formData.product_category}
+                      onChange={(e) => {
+                        if (e.target.value === "__ADD_NEW__") {
+                          setIsAddingCategory(true);
+                          setCategoryError(null);
+                        } else {
+                          setFormData((prev) => ({ ...prev, product_category: e.target.value }));
+                        }
+                      }}
+                    >
+                      {categoriesList.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                      <option value="__ADD_NEW__" className="text-blue-600 font-bold bg-blue-50">
+                        + Add New Category...
                       </option>
-                    ))}
-                  </select>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingCategory(true);
+                        setCategoryError(null);
+                      }}
+                      className="p-2 text-[#0066FF] hover:bg-blue-50 border border-blue-200 rounded-md transition-colors cursor-pointer shadow-2xs shrink-0"
+                      title="Add New Category with Anti-Garbage Engine"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </FormField>
 
                 <FormField label="Fabric Construction" required error={errors.fabric_type} helperText="Select popular weave/composition or type custom.">
@@ -730,6 +807,85 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
           </div>
         </div>
       </form>
+
+      {/* Anti-Garbage Quick Add Category Modal Dialog */}
+      {isAddingCategory && (
+        <div className={UI_TOKENS.launcherModal.backdrop} onClick={() => setIsAddingCategory(false)}>
+          <div
+            className="w-full max-w-md bg-white rounded-xl shadow-2xl border border-slate-200 p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#0066FF] flex items-center justify-center font-bold text-xs">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Add Woven Category</h3>
+                  <p className="text-[11px] text-slate-500">Anti-Garbage Duplicate Engine Active</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddingCategory(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {categoryError && (
+              <div className="p-2.5 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-1.5">
+                <span className="font-bold shrink-0">⚠️ Alert:</span>
+                <span>{categoryError}</span>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className={UI_TOKENS.form.label}>Category Name</label>
+              <TextInput
+                placeholder="e.g. Workwear Overalls, Denim Jackets"
+                value={newCategoryInput}
+                onChange={(e) => {
+                  setNewCategoryInput(e.target.value);
+                  if (categoryError) setCategoryError(null);
+                }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSaveNewCategory();
+                  }
+                }}
+              />
+              <p className="text-[11px] text-slate-400">
+                System auto-trims, formats title case, and prevents duplicate variations.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setIsAddingCategory(false);
+                  setNewCategoryInput("");
+                  setCategoryError(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleSaveNewCategory}
+              >
+                Verify & Add Category
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
