@@ -142,7 +142,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Fetch operational companies (excluding Platform Owner) & buyers
+  // Fetch operational companies (excluding Platform Owner)
   useEffect(() => {
     getOperationalCompanies()
       .then((operationalList) => {
@@ -154,11 +154,24 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
         }
       })
       .catch(() => {});
-
-    getBuyers({ per_page: 100 })
-      .then((res) => setBuyers(res.data))
-      .catch(() => {});
   }, [mode]);
+
+  // Fetch buyers (filtered by selected Company and Active status)
+  useEffect(() => {
+    if (!selectedCompanyId) return;
+    getBuyers({ company_id: selectedCompanyId, status: "active", per_page: 100 })
+      .then((res) => {
+        setBuyers(res.data);
+        // If current buyer doesn't belong to newly selected company, reset buyer_id
+        if (res.data.length > 0 && mode === "create") {
+          setFormData((prev) => ({
+            ...prev,
+            buyer_id: res.data.some((b) => b.id === prev.buyer_id) ? prev.buyer_id : "",
+          }));
+        }
+      })
+      .catch(() => setBuyers([]));
+  }, [selectedCompanyId, mode]);
 
   // Load next code preview in create mode
   useEffect(() => {
@@ -456,7 +469,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                     value={formData.buyer_id}
                     onChange={(e) => setFormData((prev) => ({ ...prev, buyer_id: Number(e.target.value) || "" }))}
                   >
-                    <option value="">Select Buyer Client</option>
+                    <option value="">Select Buyer</option>
                     {buyers.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name} ({b.code})
