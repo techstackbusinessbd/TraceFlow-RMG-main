@@ -134,14 +134,18 @@ export function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      if (currentPath === "/" || currentPath === "/login") {
-        window.history.replaceState({}, "", defaultLandingPath);
-        setCurrentPath(defaultLandingPath);
-      }
+  const [activeSubmoduleGroup, setActiveSubmoduleGroup] = useState<string | null>(() => {
+    return sessionStorage.getItem("traceflow_active_submodule_group") || null;
+  });
+
+  const handleSubmoduleGroupChange = (group: string | null) => {
+    setActiveSubmoduleGroup(group);
+    if (group) {
+      sessionStorage.setItem("traceflow_active_submodule_group", group);
+    } else {
+      sessionStorage.removeItem("traceflow_active_submodule_group");
     }
-  }, [isAuthenticated, currentPath, defaultLandingPath]);
+  };
 
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -156,7 +160,11 @@ export function App() {
     setCurrentPath(path);
   };
 
-  const handleSelectModule = (moduleId: string) => {
+  const handleSelectModule = (moduleId: string, submoduleGroupId?: string) => {
+    if (submoduleGroupId) {
+      handleSubmoduleGroupChange(submoduleGroupId);
+    }
+
     if (moduleId === "dashboard") {
       navigateTo("/dashboard");
     } else if (moduleId === "profile") {
@@ -510,6 +518,8 @@ export function App() {
       currentModuleId={currentModuleId}
       hideRail={isDashboard || isNotFound || isUnauthorized}
       activeCategory={activeCategory}
+      activeSubmoduleGroup={activeSubmoduleGroup}
+      onClearSubmoduleGroup={() => handleSubmoduleGroupChange(null)}
       onProfileClick={() => navigateTo("/profile")}
       breadcrumbs={getBreadcrumbs()}
       onSelectModule={handleSelectModule}

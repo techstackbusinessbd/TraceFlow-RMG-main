@@ -15,9 +15,11 @@ interface AppLayoutProps {
   children: React.ReactNode;
   breadcrumbs?: BreadcrumbItem[];
   currentModuleId?: string;
-  onSelectModule?: (id: string) => void;
+  onSelectModule?: (id: string, submoduleGroupId?: string) => void;
   statusBadge?: React.ReactNode;
   activeCategory?: string | null;
+  activeSubmoduleGroup?: string | null;
+  onClearSubmoduleGroup?: () => void;
   hideRail?: boolean;
   onProfileClick?: () => void;
 }
@@ -33,6 +35,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   onSelectModule,
   statusBadge,
   activeCategory,
+  activeSubmoduleGroup,
+  onClearSubmoduleGroup,
   hideRail = false,
   onProfileClick,
 }) => {
@@ -63,8 +67,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           setIsLauncherOpen(false);
           setLauncherSearchQuery('');
         }}
-        onSelectApp={(modId) => {
-          onSelectModule?.(modId);
+        onSelectApp={(modId, subGroupId) => {
+          onSelectModule?.(modId, subGroupId);
         }}
       />
 
@@ -74,10 +78,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         {!hideRail && (
           <NavigationRail
             currentModuleId={currentModuleId}
-            onSelectModule={onSelectModule}
+            onSelectModule={(id) => onSelectModule?.(id)}
             collapsed={isNavCollapsed}
             onToggleCollapse={() => setIsNavCollapsed(!isNavCollapsed)}
             activeCategory={activeCategory}
+            activeSubmoduleGroup={activeSubmoduleGroup}
+            onClearSubmoduleGroup={onClearSubmoduleGroup}
             hideCategories={hideRail}
           />
         )}

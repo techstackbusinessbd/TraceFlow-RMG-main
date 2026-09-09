@@ -177,6 +177,9 @@ export const UI_TOKENS = {
     iconSmBlue: "w-4 h-4 text-[#0066FF]",
     iconMd: "w-4.5 h-4.5",
     chevronSm: "w-3.5 h-3.5",
+    focusBanner: "mx-2 mb-2 p-2 bg-blue-50/70 border border-blue-200/80 rounded-md flex items-center justify-between shadow-2xs",
+    focusBannerText: "text-[11px] font-semibold text-blue-900 truncate flex items-center gap-1.5",
+    focusBannerClearBtn: "text-[10px] text-blue-600 hover:text-blue-800 hover:bg-blue-100/60 px-1.5 py-0.5 rounded transition-colors font-medium cursor-pointer shrink-0",
   },
   button: {
     base: "inline-flex items-center justify-center font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed text-xs rounded-lg px-3.5 py-2 cursor-pointer shadow-xs",

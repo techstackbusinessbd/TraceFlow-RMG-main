@@ -22,13 +22,14 @@ import { useAuthStore } from "../../store/authStore";
 interface AppLauncherModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectApp: (moduleId: string) => void;
+  onSelectApp: (moduleId: string, submoduleGroupId?: string) => void;
   initialSearchQuery?: string;
 }
 
 interface SubItemLink {
   id: string;
   name: string;
+  submoduleGroupId?: string;
 }
 
 interface AppCard {
@@ -38,6 +39,8 @@ interface AppCard {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  submoduleGroupId?: string;
+  targetModuleId?: string;
   submodules?: SubItemLink[];
   requiredPermissions?: string[];
   requiredRoles?: string[];
@@ -52,9 +55,11 @@ const APPS_CATALOG: AppCard[] = [
     description: "Employee biometric punch ID, password reset, and access details",
     icon: ShieldCheck,
     badge: "Core",
+    submoduleGroupId: "user-profile-group",
+    targetModuleId: "profile",
     submodules: [
-      { id: "profile", name: "My Profile" },
-      { id: "profile-password", name: "Change Password" },
+      { id: "profile", name: "My Profile", submoduleGroupId: "user-profile-group" },
+      { id: "profile-password", name: "Change Password", submoduleGroupId: "user-profile-group" },
     ],
     requiredRoles: ["superadmin", "admin", "standarduser", "merchandiser", "store_manager", "cutting_manager", "floor_supervisor", "qc_auditor", "commercial_manager"],
   },
@@ -64,9 +69,11 @@ const APPS_CATALOG: AppCard[] = [
     category: "System Administration & Auth",
     description: "Multi-tenant factory operators, role permissions, and user badges",
     icon: KeyRound,
+    submoduleGroupId: "user-directory-group",
+    targetModuleId: "admin-users",
     submodules: [
-      { id: "admin-users", name: "User Directory" },
-      { id: "admin-roles", name: "Role Matrix" },
+      { id: "admin-users", name: "User Directory", submoduleGroupId: "user-directory-group" },
+      { id: "admin-roles", name: "Role Matrix", submoduleGroupId: "user-directory-group" },
     ],
     requiredPermissions: ["system_admin.users.view", "system_admin.roles.view"],
     requiredRoles: ["superadmin", "admin"],
@@ -80,9 +87,11 @@ const APPS_CATALOG: AppCard[] = [
     description: "Legal entity profiles, factory floor units and sewing lines",
     icon: Building2,
     badge: "Master",
+    submoduleGroupId: "org-setup-group",
+    targetModuleId: "master-companies",
     submodules: [
-      { id: "master-companies", name: "Company Directory" },
-      { id: "master-units", name: "Factory Floors & Lines" },
+      { id: "master-companies", name: "Company", submoduleGroupId: "org-setup-group" },
+      { id: "master-units", name: "Factory Floors & Line", submoduleGroupId: "org-setup-group" },
     ],
     requiredPermissions: [
       "system_admin.companies.view",
@@ -99,10 +108,12 @@ const APPS_CATALOG: AppCard[] = [
     description: "Global buyers, buying agents, and style garment libraries",
     icon: Users,
     badge: "Master",
+    submoduleGroupId: "merchandising-master-group",
+    targetModuleId: "master-buyers",
     submodules: [
-      { id: "master-buyers", name: "Buyer Directory" },
-      { id: "master-agents", name: "Buying Agent Directory" },
-      { id: "master-styles", name: "Style Library" },
+      { id: "master-buyers", name: "Buyer Directory", submoduleGroupId: "merchandising-master-group" },
+      { id: "master-agents", name: "Buying Agent", submoduleGroupId: "merchandising-master-group" },
+      { id: "master-styles", name: "Style Library", submoduleGroupId: "merchandising-master-group" },
     ],
     requiredPermissions: [
       "master_data.buyers.profile.view",
@@ -120,9 +131,11 @@ const APPS_CATALOG: AppCard[] = [
     description: "Yarn spinners, fabric mills, and accessory vendors",
     icon: Truck,
     badge: "Master",
+    submoduleGroupId: "sourcing-master-group",
+    targetModuleId: "master-suppliers",
     submodules: [
-      { id: "master-suppliers", name: "Suppliers Directory" },
-      { id: "master-mills", name: "Fabric Mills" },
+      { id: "master-suppliers", name: "Suppliers Directory", submoduleGroupId: "sourcing-master-group" },
+      { id: "master-mills", name: "Fabric Mills", submoduleGroupId: "sourcing-master-group" },
     ],
     requiredPermissions: [
       "master_data.suppliers.view",
@@ -525,7 +538,7 @@ export const AppLauncherModal: React.FC<AppLauncherModalProps> = ({
                         <div
                           key={app.id}
                           onClick={() => {
-                            onSelectApp(app.id);
+                            onSelectApp(app.targetModuleId || app.id, app.submoduleGroupId);
                             onClose();
                           }}
                           className={UI_TOKENS.launcherModal.card}
@@ -569,7 +582,7 @@ export const AppLauncherModal: React.FC<AppLauncherModalProps> = ({
                                     key={sub.id}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      onSelectApp(sub.id);
+                                      onSelectApp(sub.id, sub.submoduleGroupId || app.submoduleGroupId);
                                       onClose();
                                     }}
                                     className={UI_TOKENS.launcherModal.cardSubPill}

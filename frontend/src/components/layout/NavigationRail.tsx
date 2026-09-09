@@ -50,6 +50,8 @@ interface NavigationRailProps {
   onToggleCollapse?: () => void;
   activeCategory?: string | null;
   hideCategories?: boolean;
+  activeSubmoduleGroup?: string | null;
+  onClearSubmoduleGroup?: () => void;
 }
 
 /**
@@ -63,6 +65,8 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
   onToggleCollapse,
   activeCategory,
   hideCategories = false,
+  activeSubmoduleGroup,
+  onClearSubmoduleGroup,
 }) => {
   const { canAccessWidget } = useAuthStore();
   const [internalCollapsed, setInternalCollapsed] = useState(false);
@@ -412,6 +416,10 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
       // Filter items within category
       const visibleItems = cat.items
+        .filter((item) => {
+          if (!activeSubmoduleGroup) return true;
+          return item.id === activeSubmoduleGroup;
+        })
         .map((item) => {
           // If item has subItems, filter subItems
           if (item.subItems && item.subItems.length > 0) {
@@ -549,6 +557,24 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
                 <span>Master Records</span>
               </button>
             )}
+          </div>
+        )}
+
+        {/* Focused Submodule Group Indicator (if selected from App Launcher) */}
+        {!collapsed && activeSubmoduleGroup && onClearSubmoduleGroup && (
+          <div className={UI_TOKENS.powerNav.focusBanner}>
+            <span className={UI_TOKENS.powerNav.focusBannerText}>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse shrink-0" />
+              <span>Filtered Submodule</span>
+            </span>
+            <button
+              type="button"
+              onClick={onClearSubmoduleGroup}
+              className={UI_TOKENS.powerNav.focusBannerClearBtn}
+              title="Show all submodules of this module"
+            >
+              Show All
+            </button>
           </div>
         )}
 
