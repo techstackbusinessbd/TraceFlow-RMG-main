@@ -56,13 +56,22 @@ const WASH_TYPES = [
   "Resin 3D Crinkle",
 ];
 
-const COMMON_SEASONS = [
-  "Spring/Summer 2026",
-  "Autumn/Winter 2026",
-  "Pre-Fall 2026",
-  "Spring/Summer 2027",
-  "Autumn/Winter 2027",
+const SEASON_NAMES = [
+  "Spring/Summer",
+  "Autumn/Winter",
+  "Pre-Fall",
+  "Resort / Cruise",
+  "Holiday",
   "All Seasons / Carry Over",
+];
+
+const SEASON_YEARS = [
+  "2025",
+  "2026",
+  "2027",
+  "2028",
+  "2029",
+  "2030",
 ];
 
 const COMMON_GARMENT_ITEMS = [
@@ -106,6 +115,9 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
+  const [seasonName, setSeasonName] = useState<string>("Spring/Summer");
+  const [seasonYear, setSeasonYear] = useState<string>("2026");
+
   const [formData, setFormData] = useState<StyleFormData>({
     company_id: 1,
     buyer_id: "",
@@ -132,6 +144,12 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
       { size_name: "36", sort_order: 4 },
     ],
   });
+
+  // Keep combined formData.season synchronized when seasonName or seasonYear changes
+  useEffect(() => {
+    const combined = seasonYear ? `${seasonName} ${seasonYear}`.trim() : seasonName;
+    setFormData((prev) => ({ ...prev, season: combined }));
+  }, [seasonName, seasonYear]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -189,6 +207,20 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
         .then((data) => {
           setSelectedCompanyId(data.company_id);
           setNextCode(data.code);
+
+          // Parse season into Season Name & Season Year (e.g. "Spring/Summer 2026")
+          if (data.season) {
+            const parts = data.season.trim().split(" ");
+            const lastPart = parts[parts.length - 1];
+            if (/^\d{4}$/.test(lastPart)) {
+              setSeasonYear(lastPart);
+              setSeasonName(parts.slice(0, -1).join(" "));
+            } else {
+              setSeasonName(data.season);
+              setSeasonYear("");
+            }
+          }
+
           setFormData({
             company_id: data.company_id,
             buyer_id: data.buyer_id,
@@ -478,18 +510,32 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                   </select>
                 </FormField>
 
-                <FormField label="Season" required error={errors.season} helperText="Select standard season or type custom.">
-                  <TextInput
-                    list="season-presets"
-                    placeholder="e.g. Spring/Summer 2026"
-                    value={formData.season}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, season: e.target.value }))}
-                  />
-                  <datalist id="season-presets">
-                    {COMMON_SEASONS.map((s) => (
-                      <option key={s} value={s} />
+                <FormField label="Season Name" required error={errors.season} helperText="Cycle / Collection">
+                  <select
+                    className={UI_TOKENS.input.select}
+                    value={seasonName}
+                    onChange={(e) => setSeasonName(e.target.value)}
+                  >
+                    {SEASON_NAMES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
+                </FormField>
+
+                <FormField label="Season Year" required helperText="Production Year">
+                  <select
+                    className={UI_TOKENS.input.select}
+                    value={seasonYear}
+                    onChange={(e) => setSeasonYear(e.target.value)}
+                  >
+                    {SEASON_YEARS.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
                 </FormField>
 
                 <FormField label="Garment Item" required error={errors.garment_item} helperText="Select standard garment or type custom item.">
