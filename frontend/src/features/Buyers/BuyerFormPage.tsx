@@ -317,108 +317,79 @@ export const BuyerFormPage: React.FC<BuyerFormPageProps> = ({ mode, buyerId, onN
                   />
                 </FormField>
 
-                {/* Buyer Type Selector */}
-                <div className="md:col-span-2 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <label className="text-xs font-semibold text-slate-800 block mb-2">
-                    Buyer Type & Sourcing Channel <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label
-                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                        formData.buyer_type === "direct"
-                          ? "border-blue-600 bg-blue-50/50 shadow-sm"
-                          : "border-slate-200 bg-white hover:bg-slate-50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="buyer_type"
-                        value="direct"
-                        checked={formData.buyer_type === "direct"}
-                        onChange={() => setFormData({ ...formData, buyer_type: "direct", agent_id: null })}
-                        className="mt-0.5 text-blue-600 focus:ring-blue-500"
-                      />
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 block">Direct Buyer</span>
-                        <span className="text-[11px] text-slate-500">
-                          Brand / Retailer engages directly with the factory without agency intermediaries.
-                        </span>
-                      </div>
-                    </label>
+                {/* Buyer Type & Sourcing Channel (Clean Enterprise FormField) */}
+                <FormField
+                  label="Buyer Type & Sourcing Channel"
+                  required
+                  error={errors.buyer_type}
+                  helperText={
+                    formData.buyer_type === "direct"
+                      ? "Direct Brand / Retailer contracting directly with factory."
+                      : "Sourced through an intermediary Buying House / Agent."
+                  }
+                >
+                  <select
+                    value={formData.buyer_type}
+                    onChange={(e) => {
+                      const val = e.target.value as "direct" | "agent";
+                      setFormData({
+                        ...formData,
+                        buyer_type: val,
+                        agent_id: val === "direct" ? null : formData.agent_id,
+                      });
+                    }}
+                    className={`w-full ${UI_TOKENS.input.select} ${errors.buyer_type ? UI_TOKENS.input.error : ""}`}
+                  >
+                    <option value="direct">Direct Buyer (No Intermediary)</option>
+                    <option value="agent">Via Buying Agent / House</option>
+                  </select>
+                </FormField>
 
-                    <label
-                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                        formData.buyer_type === "agent"
-                          ? "border-blue-600 bg-blue-50/50 shadow-sm"
-                          : "border-slate-200 bg-white hover:bg-slate-50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="buyer_type"
-                        value="agent"
-                        checked={formData.buyer_type === "agent"}
-                        onChange={() => setFormData({ ...formData, buyer_type: "agent" })}
-                        className="mt-0.5 text-blue-600 focus:ring-blue-500"
-                      />
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 block">Via Buying Agent / House</span>
-                        <span className="text-[11px] text-slate-500">
-                          Orders are sourced and represented through a certified Buying House / Agent.
-                        </span>
-                      </div>
-                    </label>
-                  </div>
-                  {errors.buyer_type && (
-                    <p className="text-xs text-rose-600 mt-2">{errors.buyer_type}</p>
-                  )}
-
-                  {/* Dynamic Buying Agent Selector when buyer_type === 'agent' */}
-                  {formData.buyer_type === "agent" && (
-                    <div className="mt-4 pt-4 border-t border-slate-200 animate-fadeIn">
-                      <FormField
-                        label="Select Buying Agent / House"
-                        required
-                        error={errors.agent_id}
-                        helperText="Designate the authorized agency entity managing this buyer account."
+                {/* Conditional Buying Agent Field (Seamless FormField, No Nested Card) */}
+                {formData.buyer_type === "agent" ? (
+                  <FormField
+                    label="Buying Agent / House"
+                    required
+                    error={errors.agent_id}
+                    helperText="Select the registered agency entity representing this buyer."
+                  >
+                    <div className="space-y-1.5">
+                      <select
+                        value={formData.agent_id || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            agent_id: e.target.value ? Number(e.target.value) : null,
+                          })
+                        }
+                        className={`w-full ${UI_TOKENS.input.select} ${
+                          errors.agent_id ? UI_TOKENS.input.error : ""
+                        }`}
                       >
-                        <div className="relative">
-                          <select
-                            value={formData.agent_id || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                agent_id: e.target.value ? Number(e.target.value) : null,
-                              })
-                            }
-                            className={`w-full ${UI_TOKENS.input.select} ${
-                              errors.agent_id ? UI_TOKENS.input.error : ""
-                            }`}
-                          >
-                            <option value="">-- Choose Buying Agent / House --</option>
-                            {agents.map((ag) => (
-                              <option key={ag.id} value={ag.id}>
-                                {ag.name} ({ag.code}) {ag.commission_rate ? `— ${ag.commission_rate}% Commission` : ""}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </FormField>
+                        <option value="">-- Select Buying Agent --</option>
+                        {agents.map((ag) => (
+                          <option key={ag.id} value={ag.id}>
+                            {ag.name} ({ag.code}) {ag.commission_rate ? `[${ag.commission_rate}% Commission]` : ""}
+                          </option>
+                        ))}
+                      </select>
                       {agents.length === 0 && (
-                        <p className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded border border-amber-200 mt-2">
-                          Notice: No active buying agents found under this company. Please register an agent in{" "}
+                        <p className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-md border border-amber-200">
+                          Notice: No registered agents found.{" "}
                           <span
                             onClick={() => onNavigate("/master/agents/create")}
-                            className="font-semibold underline cursor-pointer text-amber-900"
+                            className="font-semibold underline cursor-pointer text-[#0066FF]"
                           >
-                            Buying Agents Directory
+                            Register an Agent
                           </span>{" "}
                           first.
                         </p>
                       )}
                     </div>
-                  )}
-                </div>
+                  </FormField>
+                ) : (
+                  <div className="hidden md:block" aria-hidden="true" />
+                )}
 
                 {/* Buyer Legal Name */}
                 <FormField
