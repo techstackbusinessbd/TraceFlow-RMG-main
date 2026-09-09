@@ -20,6 +20,7 @@ import { FormField } from "../../components/common/FormField";
 import { TextInput } from "../../components/common/TextInput";
 import { Badge } from "../../components/common/Badge";
 import { Toast } from "../../components/common/Toast";
+import { Toggle } from "../../components/common/Toggle";
 import { UI_TOKENS } from "../../config/designTokens";
 import {
   getBuyerById,
@@ -707,25 +708,13 @@ export const BuyerFormPage: React.FC<BuyerFormPageProps> = ({ mode, buyerId, onN
                   Active buyers are immediately available in Tech-Pack registration, merchandising inquiries, and production line scheduling.
                 </p>
 
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={formData.is_active}
-                    onClick={() => setFormData((prev) => ({ ...prev, is_active: !prev.is_active }))}
-                    className={`relative inline-flex h-6 w-11 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-1 cursor-pointer ${
-                      formData.is_active ? "bg-[#0066FF]" : "bg-slate-300"
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        formData.is_active ? "translate-x-5" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
-                  <span className="text-xs font-semibold text-slate-900">
-                    {formData.is_active ? "Active & Eligible for Orders" : "Inactive / On Hold"}
-                  </span>
+                <div className="pt-2">
+                  <Toggle
+                    checked={formData.is_active}
+                    onChange={(val) => setFormData((prev) => ({ ...prev, is_active: val }))}
+                    activeText="Active & Eligible for Orders"
+                    inactiveText="Inactive / On Hold"
+                  />
                 </div>
               </div>
             </div>

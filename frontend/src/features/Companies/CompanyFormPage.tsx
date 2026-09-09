@@ -6,6 +6,7 @@ import { FormField } from "../../components/common/FormField";
 import { TextInput } from "../../components/common/TextInput";
 import { Badge } from "../../components/common/Badge";
 import { Toast } from "../../components/common/Toast";
+import { Toggle } from "../../components/common/Toggle";
 import { UI_TOKENS } from "../../config/designTokens";
 import {
   getCompany,
@@ -352,58 +353,35 @@ export const CompanyFormPage: React.FC<CompanyFormPageProps> = ({
                     : "Inactive companies cannot create new orders or transactions, and their users may have restricted access."}
                 </p>
 
-                <div className="flex items-center gap-3 pt-1">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={isActive}
-                    disabled={isDefault || (isEditMode && isActive && activeUsersCount > 0 && !isSuperAdmin)}
-                    onClick={() => {
-                      if (isDefault) {
-                        showToast("error", "Action Prohibited", "The default system company cannot be deactivated.");
-                        return;
-                      }
-                      if (isEditMode && isActive && activeUsersCount > 0 && !isSuperAdmin) {
-                        showToast("error", "Cannot Deactivate", `This company has ${activeUsersCount} active assigned user(s). Deactivate or reassign them first.`);
-                        return;
-                      }
-                      setIsActive((v) => !v);
-                    }}
-                    className={`relative inline-flex h-6 w-11 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-1 ${
-                      isDefault || (isEditMode && isActive && activeUsersCount > 0 && !isSuperAdmin)
-                        ? "bg-[#0066FF] opacity-60 cursor-not-allowed"
-                        : isActive
-                        ? "bg-[#0066FF] cursor-pointer"
-                        : "bg-slate-300 cursor-pointer"
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isActive ? "translate-x-5" : "translate-x-0"}`}
-                    />
-                  </button>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-900">
-                        {isActive ? "Active" : "Inactive"}
-                      </span>
-                      {isDefault && (
-                        <Badge variant="info" className="text-[10px] px-1.5 py-0">Core Entity</Badge>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-500">
-                      {isDefault
-                        ? "Protected default entity — cannot be deactivated"
-                        : isEditMode && isActive && activeUsersCount > 0
-                        ? isSuperAdmin
-                          ? `Active (${activeUsersCount} active users — Super Admin Force Allowed)`
-                          : `Locked (${activeUsersCount} active user accounts)`
-                        : isActive
-                        ? "Operational — can accept orders"
-                        : "Suspended — no new transactions"}
-                    </p>
-                  </div>
-                </div>
-
+                <Toggle
+                  checked={isActive}
+                  onChange={(val) => {
+                    if (isDefault) {
+                      showToast("error", "Action Prohibited", "The default system company cannot be deactivated.");
+                      return;
+                    }
+                    if (isEditMode && isActive && activeUsersCount > 0 && !isSuperAdmin) {
+                      showToast("error", "Cannot Deactivate", `This company has ${activeUsersCount} active assigned user(s). Deactivate or reassign them first.`);
+                      return;
+                    }
+                    setIsActive(val);
+                  }}
+                  disabled={isDefault || (isEditMode && isActive && activeUsersCount > 0 && !isSuperAdmin)}
+                  activeText="Active"
+                  inactiveText="Inactive"
+                  description={
+                    isDefault
+                      ? "Protected default entity — cannot be deactivated"
+                      : isEditMode && isActive && activeUsersCount > 0
+                      ? isSuperAdmin
+                        ? `Active (${activeUsersCount} active users — Super Admin Force Allowed)`
+                        : `Locked (${activeUsersCount} active user accounts)`
+                      : isActive
+                      ? "Operational — can accept orders"
+                      : "Suspended — no new transactions"
+                  }
+                />
+                
                 {isDefault && (
                   <div className="p-2 rounded bg-blue-50 border border-blue-200/80 text-[11px] text-[#0066FF] flex items-start gap-1.5 leading-snug">
                     <span>🛡️ <strong>Default System Company:</strong> This is the primary system entity and cannot be deactivated or deleted by any user (including Super Admin).</span>

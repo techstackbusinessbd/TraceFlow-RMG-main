@@ -6,6 +6,7 @@ import { FormField } from "../../components/common/FormField";
 import { TextInput } from "../../components/common/TextInput";
 import { Badge } from "../../components/common/Badge";
 import { Toast } from "../../components/common/Toast";
+import { Toggle } from "../../components/common/Toggle";
 import { UI_TOKENS } from "../../config/designTokens";
 import { getCompanies, type Company } from "../../services/companyService";
 import {
@@ -360,27 +361,14 @@ export const AgentFormPage: React.FC<AgentFormPageProps> = ({
             {/* Active Status */}
             <div>
               <label className="text-xs font-semibold text-slate-800 block mb-2">Operational Status</label>
-              <div className="flex items-center gap-4 mt-2">
-                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
-                  <input
-                    type="radio"
-                    name="is_active"
-                    checked={formData.is_active === true}
-                    onChange={() => setFormData({ ...formData, is_active: true })}
-                    className="text-slate-900 focus:ring-slate-900"
-                  />
-                  <span>Active</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
-                  <input
-                    type="radio"
-                    name="is_active"
-                    checked={formData.is_active === false}
-                    onChange={() => setFormData({ ...formData, is_active: false })}
-                    className="text-slate-900 focus:ring-slate-900"
-                  />
-                  <span>Inactive</span>
-                </label>
+              <div className="mt-2">
+                <Toggle
+                  checked={formData.is_active}
+                  onChange={(val) => setFormData({ ...formData, is_active: val })}
+                  activeText="Active & Operational"
+                  inactiveText="Inactive / Suspended"
+                  description="Active agents are selectable when registering new buyers."
+                />
               </div>
             </div>
 

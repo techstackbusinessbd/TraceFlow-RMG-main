@@ -242,6 +242,14 @@ export const UI_TOKENS = {
     header: "flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3",
     title: "text-sm font-semibold text-slate-900",
   },
+  toggle: {
+    base: "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0066FF] focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer",
+    active: "bg-[#0066FF]",
+    inactive: "bg-slate-300",
+    thumb: "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+    thumbActive: "translate-x-5",
+    thumbInactive: "translate-x-0",
+  },
   authLayout: {
     wrapper: "min-h-screen bg-[#F0F4F8] flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 font-sans",
     headerWrapper: "sm:mx-auto sm:w-full sm:max-w-md text-center mb-6",
