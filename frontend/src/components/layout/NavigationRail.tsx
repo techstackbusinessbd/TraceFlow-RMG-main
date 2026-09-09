@@ -443,37 +443,46 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
     [initialActive.catId]: true,
   });
 
+  // Default all submodule groups to open so all submenus are visibly displayed in the sidebar
   const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({
+    'org-setup-group': true,
+    'merchandising-master-group': true,
+    'sourcing-master-group': true,
+    'identity-master-group': true,
+    'product-dev-group': true,
+    'commercial-orders': true,
+    'warehouse-group': true,
+    'cutting-ops': true,
+    'sewing-lines-group': true,
+    'quality-audit-group': true,
+    'commercial-group': true,
     ...(initialActive.parentId ? { [initialActive.parentId]: true } : {}),
   });
 
-  // Strictly open ONLY the active parent group, close all others
+  // Ensure active category and active parent group remain visible
   React.useEffect(() => {
     const active = findActiveCategoryAndParent(currentModuleId);
     if (active.catId) {
-      setOpenCategories({ [active.catId]: true });
+      setOpenCategories((prev) => ({ ...prev, [active.catId]: true }));
     }
     if (active.parentId) {
-      setExpandedParents({ [active.parentId]: true });
-    } else {
-      setExpandedParents({});
+      setExpandedParents((prev) => ({ ...prev, [active.parentId]: true }));
     }
   }, [currentModuleId]);
 
   const toggleCategory = (catId: string) => {
     setOpenCategories((prev) => ({
-      // Accordion behavior: close others if opening a new category
+      ...prev,
       [catId]: !prev[catId],
     }));
   };
 
   const toggleParent = (parentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setExpandedParents((prev) => {
-      // Accordion behavior: if already open, toggle off; if closed, close all others and open this one
-      const wasOpen = !!prev[parentId];
-      return wasOpen ? {} : { [parentId]: true };
-    });
+    setExpandedParents((prev) => ({
+      ...prev,
+      [parentId]: !prev[parentId],
+    }));
   };
 
   return (
