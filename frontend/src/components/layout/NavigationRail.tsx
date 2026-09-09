@@ -7,12 +7,11 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
-  Building2,
   Shirt,
   Scissors,
   CheckCircle2,
   Truck,
-  User,
+  Database,
 } from 'lucide-react';
 import { UI_TOKENS } from '../../config/designTokens';
 import { useAuthStore } from '../../store/authStore';
@@ -81,18 +80,73 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
   const categories: NavCategory[] = [
     {
-      id: 'auth',
-      title: 'System Admin & Auth',
-      icon: User,
+      id: 'master-data',
+      title: 'Master Data',
+      icon: Database,
+      requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser', 'commercial_manager'],
       items: [
         {
-          id: 'auth-group',
-          label: 'Identity & Access',
+          id: 'org-setup-group',
+          label: 'Organization Setup',
+          requiredRoles: ['superadmin', 'admin', 'standarduser'],
           subItems: [
             {
-              id: 'profile',
-              label: 'User Profile & Security',
+              id: 'master-companies',
+              label: 'Company Directory',
+              requiredPermissions: ['system_admin.companies.profile.view'],
+              requiredRoles: ['superadmin', 'admin'],
             },
+            {
+              id: 'master-units',
+              label: 'Factory Floors & Lines',
+              requiredPermissions: ['master_data.lines.setup.view'],
+              requiredRoles: ['superadmin', 'admin', 'production_manager', 'floor_supervisor', 'standarduser'],
+            },
+          ],
+        },
+        {
+          id: 'merchandising-master-group',
+          label: 'Merchandising',
+          requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
+          subItems: [
+            {
+              id: 'master-buyers',
+              label: 'Buyer Directory',
+              requiredPermissions: ['master_data.buyers.profile.view'],
+              requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
+            },
+            {
+              id: 'master-agents',
+              label: 'Buying Agent Directory',
+              requiredPermissions: ['master_data.agents.profile.view'],
+              requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
+            },
+            {
+              id: 'master-styles',
+              label: 'Style Library',
+              requiredPermissions: ['master_data.styles.profile.view', 'merchandising.styles.view'],
+              requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
+            },
+          ],
+        },
+        {
+          id: 'sourcing-master-group',
+          label: 'Sourcing & Supply',
+          requiredRoles: ['superadmin', 'admin', 'commercial_manager'],
+          subItems: [
+            {
+              id: 'master-suppliers',
+              label: 'Suppliers Directory',
+              requiredPermissions: ['master_data.suppliers.view', 'suppliers.view'],
+              requiredRoles: ['superadmin', 'admin', 'commercial_manager'],
+            },
+          ],
+        },
+        {
+          id: 'identity-master-group',
+          label: 'System & Security',
+          requiredRoles: ['superadmin', 'admin'],
+          subItems: [
             {
               id: 'admin-users',
               label: 'User Directory',
@@ -110,63 +164,17 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
       ],
     },
     {
-      id: 'governance',
-      title: 'Enterprise Governance',
-      icon: Building2,
-      requiredRoles: ['superadmin', 'admin', 'standarduser'],
-      items: [
-        {
-          id: 'company-setup',
-          label: 'Corporate Structure',
-          requiredRoles: ['superadmin', 'admin'],
-          subItems: [
-            {
-              id: 'master-companies',
-              label: 'Company Directory',
-              requiredPermissions: ['system_admin.companies.profile.view'],
-              requiredRoles: ['superadmin', 'admin'],
-            },
-          ],
-        },
-      ],
-    },
-    {
       id: 'merchandising',
-      title: 'Merchandising & CRM',
+      title: 'Merchandising Operations',
       icon: Shirt,
-      requiredPermissions: ['merchandising.*', 'master_data.styles.*', 'master_data.buyers.*', 'master_data.agents.*'],
-      requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
+      requiredPermissions: ['merchandising.*'],
+      requiredRoles: ['superadmin', 'admin', 'merchandiser'],
       items: [
         {
-          id: 'customer-accounts',
-          label: 'Client Accounts',
-          requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
-          subItems: [
-            {
-              id: 'master-buyers',
-              label: 'Buyer Directory',
-              requiredPermissions: ['master_data.buyers.profile.view'],
-              requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
-            },
-            {
-              id: 'master-agents',
-              label: 'Buying Agent Directory',
-              requiredPermissions: ['master_data.agents.profile.view'],
-              requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
-            },
-          ],
-        },
-        {
-          id: 'product-development',
+          id: 'product-dev-group',
           label: 'Product Development',
-          requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
+          requiredRoles: ['superadmin', 'admin', 'merchandiser'],
           subItems: [
-            {
-              id: 'master-styles',
-              label: 'Style Library',
-              requiredPermissions: ['master_data.styles.profile.view', 'merchandising.styles.view'],
-              requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
-            },
             {
               id: 'inquiries',
               label: 'Buyer Inquiries',
@@ -176,7 +184,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             {
               id: 'styles-costing',
               label: 'Styles & Costing BOM',
-              requiredPermissions: ['master_data.styles.profile.view', 'merchandising.styles.view', 'styles.view'],
+              requiredPermissions: ['merchandising.styles.view', 'styles.view'],
               requiredRoles: ['superadmin', 'admin', 'merchandiser'],
             },
             {
@@ -197,27 +205,6 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
               label: 'Customer Purchase Orders',
               requiredPermissions: ['merchandising.orders.view', 'orders.pos.view'],
               requiredRoles: ['superadmin', 'admin', 'merchandiser'],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'sourcing',
-      title: 'Sourcing & Procurement',
-      icon: Truck,
-      requiredRoles: ['superadmin', 'admin', 'commercial_manager'],
-      items: [
-        {
-          id: 'vendor-management',
-          label: 'Vendor Master',
-          requiredRoles: ['superadmin', 'admin', 'commercial_manager'],
-          subItems: [
-            {
-              id: 'master-suppliers',
-              label: 'Suppliers Directory',
-              requiredPermissions: ['master_data.suppliers.view', 'suppliers.view'],
-              requiredRoles: ['superadmin', 'admin', 'commercial_manager'],
             },
           ],
         },
@@ -271,19 +258,6 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
       requiredPermissions: ['shopfloor.*', 'cutting.*', 'sewing.*', 'master_data.lines.*'],
       requiredRoles: ['superadmin', 'admin', 'cutting_manager', 'floor_supervisor', 'production_manager'],
       items: [
-        {
-          id: 'factory-setup',
-          label: 'Plant Configuration',
-          requiredRoles: ['superadmin', 'admin', 'production_manager', 'floor_supervisor', 'standarduser'],
-          subItems: [
-            {
-              id: 'master-units',
-              label: 'Factory Floors & Lines',
-              requiredPermissions: ['master_data.lines.setup.view'],
-              requiredRoles: ['superadmin', 'admin', 'production_manager', 'floor_supervisor', 'standarduser'],
-            },
-          ],
-        },
         {
           id: 'cutting-group',
           label: 'CAD & Cutting Runs',
@@ -460,7 +434,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
         }
       }
     }
-    return { catId: 'governance', parentId: 'master-setup' };
+    return { catId: 'master-data', parentId: 'org-setup-group' };
   };
 
   const initialActive = findActiveCategoryAndParent(currentModuleId);

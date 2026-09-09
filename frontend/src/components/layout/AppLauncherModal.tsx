@@ -72,16 +72,17 @@ const APPS_CATALOG: AppCard[] = [
     requiredRoles: ["superadmin", "admin"],
   },
 
-  // 02. Enterprise Governance
+  // 02. Master Data (Central Enterprise Repository)
   {
     id: "master-companies",
-    name: "Companies",
-    category: "Enterprise Governance",
-    description: "Legal entity profiles, codes, tax IDs and factory setups",
+    name: "Organization Setup",
+    category: "Master Data",
+    description: "Legal entity profiles, factory floor units and sewing lines",
     icon: Building2,
+    badge: "Master",
     submodules: [
-      { id: "master-companies", name: "Company Profiles" },
-      { id: "master-units", name: "Floors & Lines" },
+      { id: "master-companies", name: "Company Directory" },
+      { id: "master-units", name: "Factory Floors & Lines" },
     ],
     requiredPermissions: [
       "system_admin.companies.view",
@@ -91,36 +92,36 @@ const APPS_CATALOG: AppCard[] = [
     requiredRoles: ["superadmin", "admin"],
   },
 
-  // 03. Merchandising & CRM
   {
     id: "master-buyers",
-    name: "Buyers & Brands",
-    category: "Merchandising & CRM",
-    description: "Global brands, contracts, and commission matrices",
+    name: "Merchandising Master",
+    category: "Master Data",
+    description: "Global buyers, buying agents, and style garment libraries",
     icon: Users,
-    badge: "Active",
+    badge: "Master",
     submodules: [
       { id: "master-buyers", name: "Buyer Directory" },
       { id: "master-agents", name: "Buying Agent Directory" },
-      { id: "master-brands", name: "Brands List" },
+      { id: "master-styles", name: "Style Library" },
     ],
     requiredPermissions: [
       "master_data.buyers.profile.view",
       "master_data.buyers.*",
+      "master_data.styles.profile.view",
       "master_data.*",
     ],
     requiredRoles: ["superadmin", "admin", "standarduser", "merchandiser"],
   },
 
-  // 04. Sourcing & Procurement
   {
     id: "master-suppliers",
-    name: "Suppliers & Mills",
-    category: "Sourcing & Procurement",
+    name: "Sourcing & Supply Master",
+    category: "Master Data",
     description: "Yarn spinners, fabric mills, and accessory vendors",
-    icon: Building2,
+    icon: Truck,
+    badge: "Master",
     submodules: [
-      { id: "master-suppliers", name: "Suppliers" },
+      { id: "master-suppliers", name: "Suppliers Directory" },
       { id: "master-mills", name: "Fabric Mills" },
     ],
     requiredPermissions: [
@@ -131,11 +132,11 @@ const APPS_CATALOG: AppCard[] = [
     requiredRoles: ["superadmin", "admin", "commercial_manager"],
   },
 
-  // 05. Merchandising Flows
+  // 03. Merchandising Operations
   {
     id: "inquiries",
     name: "Buyer Inquiries",
-    category: "Merchandising & CRM",
+    category: "Merchandising Operations",
     description: "Sample proto development and early costing requests",
     icon: Shirt,
     submodules: [
@@ -148,7 +149,7 @@ const APPS_CATALOG: AppCard[] = [
   {
     id: "styles-costing",
     name: "Styles & BOM Costing",
-    category: "Merchandising & CRM",
+    category: "Merchandising Operations",
     description: "Complete bill of materials and pre-costing calculator",
     icon: Shirt,
     badge: "Core",
@@ -167,7 +168,7 @@ const APPS_CATALOG: AppCard[] = [
   {
     id: "order-pos",
     name: "Customer Purchase Orders",
-    category: "Merchandising & CRM",
+    category: "Merchandising Operations",
     description: "Commercial PO line allocation and delivery schedule",
     icon: Shirt,
     submodules: [
@@ -457,46 +458,40 @@ export const AppLauncherModal: React.FC<AppLauncherModalProps> = ({
                 title: "1. System Admin, Identity & Authentication",
               },
               {
-                id: "governance",
+                id: "master-data",
                 step: "02",
-                category: "Enterprise Governance",
-                title: "2. Enterprise Governance & Corporate Setup",
+                category: "Master Data",
+                title: "2. Master Data (Organization, Merchandising & Sourcing)",
               },
               {
                 id: "merchandising",
                 step: "03",
-                category: "Merchandising & CRM",
-                title: "3. Merchandising, Styles & Buyer CRM",
-              },
-              {
-                id: "sourcing",
-                step: "04",
-                category: "Sourcing & Procurement",
-                title: "4. Sourcing, Mills & Procurement",
+                category: "Merchandising Operations",
+                title: "3. Merchandising Operations & Commercial Orders",
               },
               {
                 id: "materials",
-                step: "05",
+                step: "04",
                 category: "Warehouse & Materials",
-                title: "5. Supply Chain, Fabric Rolls & Inventory",
+                title: "4. Supply Chain, Fabric Rolls & Inventory",
               },
               {
                 id: "shopfloor",
-                step: "06",
+                step: "05",
                 category: "Shopfloor Manufacturing",
-                title: "6. Shopfloor CAD, Cutting & Sewing Lines",
+                title: "5. Shopfloor CAD, Cutting & Sewing Lines",
               },
               {
                 id: "quality",
-                step: "07",
+                step: "06",
                 category: "Quality Assurance",
-                title: "7. Quality Control Audits & Compliance",
+                title: "6. Quality Control Audits & Compliance",
               },
               {
                 id: "shipping",
-                step: "08",
+                step: "07",
                 category: "Finishing & Dispatch",
-                title: "8. Finishing, Packaging & Commercial Dispatch",
+                title: "7. Finishing, Packaging & Commercial Dispatch",
               },
             ].map((moduleGroup) => {
               const groupApps = filteredApps.filter(

@@ -214,12 +214,11 @@ export function App() {
 
   // Map current module/path to Category
   const getActiveCategory = (moduleId: string): string | null => {
-    if (["profile", "profile-password", "admin-users", "admin-roles"].includes(moduleId)) return "auth";
-    if (["master-companies"].includes(moduleId)) return "governance";
-    if (["master-buyers", "master-agents", "master-styles", "inquiries", "styles-costing", "techpacks", "order-pos"].includes(moduleId)) return "merchandising";
-    if (["master-suppliers"].includes(moduleId)) return "sourcing";
+    if (["profile", "profile-password"].includes(moduleId)) return "auth";
+    if (["master-companies", "master-units", "master-buyers", "master-agents", "master-styles", "master-suppliers", "admin-users", "admin-roles"].includes(moduleId)) return "master-data";
+    if (["inquiries", "styles-costing", "techpacks", "order-pos"].includes(moduleId)) return "merchandising";
     if (["warehouse-rolls", "roll-grn", "shade-lots", "trims-warehouse"].includes(moduleId)) return "materials";
-    if (["master-units", "cad-markers", "spreading-tables", "cutting-bundles", "sewing-lines", "hourly-production"].includes(moduleId)) return "shopfloor";
+    if (["cad-markers", "spreading-tables", "cutting-bundles", "sewing-lines", "hourly-production"].includes(moduleId)) return "shopfloor";
     if (["qc-inspection", "cutting-qc", "endline-qc"].includes(moduleId)) return "quality";
     if (["finishing-packing", "export-shipment"].includes(moduleId)) return "shipping";
     return null;
@@ -267,7 +266,8 @@ export function App() {
     if (isCompanySection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "Enterprise Governance", href: "/companies" },
+        { label: "Master Data", href: "/companies" },
+        { label: "Organization Setup", href: "/companies" },
       ];
       if (companyRoute.type === "list") {
         return [...base, { label: "Company Directory", active: true }];
@@ -285,7 +285,8 @@ export function App() {
     if (isUserSection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "System Admin & Auth", href: "/users" },
+        { label: "Master Data", href: "/users" },
+        { label: "System & Security", href: "/users" },
       ];
       if (userRoute.type === "list") {
         return [...base, { label: "User Directory", active: true }];
@@ -303,7 +304,8 @@ export function App() {
     if (isRoleSection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "System Admin & Auth", href: "/roles" },
+        { label: "Master Data", href: "/roles" },
+        { label: "System & Security", href: "/roles" },
       ];
       if (roleRoute.type === "list") {
         return [...base, { label: "Roles & Policy Matrix", active: true }];
@@ -318,7 +320,8 @@ export function App() {
     if (isAgentSection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "Merchandising & CRM", href: "/master/buyers" },
+        { label: "Master Data", href: "/master/buyers" },
+        { label: "Merchandising", href: "/master/agents" },
       ];
       if (agentRoute.type === "list") {
         return [...base, { label: "Buying Agent Directory", active: true }];
@@ -336,7 +339,8 @@ export function App() {
     if (isBuyerSection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "Merchandising & CRM", href: "/master/buyers" },
+        { label: "Master Data", href: "/master/buyers" },
+        { label: "Merchandising", href: "/master/buyers" },
       ];
       if (buyerRoute.type === "list") {
         return [...base, { label: "Buyer Directory", active: true }];
@@ -354,7 +358,8 @@ export function App() {
     if (isStyleSection) {
       const base = [
         { label: "Home", href: "/dashboard" },
-        { label: "Merchandising & CRM", href: "/master/styles" },
+        { label: "Master Data", href: "/master/styles" },
+        { label: "Merchandising", href: "/master/styles" },
       ];
       if (styleRoute.type === "list") {
         return [...base, { label: "Style Library", active: true }];
