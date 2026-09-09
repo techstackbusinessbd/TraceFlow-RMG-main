@@ -468,17 +468,33 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
             {/* Card 1: Core Affiliations */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-[#0066FF]" />
-                  <h2 className={UI_TOKENS.card.title}>Buyer & Commercial Affiliation</h2>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0066FF] flex items-center justify-center shadow-2xs">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className={UI_TOKENS.card.title}>Buyer & Commercial Affiliation</h2>
+                    <p className="text-[11px] text-slate-500">
+                      Company provenance, client buyer account, and production season calendar
+                    </p>
+                  </div>
                 </div>
-                <span className="text-xs text-slate-400">Step 1 of 4</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-400 font-medium">Stage:</span>
+                  <Badge variant="neutral">Step 1 of 4</Badge>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField label="Company" required error={errors.company_id}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                {/* 1. Company */}
+                <FormField
+                  label="Company"
+                  required
+                  error={errors.company_id}
+                  helperText="Manufacturing operating unit responsible for execution."
+                >
                   <select
-                    className={UI_TOKENS.input.select}
+                    className={`w-full ${UI_TOKENS.input.select} ${errors.company_id ? UI_TOKENS.input.error : ""}`}
                     value={formData.company_id}
                     onChange={(e) => {
                       const cid = Number(e.target.value);
@@ -495,13 +511,19 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                   </select>
                 </FormField>
 
-                <FormField label="Buyer" required error={errors.buyer_id}>
+                {/* 2. Buyer */}
+                <FormField
+                  label="Buyer"
+                  required
+                  error={errors.buyer_id}
+                  helperText="Primary brand or retail client placing the order."
+                >
                   <select
-                    className={UI_TOKENS.input.select}
+                    className={`w-full ${UI_TOKENS.input.select} ${errors.buyer_id ? UI_TOKENS.input.error : ""}`}
                     value={formData.buyer_id}
                     onChange={(e) => setFormData((prev) => ({ ...prev, buyer_id: Number(e.target.value) || "" }))}
                   >
-                    <option value="">Select Buyer</option>
+                    <option value="">Select Buyer...</option>
                     {buyers.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name} ({b.code})
@@ -510,58 +532,88 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
                   </select>
                 </FormField>
 
-                <FormField label="Season Name" required error={errors.season} helperText="Cycle / Collection">
-                  <select
-                    className={UI_TOKENS.input.select}
-                    value={seasonName}
-                    onChange={(e) => setSeasonName(e.target.value)}
+                {/* 3. Season Group (Combined 2-column inline grid for perfect alignment) */}
+                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-slate-50/80 rounded-lg border border-slate-200/70">
+                  <FormField
+                    label="Season Name"
+                    required
+                    error={errors.season}
+                    helperText="Fashion buying cycle or collection."
                   >
-                    {SEASON_NAMES.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </FormField>
+                    <select
+                      className={`w-full ${UI_TOKENS.input.select}`}
+                      value={seasonName}
+                      onChange={(e) => setSeasonName(e.target.value)}
+                    >
+                      {SEASON_NAMES.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
 
-                <FormField label="Season Year" required helperText="Production Year">
-                  <select
-                    className={UI_TOKENS.input.select}
-                    value={seasonYear}
-                    onChange={(e) => setSeasonYear(e.target.value)}
+                  <FormField
+                    label="Season Year"
+                    required
+                    helperText="Calendar delivery & production year."
                   >
-                    {SEASON_YEARS.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
-                </FormField>
+                    <select
+                      className={`w-full ${UI_TOKENS.input.select}`}
+                      value={seasonYear}
+                      onChange={(e) => setSeasonYear(e.target.value)}
+                    >
+                      {SEASON_YEARS.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+                </div>
 
-                <FormField label="Garment Item" required error={errors.garment_item} helperText="Select standard garment or type custom item.">
-                  <TextInput
-                    list="garment-presets"
-                    placeholder="e.g. Casual Chino Pant, Formal Shirt"
-                    value={formData.garment_item}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, garment_item: e.target.value }))}
-                  />
-                  <datalist id="garment-presets">
-                    {COMMON_GARMENT_ITEMS.map((item) => (
-                      <option key={item} value={item} />
-                    ))}
-                  </datalist>
-                </FormField>
+                {/* 4. Garment Item */}
+                <div className="md:col-span-2">
+                  <FormField
+                    label="Garment Item"
+                    required
+                    error={errors.garment_item}
+                    helperText="Specific apparel article or construction type (e.g. Chino Pant, 5-Pocket Jeans, Cargo Shorts)."
+                  >
+                    <TextInput
+                      list="garment-presets"
+                      placeholder="e.g. Casual Chino Pant, Formal Shirt, Cargo Pant"
+                      value={formData.garment_item}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, garment_item: e.target.value }))}
+                    />
+                    <datalist id="garment-presets">
+                      {COMMON_GARMENT_ITEMS.map((item) => (
+                        <option key={item} value={item} />
+                      ))}
+                    </datalist>
+                  </FormField>
+                </div>
               </div>
             </div>
 
             {/* Card 2: Garment & Technical Specifications */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <div className="flex items-center gap-2">
-                  <Scissors className="w-4 h-4 text-[#0066FF]" />
-                  <h2 className={UI_TOKENS.card.title}>Woven Specifications & Engineering</h2>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-2xs">
+                    <Scissors className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className={UI_TOKENS.card.title}>Woven Specifications & Engineering</h2>
+                    <p className="text-[11px] text-slate-500">
+                      Fabric construction, industrial wash standard, and IE minute evaluation
+                    </p>
+                  </div>
                 </div>
-                <span className="text-xs text-slate-400">Step 2 of 4</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-400 font-medium">Stage:</span>
+                  <Badge variant="neutral">Step 2 of 4</Badge>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -678,9 +730,16 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
             {/* Card 3: Colorways Repeater */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <div className="flex items-center gap-2">
-                  <Palette className="w-4 h-4 text-[#0066FF]" />
-                  <h2 className={UI_TOKENS.card.title}>Colorways Matrix</h2>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-pink-50 text-pink-600 flex items-center justify-center shadow-2xs">
+                    <Palette className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className={UI_TOKENS.card.title}>Colorways & Shade Matrix</h2>
+                    <p className="text-[11px] text-slate-500">
+                      Pantone codes, hex shades, and production color variant mapping
+                    </p>
+                  </div>
                 </div>
                 <Button
                   type="button"
@@ -693,7 +752,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
               </div>
 
               {errors.colors && (
-                <div className="p-2 mb-3 text-xs bg-rose-50 text-rose-700 border border-rose-200 rounded">
+                <div className="p-2.5 mb-3 text-xs bg-rose-50 text-rose-700 border border-rose-200 rounded-md">
                   {errors.colors}
                 </div>
               )}
@@ -747,12 +806,19 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
             {/* Card 4: Size Scale Builder */}
             <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#0066FF]" />
-                  <h2 className={UI_TOKENS.card.title}>Size Scale Matrix</h2>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shadow-2xs">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className={UI_TOKENS.card.title}>Size Scale & Ratio Spectrum</h2>
+                    <p className="text-[11px] text-slate-500">
+                      Ordered size breakdown, waist-inseam combinations, and cutting ratios
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-500 mr-1">Presets:</span>
+                  <span className="text-[11px] text-slate-500 mr-1 hidden sm:inline">Presets:</span>
                   {Object.entries(PRESET_SIZE_SCALES).map(([name, scale]) => (
                     <button
                       key={name}
