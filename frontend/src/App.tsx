@@ -19,6 +19,9 @@ import { BuyerDetailsPage } from "./features/Buyers/BuyerDetailsPage";
 import { AgentListPage } from "./features/Agents/AgentListPage";
 import { AgentFormPage } from "./features/Agents/AgentFormPage";
 import { AgentDetailsPage } from "./features/Agents/AgentDetailsPage";
+import { StyleListPage } from "./features/Styles/StyleListPage";
+import { StyleFormPage } from "./features/Styles/StyleFormPage";
+import { StyleDetailsPage } from "./features/Styles/StyleDetailsPage";
 import { NotFoundPage } from "./components/common/NotFoundPage";
 import { AccessDeniedPage } from "./components/common/AccessDeniedPage";
 import { useAuthStore } from "./store/authStore";
@@ -80,6 +83,17 @@ function parseBuyerPath(path: string): { type: "list" | "create" | "edit" | "vie
   return { type: null };
 }
 
+// Helper: parse /master/styles, /master/styles/create, /master/styles/:id, and /master/styles/:id/edit
+function parseStylePath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: string } {
+  if (path === "/master/styles") return { type: "list" };
+  if (path === "/master/styles/create") return { type: "create" };
+  const editMatch = path.match(/^\/master\/styles\/([a-zA-Z0-9-]+)\/edit$/);
+  if (editMatch) return { type: "edit", id: editMatch[1] };
+  const viewMatch = path.match(/^\/master\/styles\/([a-zA-Z0-9-]+)$/);
+  if (viewMatch) return { type: "view", id: viewMatch[1] };
+  return { type: null };
+}
+
 export function App() {
   const { isAuthenticated, canAccessWidget } = useAuthStore();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -105,6 +119,10 @@ export function App() {
   );
   const canViewAgents = canAccessWidget(
     ['master_data.agents.profile.view'],
+    ['superadmin', 'admin', 'standarduser', 'merchandiser']
+  );
+  const canViewStyles = canAccessWidget(
+    ['master_data.styles.profile.view', 'merchandising.styles.view'],
     ['superadmin', 'admin', 'standarduser', 'merchandiser']
   );
 
@@ -143,6 +161,8 @@ export function App() {
       navigateTo("/dashboard");
     } else if (moduleId === "master-buyers") {
       navigateTo("/master/buyers");
+    } else if (moduleId === "master-styles" || moduleId === "styles-costing") {
+      navigateTo("/master/styles");
     } else if (moduleId === "master-agents") {
       navigateTo("/master/agents");
     } else if (moduleId === "master-companies") {
@@ -168,6 +188,8 @@ export function App() {
   const isAgentSection = agentRoute.type !== null;
   const buyerRoute = parseBuyerPath(currentPath);
   const isBuyerSection = buyerRoute.type !== null;
+  const styleRoute = parseStylePath(currentPath);
+  const isStyleSection = styleRoute.type !== null;
 
   const isKnownRoute =
     isDashboard ||
@@ -176,7 +198,8 @@ export function App() {
     isUserSection ||
     isRoleSection ||
     isAgentSection ||
-    isBuyerSection;
+    isBuyerSection ||
+    isStyleSection;
   const isNotFound = !isKnownRoute;
 
   // Check if current route violates user's authorization
@@ -186,12 +209,13 @@ export function App() {
     (isUserSection && !canViewUsers) ||
     (isRoleSection && !canViewRoles) ||
     (isAgentSection && !canViewAgents) ||
-    (isBuyerSection && !canViewMasterBuyers);
+    (isBuyerSection && !canViewMasterBuyers) ||
+    (isStyleSection && !canViewStyles);
 
   // Map current module/path to Category
   const getActiveCategory = (moduleId: string): string | null => {
     if (["profile", "profile-password", "admin-users", "admin-roles"].includes(moduleId)) return "auth";
-    if (["master-companies", "master-agents", "master-buyers", "master-suppliers", "master-units"].includes(moduleId)) return "governance";
+    if (["master-companies", "master-agents", "master-buyers", "master-styles", "master-suppliers", "master-units"].includes(moduleId)) return "governance";
     if (["inquiries", "styles-costing", "techpacks", "order-pos"].includes(moduleId)) return "merchandising";
     if (["warehouse-rolls", "roll-grn", "shade-lots", "trims-warehouse"].includes(moduleId)) return "materials";
     if (["cad-markers", "spreading-tables", "cutting-bundles", "sewing-lines", "hourly-production"].includes(moduleId)) return "shopfloor";
@@ -216,6 +240,8 @@ export function App() {
     currentModuleId = "master-agents";
   } else if (isBuyerSection) {
     currentModuleId = "master-buyers";
+  } else if (isStyleSection) {
+    currentModuleId = "master-styles";
   } else {
     currentModuleId = currentPath.replace(/^\//, "").replace("master/buyers", "master-buyers") || "master-buyers";
   }
@@ -324,6 +350,24 @@ export function App() {
         return [...base, { label: "Buyer Directory", href: "/master/buyers" }, { label: "Buyer Profile", active: true }];
       }
     }
+    if (isStyleSection) {
+      const base = [
+        { label: "Home", href: "/dashboard" },
+        { label: "Master Data", href: "/master/styles" },
+      ];
+      if (styleRoute.type === "list") {
+        return [...base, { label: "Style Library", active: true }];
+      }
+      if (styleRoute.type === "create") {
+        return [...base, { label: "Style Library", href: "/master/styles" }, { label: "Create Style", active: true }];
+      }
+      if (styleRoute.type === "edit") {
+        return [...base, { label: "Style Library", href: "/master/styles" }, { label: "Edit Style", active: true }];
+      }
+      if (styleRoute.type === "view") {
+        return [...base, { label: "Style Library", href: "/master/styles" }, { label: "Style Profile", active: true }];
+      }
+    }
     if (isUnauthorized) {
       return [
         { label: "Home", href: "/dashboard" },
@@ -423,6 +467,22 @@ export function App() {
       }
       if (buyerRoute.type === "view" && buyerRoute.id) {
         return <BuyerDetailsPage buyerId={buyerRoute.id} onNavigate={navigateTo} />;
+      }
+    }
+
+    // Style Section Routes (100% Woven Master Data)
+    if (isStyleSection) {
+      if (styleRoute.type === "list") {
+        return <StyleListPage onNavigate={navigateTo} />;
+      }
+      if (styleRoute.type === "create") {
+        return <StyleFormPage mode="create" onNavigate={navigateTo} />;
+      }
+      if (styleRoute.type === "edit" && styleRoute.id) {
+        return <StyleFormPage mode="edit" styleId={styleRoute.id} onNavigate={navigateTo} />;
+      }
+      if (styleRoute.type === "view" && styleRoute.id) {
+        return <StyleDetailsPage styleId={styleRoute.id} onNavigate={navigateTo} />;
       }
     }
 
