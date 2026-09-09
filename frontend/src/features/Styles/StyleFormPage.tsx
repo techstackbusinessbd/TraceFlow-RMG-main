@@ -238,23 +238,25 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
     try {
       if (mode === "create") {
         await createStyle(formData);
-        showToast("success", "Success", "Woven Style created successfully.");
-        setTimeout(() => onNavigate("/master/styles"), 1000);
-      } else if (mode === "edit" && styleId) {
-        await updateStyle(styleId, formData);
-        showToast("success", "Success", "Woven Style updated successfully.");
-        setTimeout(() => onNavigate(`/master/styles/${styleId}`), 1000);
+        showToast("success", "Success", "Style created successfully.");
+      } else {
+        await updateStyle(styleId!, formData);
+        showToast("success", "Success", "Style updated successfully.");
       }
-    } catch (err: any) {
-      if (err.errors) {
+      setTimeout(() => {
+        onNavigate("/master/styles");
+      }, 1000);
+    } catch (err: unknown) {
+      const apiErr = err as { errors?: Record<string, string[]>; message?: string };
+      if (apiErr.errors) {
         const fieldErrors: Record<string, string> = {};
-        for (const [k, v] of Object.entries(err.errors)) {
-          fieldErrors[k] = (v as string[])[0];
+        for (const [key, msgs] of Object.entries(apiErr.errors)) {
+          fieldErrors[key] = Array.isArray(msgs) ? msgs[0] : String(msgs);
         }
         setErrors(fieldErrors);
-        showToast("error", "Validation Error", "Please review and correct highlighted fields.");
+        showToast("error", "Validation Error", "Please review the highlighted fields.");
       } else {
-        showToast("error", "Submission Failed", err.message || "An unexpected error occurred.");
+        showToast("error", "Error", apiErr.message || "Failed to save style record.");
       }
     } finally {
       setIsSubmitting(false);
@@ -277,7 +279,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
 
       {/* Tier 1: Page Header */}
       <PageHeader
-        title={mode === "create" ? "Create Woven Style" : `Edit Style: ${formData.style_name || nextCode}`}
+        title={mode === "create" ? "Create Style" : `Edit Style: ${formData.style_name || nextCode}`}
         badgeLabel="Style Code"
         badgeCount={nextCode}
         actions={

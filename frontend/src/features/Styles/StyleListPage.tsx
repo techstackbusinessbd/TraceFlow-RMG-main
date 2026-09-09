@@ -300,8 +300,8 @@ export const StyleListPage: React.FC<StyleListPageProps> = ({ onNavigate }) => {
       {/* Tier 1: Page Header */}
       <PageHeader
         title="Style Library"
-        badgeLabel="Woven Garments"
-        badgeCount={`${total} Styles`}
+        badgeLabel="Styles"
+        badgeCount={total}
         actions={
           <div className="flex items-center gap-2">
             {canCreate && (
