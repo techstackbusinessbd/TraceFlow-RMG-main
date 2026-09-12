@@ -251,6 +251,11 @@ export const UI_TOKENS = {
     iconLeft: "absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none",
     iconRight: "absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 cursor-pointer",
   },
+  inputGroup: {
+    container: "flex items-center rounded-md border border-slate-300 bg-white shadow-2xs focus-within:border-[#0066FF] focus-within:ring-1 focus-within:ring-[#0066FF] transition-colors",
+    input: "w-full px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent rounded-l-md disabled:bg-slate-50 disabled:text-slate-400",
+    addonSelect: "bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold border-l border-slate-200 px-2.5 py-1.5 text-xs rounded-r-md focus:outline-none cursor-pointer shrink-0 transition-colors disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400",
+  },
   filter: {
     container: "bg-white border border-slate-200 rounded-md p-3.5 shadow-2xs space-y-3",
     subline: "flex flex-wrap items-center justify-between pt-2.5 border-t border-slate-100 text-xs text-slate-500",

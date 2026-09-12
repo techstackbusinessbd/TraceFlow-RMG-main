@@ -2,6 +2,13 @@ import { useAuthStore } from "../store/authStore";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+export interface UomItem {
+  code: string;
+  name: string;
+  is_base: boolean;
+  factor: number;
+}
+
 export interface MasterMetadata {
   woven_categories: string[];
   category_items?: Record<string, string[]>;
@@ -15,6 +22,7 @@ export interface MasterMetadata {
   };
   size_scales: Record<string, string[]>;
   payment_terms: string[];
+  uom_scales?: Record<string, UomItem[]>;
   style_statuses: Record<string, string>;
 }
 
@@ -131,6 +139,35 @@ export const DEFAULT_MASTER_METADATA: MasterMetadata = {
     "TT / Advance",
     "Open Account (CAD)",
   ],
+  uom_scales: {
+    apparel: [
+      { code: "Pcs", name: "Pieces", is_base: true, factor: 1 },
+      { code: "Dzn", name: "Dozen", is_base: false, factor: 12 },
+      { code: "Set", name: "Suit / Set", is_base: false, factor: 1 },
+      { code: "Pair", name: "Pairs", is_base: false, factor: 1 },
+      { code: "Pack", name: "Multi-pack", is_base: false, factor: 1 },
+    ],
+    fabric: [
+      { code: "Yds", name: "Yards", is_base: true, factor: 1 },
+      { code: "Mtr", name: "Meters", is_base: false, factor: 1.09361 },
+      { code: "Kg", name: "Kilograms", is_base: true, factor: 1 },
+      { code: "Lbs", name: "Pounds", is_base: false, factor: 0.453592 },
+    ],
+    accessories: [
+      { code: "Pcs", name: "Pieces", is_base: true, factor: 1 },
+      { code: "Gross", name: "Gross (144 pcs)", is_base: false, factor: 144 },
+      { code: "Dzn", name: "Dozen (12 pcs)", is_base: false, factor: 12 },
+      { code: "Cone", name: "Cone", is_base: false, factor: 1 },
+      { code: "Roll", name: "Roll", is_base: false, factor: 1 },
+      { code: "Thousand", name: "Thousand (1000 pcs)", is_base: false, factor: 1000 },
+    ],
+    packing: [
+      { code: "Carton", name: "Carton (Ctn)", is_base: true, factor: 1 },
+      { code: "Poly", name: "Polybag", is_base: false, factor: 1 },
+      { code: "CBM", name: "Cubic Meter", is_base: false, factor: 1 },
+      { code: "Pallet", name: "Pallet", is_base: false, factor: 1 },
+    ],
+  },
   style_statuses: {
     Development: "Development (TechPack Review)",
     Sampling: "Sampling (Proto / Fit)",

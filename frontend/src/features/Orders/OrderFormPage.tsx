@@ -92,8 +92,8 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
   // Selected Style Details
   const [selectedStyle, setSelectedStyle] = useState<WovenStyle | null>(null);
 
-  // Active Entry Mode: null (unselected initial state) vs 'manual' (2D Matrix Grid) vs 'import' (Excel/PDF File)
-  const [activeTab, setActiveTab] = useState<"manual" | "import" | null>(null);
+  // Active Entry Mode: 'manual' (2D Matrix Grid) vs 'import' (Excel/PDF File)
+  const [activeTab, setActiveTab] = useState<"manual" | "import">("manual");
 
   // Form State
   const [formData, setFormData] = useState<PurchaseOrderFormData>({
@@ -1105,6 +1105,23 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
             >
               Cancel
             </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setActiveTab("import");
+                setActiveOrderFormTab("breakdown");
+                if (!formData.style_id) {
+                  showToast("info", "Select Style First", "Please select Company, Buyer, and Style in Part 1 before uploading buyer sheet.");
+                } else {
+                  fileInputRef.current?.click();
+                }
+              }}
+              icon={<FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />}
+              title="Upload buyer purchase order sheet (.xlsx, .csv, .pdf) to auto-extract breakdowns"
+            >
+              Import Buyer Sheet
+            </Button>
             {multiPos.length > 1 || manualPos.length > 1 ? (
               <Button
                 type="button"
@@ -1132,87 +1149,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
         }
       />
 
-      {/* Initial Step Entry Gateway (SRS 4.0 Standard: Choose between Smart PO Import vs Blank Master Order) */}
-      {mode === "create" && activeTab === null ? (
-        <div className="max-w-4xl mx-auto py-8 space-y-6">
-          <div className="text-center space-y-2">
-            <Badge variant="purple" icon={<Sparkles className="w-3.5 h-3.5" />}>
-              Order Entry Gateway
-            </Badge>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-              Select Purchase Order Initiation Method
-            </h2>
-            <p className="text-xs text-slate-500 max-w-lg mx-auto">
-              Choose how you would like to construct this order. You can auto-extract from buyer sheets or start with a clean manual 2D ratio matrix.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
-            {/* Gateway Option 1: Smart PO Import */}
-            <div
-              onClick={() => {
-                setActiveTab("import");
-                setActiveOrderFormTab("breakdown");
-              }}
-              className="group p-6 bg-white border border-slate-200 hover:border-[#0066FF] rounded-xl shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-5"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#0066FF] border border-blue-100 flex items-center justify-center font-bold shadow-2xs group-hover:bg-[#0066FF] group-hover:text-white transition-colors">
-                  <FileSpreadsheet className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-[#0066FF] transition-colors">
-                      Smart PO Import (Recommended)
-                    </h3>
-                    <Badge variant="info">Fastest</Badge>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Upload official buyer purchase order sheets (.xlsx, .xls, .csv, or .pdf). The parsing engine auto-extracts PO numbers, destination countries, delivery dates, colorways, sizes, and ratio matrices.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0066FF]">
-                <span>Upload PO Sheet & Extract</span>
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-
-            {/* Gateway Option 2: Blank Master Order */}
-            <div
-              onClick={() => {
-                setActiveTab("manual");
-                setActiveOrderFormTab("header");
-              }}
-              className="group p-6 bg-white border border-slate-200 hover:border-[#0066FF] rounded-xl shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-5"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold shadow-2xs group-hover:bg-[#0066FF] group-hover:text-white transition-colors">
-                  <Calculator className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-[#0066FF] transition-colors">
-                      Blank Master Order
-                    </h3>
-                    <Badge variant="neutral">Manual 2D Matrix</Badge>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Build order manually from scratch. Define master commercial terms, milestone dates, and enter manufacturing quantities into an interactive 2D color-size ratio matrix.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-700 group-hover:text-[#0066FF]">
-                <span>Open Blank Order Form</span>
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-      /* Main Form Container */
+      {/* Main Form Container */}
       <form onSubmit={handleSubmit} noValidate>
         {/* Enterprise In-Page Tab Navigation (SRS 3.1 & 3.2 Workflow Separation) */}
         <div className="mb-4 bg-white border border-slate-200 rounded-lg p-1.5 shadow-2xs flex flex-wrap items-center justify-between gap-2">
@@ -1950,10 +1887,9 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
               </div>
             </div>
 
-            {/* Section: Ratio Breakdown / Import Workspace (Shown only after choosing an entry mode) */}
-            {activeTab !== null && (
-              <div className={UI_TOKENS.card.base}>
-              <div className={UI_TOKENS.card.header}>
+            {/* Section: Ratio Breakdown / Import Workspace */}
+            <div className={UI_TOKENS.card.base}>
+              <div className={`${UI_TOKENS.card.header} flex-wrap gap-3`}>
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shadow-2xs">
                     {activeTab === "manual" ? <Calculator className="w-4 h-4" /> : <Sparkles className="w-4 h-4 text-[#0066FF]" />}
@@ -1976,6 +1912,34 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                         : "Upload buyer purchase order sheet to auto-fill commercial terms and breakdown matrix."}
                     </p>
                   </div>
+                </div>
+
+                {/* Inline Mode Switcher for Fast Merchandiser Flow */}
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md border border-slate-200 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("manual")}
+                    className={`px-2.5 py-1 rounded font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                      activeTab === "manual"
+                        ? "bg-white text-slate-900 shadow-2xs font-bold"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Calculator className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>2D Matrix Grid</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("import")}
+                    className={`px-2.5 py-1 rounded font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                      activeTab === "import"
+                        ? "bg-white text-[#0066FF] shadow-2xs font-bold"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Import Sheet</span>
+                  </button>
                 </div>
               </div>
 
@@ -2203,6 +2167,23 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                       </div>
                     </div>
                   )}
+
+                  {/* Post-Extraction Action Bar */}
+                  {parsedSummary !== null && (
+                    <div className="pt-2 flex items-center justify-between">
+                      <span className="text-xs text-slate-500">
+                        Extracted {matrixBreakdownTotal.toLocaleString()} pcs across color-size matrix.
+                      </span>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={() => setActiveTab("manual")}
+                        icon={<Calculator className="w-3.5 h-3.5" />}
+                      >
+                        Review & Edit in 2D Ratio Matrix
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Manual Mode */
@@ -2237,6 +2218,20 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                         </div>
 
                         <div className="flex items-center gap-2">
+                          {/* Quick Import Button */}
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => {
+                              setActiveTab("import");
+                              fileInputRef.current?.click();
+                            }}
+                            icon={<FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />}
+                            title="Auto-fill matrix by uploading buyer purchase order sheet"
+                          >
+                            Import Sheet
+                          </Button>
+
                           {/* Multi PO Add Button */}
                           <Button
                             type="button"
@@ -2907,7 +2902,6 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                 )
               )}
             </div>
-            )}
 
             {/* Tab 2 Footer Navigation Row */}
             <div className="p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between gap-3 shadow-2xs">
@@ -3138,7 +3132,6 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
           </div>
         </div>
       </form>
-      )}
 
       {/* Document Preview Modal */}
       {isPreviewOpen && formData.po_document_url && (
