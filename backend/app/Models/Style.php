@@ -28,6 +28,9 @@ class Style extends Model
         'base_smv',
         'wash_type',
         'description',
+        'techpack_file_url',
+        'techpack_file_name',
+        'techpack_file_size',
         'status',
         'is_active',
     ];
@@ -103,5 +106,13 @@ class Style extends Model
     public function activeSizes(): HasMany
     {
         return $this->hasMany(StyleSize::class)->where('is_active', true)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
+     * Purchase Orders issued against this style.
+     */
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
     }
 }

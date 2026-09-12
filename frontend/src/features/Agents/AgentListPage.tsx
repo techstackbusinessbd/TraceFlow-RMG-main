@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Eye, Edit2, Trash2, Percent } from "lucide-react";
+import { Plus, Eye, Edit2, Trash2, Percent, ToggleRight, ToggleLeft } from "lucide-react";
 import { PageHeader } from "../../components/common/PageHeader";
 import { FilterToolbar } from "../../components/common/FilterToolbar";
 import { DataTable, type ColumnDef } from "../../components/common/DataTable";
@@ -267,6 +267,12 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
               ? [
                   {
                     label: agent.is_active ? "Deactivate Agent" : "Activate Agent",
+                    icon: agent.is_active ? (
+                      <ToggleRight className="w-3.5 h-3.5 text-slate-500" />
+                    ) : (
+                      <ToggleLeft className="w-3.5 h-3.5 text-slate-400" />
+                    ),
+                    variant: agent.is_active ? ("warning" as const) : ("default" as const),
                     onClick: () => handleToggleStatus(agent),
                   },
                 ]
@@ -275,8 +281,9 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
               ? [
                   {
                     label: "Delete Agent",
-                    icon: <Trash2 className="w-3.5 h-3.5" />,
+                    icon: <Trash2 className="w-3.5 h-3.5 text-rose-600" />,
                     variant: "danger" as const,
+                    dividerBefore: true,
                     onClick: () => setDeleteTarget(agent),
                   },
                 ]
@@ -383,8 +390,8 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ onNavigate }) => {
 
       {/* Confirmation Modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
+        <div className={UI_TOKENS.launcherModal.backdrop}>
+          <div className={UI_TOKENS.launcherModal.dialogContainer}>
             <div className="flex items-center gap-3 text-rose-600 mb-4">
               <div className="p-2.5 bg-rose-50 rounded-lg">
                 <Trash2 className="w-6 h-6" />

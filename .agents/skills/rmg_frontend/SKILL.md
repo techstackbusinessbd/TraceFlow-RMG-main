@@ -104,6 +104,9 @@ Every entity details/view page MUST use `<div className={UI_TOKENS.appLayout.mai
 6. **Platform Owner Exclusion in Selectors (STRICT & FINAL)**:
     - The core administrative tenant "Platform Owner" (`code === 'PLT'`) MUST NEVER be rendered as an option in company dropdowns, style forms, buyer forms, or filter select elements.
     - All operational company selectors must filter out `PLT` so factory operators and merchandisers only ever see production entities.
+7. **Modal & Dialog Small Corner Radius Standard (STRICT & FINAL)**:
+    - All modal dialogs, lookup modals, and alert sheets MUST use a sleek, enterprise small corner radius (`rounded-lg` or `rounded-md`).
+    - Bulky or oversized corner radii (`rounded-xl`, `rounded-2xl`, etc.) are STRICTLY PROHIBITED. Modals must consume `UI_TOKENS.launcherModal.dialogContainer` or `UI_TOKENS.launcherModal.dialogContainerSm`.
 
 
 ---
@@ -125,6 +128,7 @@ Every entity details/view page MUST use `<div className={UI_TOKENS.appLayout.mai
 1. **Smart Accordion Rail (`NavigationRail`)**:
    - Only the parent category of the currently active module should be expanded by default.
    - All other categories must remain collapsed to avoid visual clutter and screen scroll fatigue.
+   - **App Launcher Isolated Submodule Navigation Standard (STRICT & FINAL)**: When an app/submodule is selected from the App Launcher (*"All Modules & Workflows"*), the Sidebar Navigation Rail MUST isolate and display ONLY the active submodule's menus (child menu items). All other categories, unrelated modules, and quick links MUST remain hidden to give the operator an ultra-focused workflow workspace. Clicking "Show All" on the sidebar focus banner restores the full navigation rail.
 2. **Zero Modals for CRUD Operations**:
    - Create, List, Edit, and Details MUST be dedicated full-page routes with breadcrumbs and back navigation.
    - Modals are strictly limited to non-CRUD flows (e.g. destructive action confirmation, QR scanner, supervisor PIN prompt).

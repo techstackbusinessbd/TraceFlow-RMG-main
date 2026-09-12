@@ -14,6 +14,7 @@ class UpdateAgentRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'company_id'      => ['sometimes', 'required', 'integer', 'exists:companies,id'],
             'name'            => ['required', 'string', 'min:2', 'max:150'],
             'country'         => ['required', 'string', 'min:2', 'max:100'],
             'contact_person'  => ['nullable', 'string', 'max:100'],

@@ -276,15 +276,17 @@ export const UserListPage: React.FC<UserListPageProps> = ({ onNavigate }) => {
                     ...(!isSelf
                       ? [
                           {
-                            icon: row.is_active
-                              ? <ToggleRight className="w-3.5 h-3.5" />
-                              : <ToggleLeft className="w-3.5 h-3.5" />,
+                            icon: row.is_active ? (
+                              <ToggleRight className="w-3.5 h-3.5 text-slate-500" />
+                            ) : (
+                              <ToggleLeft className="w-3.5 h-3.5 text-slate-400" />
+                            ),
                             label: row.is_active ? "Deactivate User" : "Activate User",
                             variant: (row.is_active ? "warning" : "default") as "warning" | "default",
                             onClick: () => handleToggleStatus(row),
                           },
                           {
-                            icon: <Trash2 className="w-3.5 h-3.5" />,
+                            icon: <Trash2 className="w-3.5 h-3.5 text-rose-600" />,
                             label: "Delete User",
                             variant: "danger" as const,
                             dividerBefore: true,

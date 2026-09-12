@@ -22,9 +22,13 @@ import { AgentDetailsPage } from "./features/Agents/AgentDetailsPage";
 import { StyleListPage } from "./features/Styles/StyleListPage";
 import { StyleFormPage } from "./features/Styles/StyleFormPage";
 import { StyleDetailsPage } from "./features/Styles/StyleDetailsPage";
+import { OrderListPage } from "./features/Orders/OrderListPage";
+import { OrderFormPage } from "./features/Orders/OrderFormPage";
+import { OrderDetailsPage } from "./features/Orders/OrderDetailsPage";
 import { NotFoundPage } from "./components/common/NotFoundPage";
 import { AccessDeniedPage } from "./components/common/AccessDeniedPage";
 import { useAuthStore } from "./store/authStore";
+import { navigationService } from "./services/navigationService";
 
 
 
@@ -94,6 +98,17 @@ function parseStylePath(path: string): { type: "list" | "create" | "edit" | "vie
   return { type: null };
 }
 
+// Helper: parse /orders, /orders/create, /orders/:id, and /orders/:id/edit
+function parseOrderPath(path: string): { type: "list" | "create" | "edit" | "view" | null; id?: string } {
+  if (path === "/orders" || path === "/merchandising/orders") return { type: "list" };
+  if (path === "/orders/create" || path === "/merchandising/orders/create") return { type: "create" };
+  const editMatch = path.match(/^\/(?:merchandising\/)?orders\/([a-zA-Z0-9-]+)\/edit$/);
+  if (editMatch) return { type: "edit", id: editMatch[1] };
+  const viewMatch = path.match(/^\/(?:merchandising\/)?orders\/([a-zA-Z0-9-]+)$/);
+  if (viewMatch) return { type: "view", id: viewMatch[1] };
+  return { type: null };
+}
+
 export function App() {
   const { isAuthenticated, canAccessWidget } = useAuthStore();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -123,6 +138,10 @@ export function App() {
   );
   const canViewStyles = canAccessWidget(
     ['master_data.styles.profile.view', 'merchandising.styles.view'],
+    ['superadmin', 'admin', 'standarduser', 'merchandiser']
+  );
+  const canViewOrders = canAccessWidget(
+    ['orders.order.view', 'merchandising.orders.view'],
     ['superadmin', 'admin', 'standarduser', 'merchandiser']
   );
 
@@ -161,12 +180,15 @@ export function App() {
   };
 
   const handleSelectModule = (moduleId: string, submoduleGroupId?: string) => {
-    if (submoduleGroupId) {
+    if (moduleId === "dashboard") {
+      handleSubmoduleGroupChange(null);
+      navigateTo("/dashboard");
+    } else if (submoduleGroupId) {
       handleSubmoduleGroupChange(submoduleGroupId);
     }
 
     if (moduleId === "dashboard") {
-      navigateTo("/dashboard");
+      return;
     } else if (moduleId === "profile") {
       navigateTo("/profile");
     } else if (moduleId === "profile-password") {
@@ -187,6 +209,8 @@ export function App() {
       navigateTo("/users");
     } else if (moduleId === "admin-roles") {
       navigateTo("/roles");
+    } else if (moduleId === "order-pos" || moduleId === "orders") {
+      navigateTo("/orders");
     } else {
       navigateTo(`/${moduleId}`);
     }
@@ -206,6 +230,8 @@ export function App() {
   const isBuyerSection = buyerRoute.type !== null;
   const styleRoute = parseStylePath(currentPath);
   const isStyleSection = styleRoute.type !== null;
+  const orderRoute = parseOrderPath(currentPath);
+  const isOrderSection = orderRoute.type !== null;
 
   const isKnownRoute =
     isDashboard ||
@@ -215,7 +241,8 @@ export function App() {
     isRoleSection ||
     isAgentSection ||
     isBuyerSection ||
-    isStyleSection;
+    isStyleSection ||
+    isOrderSection;
   const isNotFound = !isKnownRoute;
 
   // Check if current route violates user's authorization
@@ -226,17 +253,29 @@ export function App() {
     (isRoleSection && !canViewRoles) ||
     (isAgentSection && !canViewAgents) ||
     (isBuyerSection && !canViewMasterBuyers) ||
-    (isStyleSection && !canViewStyles);
+    (isStyleSection && !canViewStyles) ||
+    (isOrderSection && !canViewOrders);
 
-  // Map current module/path to Category
+  // Dynamically resolve active category from centralized catalog
+  const [navCatalog, setNavCatalog] = useState<any[]>([]);
+  useEffect(() => {
+    navigationService.getCatalog().then((data) => {
+      setNavCatalog(data);
+    });
+  }, []);
+
   const getActiveCategory = (moduleId: string): string | null => {
-    if (["profile", "profile-password", "admin-users", "admin-roles"].includes(moduleId)) return "system-admin";
-    if (["master-companies", "master-units", "master-buyers", "master-agents", "master-styles", "master-suppliers"].includes(moduleId)) return "master-data";
-    if (["inquiries", "styles-costing", "techpacks", "order-pos"].includes(moduleId)) return "merchandising";
-    if (["warehouse-rolls", "roll-grn", "shade-lots", "trims-warehouse"].includes(moduleId)) return "materials";
-    if (["cad-markers", "spreading-tables", "cutting-bundles", "sewing-lines", "hourly-production"].includes(moduleId)) return "shopfloor";
-    if (["qc-inspection", "cutting-qc", "endline-qc"].includes(moduleId)) return "quality";
-    if (["finishing-packing", "export-shipment"].includes(moduleId)) return "shipping";
+    for (const mod of navCatalog) {
+      if (mod.id === moduleId) return mod.id;
+      for (const sub of mod.submodules) {
+        if (sub.id === moduleId || sub.target_module_id === moduleId) return mod.id;
+        for (const cluster of sub.clusters || []) {
+          for (const menu of cluster.menus || []) {
+            if (menu.id === moduleId || menu.path === currentPath) return mod.id;
+          }
+        }
+      }
+    }
     return null;
   };
 
@@ -258,6 +297,8 @@ export function App() {
     currentModuleId = "master-buyers";
   } else if (isStyleSection) {
     currentModuleId = "master-styles";
+  } else if (isOrderSection) {
+    currentModuleId = "order-pos";
   } else {
     currentModuleId = currentPath.replace(/^\//, "").replace("master/buyers", "master-buyers") || "master-buyers";
   }
@@ -391,6 +432,25 @@ export function App() {
         return [...base, { label: "Style Library", href: "/master/styles" }, { label: "Style Profile", active: true }];
       }
     }
+    if (isOrderSection) {
+      const base = [
+        { label: "Home", href: "/dashboard" },
+        { label: "Merchandising", href: "/orders" },
+        { label: "Commercial Orders", href: "/orders" },
+      ];
+      if (orderRoute.type === "list") {
+        return [...base, { label: "Purchase Order Directory", active: true }];
+      }
+      if (orderRoute.type === "create") {
+        return [...base, { label: "Purchase Order Directory", href: "/orders" }, { label: "Create Order", active: true }];
+      }
+      if (orderRoute.type === "edit") {
+        return [...base, { label: "Purchase Order Directory", href: "/orders" }, { label: "Edit Order", active: true }];
+      }
+      if (orderRoute.type === "view") {
+        return [...base, { label: "Purchase Order Directory", href: "/orders" }, { label: "Order Details", active: true }];
+      }
+    }
     if (isUnauthorized) {
       return [
         { label: "Home", href: "/dashboard" },
@@ -506,6 +566,22 @@ export function App() {
       }
       if (styleRoute.type === "view" && styleRoute.id) {
         return <StyleDetailsPage styleId={styleRoute.id} onNavigate={navigateTo} />;
+      }
+    }
+
+    // Purchase Order Section Routes (Sprint 2: Module 03)
+    if (isOrderSection) {
+      if (orderRoute.type === "list") {
+        return <OrderListPage onNavigate={navigateTo} />;
+      }
+      if (orderRoute.type === "create") {
+        return <OrderFormPage mode="create" onNavigate={navigateTo} />;
+      }
+      if (orderRoute.type === "edit" && orderRoute.id) {
+        return <OrderFormPage mode="edit" orderId={orderRoute.id} onNavigate={navigateTo} />;
+      }
+      if (orderRoute.type === "view" && orderRoute.id) {
+        return <OrderDetailsPage orderId={orderRoute.id} onNavigate={navigateTo} />;
       }
     }
 

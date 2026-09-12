@@ -9,6 +9,7 @@ import { Toast } from "../../components/common/Toast";
 import { Toggle } from "../../components/common/Toggle";
 import { UI_TOKENS } from "../../config/designTokens";
 import { getOperationalCompanies, type Company } from "../../services/companyService";
+import { useAuthStore } from "../../store/authStore";
 import {
   getAgentById,
   getAgentNextCode,
@@ -28,6 +29,9 @@ export const AgentFormPage: React.FC<AgentFormPageProps> = ({
   agentId,
   onNavigate,
 }) => {
+  const { hasRole } = useAuthStore();
+  const isSuperAdmin = hasRole("superadmin");
+
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | "">("");
   const [nextCode, setNextCode] = useState<string>("AUTO-AGT");
@@ -52,25 +56,6 @@ export const AgentFormPage: React.FC<AgentFormPageProps> = ({
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Load companies (excluding Platform Owner)
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const operationalList = await getOperationalCompanies();
-        setCompanies(operationalList);
-        if (mode === "create" && operationalList.length > 0) {
-          const defaultCmp = operationalList[0];
-          setSelectedCompanyId(defaultCmp.id);
-          setFormData((prev) => ({ ...prev, company_id: defaultCmp.id }));
-          loadNextCode(defaultCmp.id);
-        }
-      } catch {
-        showToast("error", "Error", "Could not load companies list.");
-      }
-    };
-    fetchCompanies();
-  }, [mode]);
-
   const loadNextCode = async (cmpId: number) => {
     try {
       const data = await getAgentNextCode(cmpId);
@@ -80,38 +65,78 @@ export const AgentFormPage: React.FC<AgentFormPageProps> = ({
     }
   };
 
-  // Load existing agent details if edit mode
+  // Load companies and agent details in a coordinated flow
   useEffect(() => {
-    if (mode === "edit" && agentId) {
-      const fetchAgent = async () => {
-        try {
+    let isMounted = true;
+
+    const initData = async () => {
+      try {
+        const operationalList = await getOperationalCompanies();
+        let finalCompanies = [...operationalList];
+
+        if (mode === "create") {
+          if (finalCompanies.length > 0) {
+            const defaultCmp = finalCompanies[0];
+            if (isMounted) {
+              setSelectedCompanyId(defaultCmp.id);
+              setFormData((prev) => ({ ...prev, company_id: defaultCmp.id }));
+              loadNextCode(defaultCmp.id);
+            }
+          }
+        } else if (mode === "edit" && agentId) {
           const agent = await getAgentById(agentId);
-          setSelectedCompanyId(agent.company_id);
-          setNextCode(agent.code);
-          setFormData({
-            company_id: agent.company_id,
-            name: agent.name,
-            country: agent.country,
-            contact_person: agent.contact_person || "",
-            email: agent.email || "",
-            phone: agent.phone || "",
-            address: agent.address || "",
-            commission_rate: agent.commission_rate ?? null,
-            is_active: agent.is_active,
-          });
-        } catch {
-          showToast("error", "Not Found", "Could not fetch buying agent details.");
+          if (isMounted) {
+            // If the agent belongs to a non-operational or platform company, ensure it's in the dropdown options
+            if (agent.company && !finalCompanies.some((c) => c.id === agent.company_id)) {
+              finalCompanies = [
+                {
+                  id: agent.company.id,
+                  code: agent.company.code,
+                  name: agent.company.name,
+                  is_default: false,
+                } as Company,
+                ...finalCompanies,
+              ];
+            }
+
+            setSelectedCompanyId(agent.company_id);
+            setNextCode(agent.code);
+            setFormData({
+              company_id: agent.company_id,
+              name: agent.name,
+              country: agent.country,
+              contact_person: agent.contact_person || "",
+              email: agent.email || "",
+              phone: agent.phone || "",
+              address: agent.address || "",
+              commission_rate: agent.commission_rate ?? null,
+              is_active: agent.is_active,
+            });
+          }
         }
-      };
-      fetchAgent();
-    }
+
+        if (isMounted) {
+          setCompanies(finalCompanies);
+        }
+      } catch {
+        if (isMounted) {
+          showToast("error", "Error", "Could not load necessary agent and company data.");
+        }
+      }
+    };
+
+    initData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [mode, agentId]);
 
   const handleCompanyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const cmpId = Number(e.target.value);
     setSelectedCompanyId(cmpId);
     setFormData((prev) => ({ ...prev, company_id: cmpId }));
-    if (mode === "create") {
+    if (cmpId) {
       loadNextCode(cmpId);
     }
   };
@@ -209,16 +234,20 @@ export const AgentFormPage: React.FC<AgentFormPageProps> = ({
                   error={errors.company_id}
                   helperText={
                     mode === "edit"
-                      ? "Agent code prefix is permanently tied to origin company."
+                      ? isSuperAdmin
+                        ? "Superadmin override: Changing company will recalculate the agent code prefix."
+                        : "Agent code prefix is permanently tied to origin company."
                       : "Company entity where this agent's accounts reside."
                   }
                 >
                   <select
-                    disabled={mode === "edit"}
+                    disabled={mode === "edit" && !isSuperAdmin}
                     value={selectedCompanyId}
                     onChange={handleCompanyChange}
                     className={`w-full ${UI_TOKENS.input.select} ${
-                      mode === "edit" ? "bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed select-none" : ""
+                      mode === "edit" && !isSuperAdmin
+                        ? "bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed select-none"
+                        : ""
                     } ${errors.company_id ? UI_TOKENS.input.error : ""}`}
                   >
                     <option value="">Select Company</option>

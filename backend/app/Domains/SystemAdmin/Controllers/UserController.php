@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -129,9 +130,15 @@ class UserController extends Controller
      */
     private function resolveUser(string|int $identifier): User
     {
-        return User::where('uuid', $identifier)
-            ->orWhere('id', is_numeric($identifier) ? (int)$identifier : 0)
-            ->firstOrFail();
+        if (is_numeric($identifier)) {
+            return User::where('id', (int) $identifier)->firstOrFail();
+        }
+
+        if (Str::isUuid((string) $identifier)) {
+            return User::where('uuid', (string) $identifier)->firstOrFail();
+        }
+
+        return User::where('username', (string) $identifier)->firstOrFail();
     }
 
     /**
@@ -140,10 +147,15 @@ class UserController extends Controller
      */
     public function show($id): JsonResponse
     {
-        $user = User::with(['company:id,uuid,code,name,legal_name,is_default', 'roles:id,name'])
-            ->where('uuid', $id)
-            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
-            ->firstOrFail();
+        $query = User::with(['company:id,uuid,code,name,legal_name,is_default', 'roles:id,name']);
+
+        if (is_numeric($id)) {
+            $user = $query->where('id', (int) $id)->firstOrFail();
+        } elseif (Str::isUuid((string) $id)) {
+            $user = $query->where('uuid', (string) $id)->firstOrFail();
+        } else {
+            $user = $query->where('username', (string) $id)->firstOrFail();
+        }
 
         $directPermissions = $user->getDirectPermissions()->pluck('name');
         $rolePermissions = $user->getPermissionsViaRoles()->pluck('name')->unique()->values();

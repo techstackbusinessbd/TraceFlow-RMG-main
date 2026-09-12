@@ -167,9 +167,10 @@ export const RoleListPage: React.FC<RoleListPageProps> = ({ onNavigate }) => {
               ? []
               : [
                   {
-                    icon: <Trash2 className="w-3.5 h-3.5" />,
+                    icon: <Trash2 className="w-3.5 h-3.5 text-rose-600" />,
                     label: "Delete Role",
                     variant: "danger",
+                    dividerBefore: true,
                     onClick: () => setDeleteTarget(row),
                   },
                 ]

@@ -5,6 +5,7 @@ import { FormField } from "../../components/common/FormField";
 import { TextInput } from "../../components/common/TextInput";
 import { UI_TOKENS } from "../../config/designTokens";
 import { useAuthStore } from "../../store/authStore";
+import { navigationService } from "../../services/navigationService";
 
 export const LoginPage: React.FC = () => {
   const { isAuthenticated, setAuth } = useAuthStore();
@@ -58,6 +59,7 @@ export const LoginPage: React.FC = () => {
       }
 
       // Success
+      navigationService.clearCache();
       setAuth(data.data.user, data.data.token);
       window.location.href = "/dashboard";
     } catch {
@@ -123,7 +125,7 @@ export const LoginPage: React.FC = () => {
             label="Password"
             required
             error={errors.password}
-            helperText="Default: SuperAdmin#2026!"
+            helperText="Default password: password"
           >
             <TextInput
               type={showPassword ? "text" : "password"}

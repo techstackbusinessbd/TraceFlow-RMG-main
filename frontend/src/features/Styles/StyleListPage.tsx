@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Eye, Edit2, ToggleLeft, ToggleRight, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Eye, Edit2, ToggleLeft, ToggleRight, Trash2, AlertCircle, FileText } from "lucide-react";
 import { PageHeader } from "../../components/common/PageHeader";
 import { FilterToolbar } from "../../components/common/FilterToolbar";
 import { DataTable, type ColumnDef } from "../../components/common/DataTable";
@@ -191,9 +191,38 @@ export const StyleListPage: React.FC<StyleListPageProps> = ({ onNavigate }) => {
       header: "Fabric & Wash",
       sortable: false,
       render: (style) => (
-        <div className="text-xs space-y-0.5">
-          <div className="text-slate-700 font-medium">{style.fabric_type}</div>
-          <div className="text-slate-400 text-[11px]">{style.wash_type}</div>
+        <div className="text-xs space-y-1">
+          <div className="text-slate-800 font-medium truncate max-w-[200px]" title={style.fabric_type || ""}>
+            {style.fabric_type || "—"}
+          </div>
+          <div className="flex flex-wrap items-center gap-1">
+            {style.wash_type ? (
+              style.wash_type.split(",").map((wt, i) => (
+                <span
+                  key={i}
+                  className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200 text-[10.5px] font-medium"
+                >
+                  {wt.trim()}
+                </span>
+              ))
+            ) : (
+              <span className="text-slate-400 text-[11px]">No wash specified</span>
+            )}
+
+            {style.techpack_file_url && (
+              <a
+                href={style.techpack_file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-blue-50 text-[#0066FF] border border-blue-200/80 text-[10.5px] font-semibold hover:bg-blue-100 transition-colors"
+                title={`Tech-Pack attached: ${style.techpack_file_name || "Spec"}`}
+              >
+                <FileText className="w-2.5 h-2.5" />
+                <span>TP</span>
+              </a>
+            )}
+          </div>
         </div>
       ),
     },
@@ -262,10 +291,11 @@ export const StyleListPage: React.FC<StyleListPageProps> = ({ onNavigate }) => {
                   {
                     label: style.is_active ? "Deactivate Style" : "Activate Style",
                     icon: style.is_active ? (
-                      <ToggleRight className="w-3.5 h-3.5" />
+                      <ToggleRight className="w-3.5 h-3.5 text-slate-500" />
                     ) : (
-                      <ToggleLeft className="w-3.5 h-3.5" />
+                      <ToggleLeft className="w-3.5 h-3.5 text-slate-400" />
                     ),
+                    variant: style.is_active ? ("warning" as const) : ("default" as const),
                     onClick: () => handleToggleStatus(style),
                   },
                 ]
@@ -276,6 +306,7 @@ export const StyleListPage: React.FC<StyleListPageProps> = ({ onNavigate }) => {
                     label: "Delete Style",
                     icon: <Trash2 className="w-3.5 h-3.5 text-rose-600" />,
                     variant: "danger" as const,
+                    dividerBefore: true,
                     onClick: () => setDeleteTarget(style),
                   },
                 ]

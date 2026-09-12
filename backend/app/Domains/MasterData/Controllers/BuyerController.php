@@ -11,6 +11,7 @@ use App\Models\Company;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class BuyerController extends Controller
 {
@@ -20,7 +21,7 @@ class BuyerController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Buyer::query()->with(['company:id,code,name', 'agent:id,code,name'])->withCount(['brands', 'activeBrands']);
+        $query = Buyer::query()->with(['company:id,uuid,code,name', 'agent:id,uuid,code,name'])->withCount(['brands', 'activeBrands']);
 
         // Search Filter
         if ($search = trim($request->query('search', ''))) {
@@ -170,9 +171,15 @@ class BuyerController extends Controller
      */
     private function resolveBuyer(string|int $identifier): Buyer
     {
-        return Buyer::where('uuid', $identifier)
-            ->orWhere('id', is_numeric($identifier) ? (int)$identifier : 0)
-            ->firstOrFail();
+        if (is_numeric($identifier)) {
+            return Buyer::where('id', (int) $identifier)->firstOrFail();
+        }
+
+        if (Str::isUuid((string) $identifier)) {
+            return Buyer::where('uuid', (string) $identifier)->firstOrFail();
+        }
+
+        return Buyer::where('code', (string) $identifier)->firstOrFail();
     }
 
     /**
@@ -181,10 +188,15 @@ class BuyerController extends Controller
      */
     public function show(string|int $id): JsonResponse
     {
-        $buyer = Buyer::with(['company:id,code,name', 'agent:id,code,name', 'brands'])
-            ->where('uuid', $id)
-            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
-            ->firstOrFail();
+        $query = Buyer::with(['company:id,uuid,code,name', 'agent:id,uuid,code,name', 'brands']);
+
+        if (is_numeric($id)) {
+            $buyer = $query->where('id', (int) $id)->firstOrFail();
+        } elseif (Str::isUuid((string) $id)) {
+            $buyer = $query->where('uuid', (string) $id)->firstOrFail();
+        } else {
+            $buyer = $query->where('code', (string) $id)->firstOrFail();
+        }
 
         return response()->json([
             'status' => 'success',

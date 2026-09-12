@@ -27,6 +27,8 @@ Your job is to assume the required engineering roles to build this system.
   3. Barcode / QR scanner camera overlays.
   4. Quick preview / inspector dialogs (e.g. Tech-Pack PDF preview, QR code enlargement).
   5. Session timeout / network disconnection alerts.
+  6. Quick master lookup / helper additions (e.g. quick size builder, quick master color addition).
+- **Modal & Dialog Corner Radius Standard (STRICT & FINAL)**: All modal containers, alert dialogs, quick entry sheets, and helper popups across the system MUST use a compact, sleek, enterprise small corner radius (`rounded-lg` or `rounded-md`). Large or bulky corner radii (`rounded-xl`, `rounded-2xl`, `rounded-3xl`) are STRICTLY PROHIBITED on modals and dialog containers. All dialog boxes must consume `UI_TOKENS.launcherModal.dialogContainer` or `UI_TOKENS.launcherModal.container`.
 - **Centralized Design Tokens & UI Primitives Only (STRICT)**: Writing ad-hoc or inline Tailwind utility classes for buttons, badges, tables, inputs, cards, and action controls directly in page files is STRICTLY PROHIBITED. All UI elements MUST exclusively consume:
   1. Centralized tokens from `frontend/src/config/designTokens.ts` (`UI_TOKENS`)
   2. Standard reusable UI primitives from `frontend/src/components/common/` (`<Button>`, `<Badge>`, `<TableActionButton>`, etc.)
@@ -69,7 +71,20 @@ Your job is to assume the required engineering roles to build this system.
      - **List Page Secondary Action**: When exporting is supported, ALWAYS use `"Export Directory"` with a `Download` icon (`<Button variant="secondary" icon={<Download className="w-4 h-4" />}>Export Directory</Button>`).
      - **Create/Edit Page Header Actions**: ALWAYS provide `"Cancel"` or `"Back to Directory"` (`<Button variant="secondary">`) on the left and `"Save <Entity>"` / `"Save Changes"` (`<Button variant="primary">`) on the right.
      - **Details Page Header Actions**: ALWAYS provide `"Back to Directory"` (`<Button variant="secondary">`) on the left and `"Edit <Entity>"` (`<Button variant="primary">`) on the right.
+- **Enterprise DataTable Action Column Standard (STRICT & FINAL)**: Across all list and directory pages using `<DataTable<T>>`, the final column MUST be a standardized Action column (`key: "actions", header: "Actions", align: "right", sortable: false`). Ad-hoc buttons, varying layouts, or loose icons are strictly prohibited. All rows MUST use `<RowActionsMenu>` adhering to:
+  1. **Primary Inline Action 1 (View/Inspect)**: `<Eye className="w-3.5 h-3.5" />`, label `"View Details"` or `"View Profile"`, `variant: "secondary"`.
+  2. **Primary Inline Action 2 (Edit/Update)**: `<Edit2 className="w-3.5 h-3.5" />`, label `"Edit <Entity>"`, `variant: "primary"` (permission-guarded).
+  3. **Dropdown Menu (`⋮` MoreHorizontal)**: Secondary actions such as module shortcuts (e.g. `Custom Permissions`), Status toggle (`Activate <Entity>` / `Deactivate <Entity>` with `ToggleRight`/`ToggleLeft`), and destructive actions (`Delete <Entity>` with `variant: "danger"` and `dividerBefore: true`).
 
+
+
+## Strict Zero-Regression & Non-Destructive Engineering Standard (STRICT & FINAL)
+- **Zero Breakage of Completed Features**: কোনো নতুন টাস্ক বা ফিচার ডেভেলপমেন্ট করার সময় পূর্বে সম্পন্ন করা, টেস্ট করা বা অনুমোদিত কোনো ফিচার, লেআউট, কম্পোনেন্ট বা লজিক নষ্ট বা ব্রেক করা কঠোরভাবে নিষিদ্ধ।
+- **Surgical & Minimal Blast Radius**:
+  1. কোড পরিবর্তনের সময় শুধুমাত্র নির্দিষ্ট প্রয়োজনীয় অংশে সার্জিক্যাল এডিট (`replace_file_content`) করতে হবে। সম্পূর্ণ ফাইল রি-রাইট করা সম্পূর্ণ নিষিদ্ধ।
+  2. কোনো শেয়ার্ড ফাইল (যেমন `NavigationRail.tsx`, `AppLauncherModal.tsx`, `designTokens.ts`, `DataTable.tsx`) মডিফাই করার আগে পূর্বের কোড ও ডিপেনডেন্সি পুঙ্খানুপুঙ্খভাবে রিড করে নিশ্চিত হতে হবে যে বর্তমান কোনো প্রপ্স বা ফাংশনালিটি প্রভাবিত হচ্ছে না।
+- **Mandatory Build & Type Safety Gate**: প্রতিটি কোড পরিবর্তনের পর অবশ্যই `npm run build` দিয়ে টাইপ চেকিং (`tsc -b`) এবং বান্ডল ভেরিফিকেশন সফল হতে হবে। কোনো অনাথ ভেরিয়েবল, আনইউজড ইমপোর্ট বা টাইপ এরর রেখে টাস্ক সম্পন্ন ঘোষণা করা যাবে না।
+- **SRS Compliance**: সমস্ত কাজ `docs/srs/regression_prevention_srs.md`-এর নীতি অনুযায়ী পরিচালিত হতে হবে।
 
 ## Communication Rules
 - **Language**: You MUST always communicate with the user in Bengali (Bangla).

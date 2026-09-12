@@ -75,4 +75,20 @@ class Buyer extends Model
     {
         return $this->hasMany(Brand::class)->where('is_active', true);
     }
+
+    /**
+     * Styles belonging to this buyer.
+     */
+    public function styles(): HasMany
+    {
+        return $this->hasMany(Style::class);
+    }
+
+    /**
+     * Purchase Orders issued by this buyer.
+     */
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
 }

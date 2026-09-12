@@ -118,9 +118,15 @@ class CompanyController extends Controller
      */
     private function resolveCompany(string|int $identifier): Company
     {
-        return Company::where('uuid', $identifier)
-            ->orWhere('id', is_numeric($identifier) ? (int)$identifier : 0)
-            ->firstOrFail();
+        if (is_numeric($identifier)) {
+            return Company::where('id', (int) $identifier)->firstOrFail();
+        }
+
+        if (Str::isUuid((string) $identifier)) {
+            return Company::where('uuid', (string) $identifier)->firstOrFail();
+        }
+
+        return Company::where('code', (string) $identifier)->firstOrFail();
     }
 
     /**
@@ -129,10 +135,15 @@ class CompanyController extends Controller
      */
     public function show($id): JsonResponse
     {
-        $company = Company::withCount(['users', 'activeUsers'])
-            ->where('uuid', $id)
-            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
-            ->firstOrFail();
+        $query = Company::withCount(['users', 'activeUsers']);
+
+        if (is_numeric($id)) {
+            $company = $query->where('id', (int) $id)->firstOrFail();
+        } elseif (Str::isUuid((string) $id)) {
+            $company = $query->where('uuid', (string) $id)->firstOrFail();
+        } else {
+            $company = $query->where('code', (string) $id)->firstOrFail();
+        }
 
         return response()->json([
             'status' => 'success',

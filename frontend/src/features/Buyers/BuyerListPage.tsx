@@ -258,9 +258,9 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
                   {
                     label: buyer.is_active ? "Deactivate Buyer" : "Activate Buyer",
                     icon: buyer.is_active ? (
-                      <ToggleLeft className="w-3.5 h-3.5 text-amber-500" />
+                      <ToggleRight className="w-3.5 h-3.5 text-slate-500" />
                     ) : (
-                      <ToggleRight className="w-3.5 h-3.5 text-emerald-500" />
+                      <ToggleLeft className="w-3.5 h-3.5 text-slate-400" />
                     ),
                     variant: buyer.is_active ? ("warning" as const) : ("default" as const),
                     onClick: () => handleToggleStatus(buyer),
@@ -271,8 +271,9 @@ export const BuyerListPage: React.FC<BuyerListPageProps> = ({ onNavigate }) => {
               ? [
                   {
                     label: "Delete Buyer",
-                    icon: <Trash2 className="w-3.5 h-3.5" />,
+                    icon: <Trash2 className="w-3.5 h-3.5 text-rose-600" />,
                     variant: "danger" as const,
+                    dividerBefore: true,
                     onClick: () => setDeleteTarget(buyer),
                   },
                 ]

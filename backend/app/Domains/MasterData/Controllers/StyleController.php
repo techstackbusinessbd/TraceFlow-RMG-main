@@ -13,6 +13,7 @@ use App\Models\StyleSize;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class StyleController extends Controller
 {
@@ -366,5 +367,149 @@ class StyleController extends Controller
             'success' => true,
             'data' => $styles,
         ]);
+    }
+
+    /**
+     * Upload an optional Tech-Pack document (PDF, Excel, Images, Archive).
+     * POST /api/v1/styles/upload-techpack
+     */
+    public function uploadTechPack(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'mimes:pdf,zip,rar,doc,docx,xls,xlsx,png,jpg,jpeg',
+                'max:25600', // 25 MB max
+            ],
+        ]);
+
+        $file = $request->file('file');
+        $originalName = $file->getClientOriginalName();
+        $size = $file->getSize();
+        $extension = $file->getClientOriginalExtension();
+        $uniqueName = 'techpack_' . time() . '_' . Str::random(10) . '.' . $extension;
+
+        $path = $file->storeAs('techpacks', $uniqueName, 'public');
+        $url = asset('storage/' . $path);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tech-Pack uploaded successfully.',
+            'data' => [
+                'file_url'  => $url,
+                'file_name' => $originalName,
+                'file_size' => $size,
+            ],
+        ]);
+    }
+
+    /**
+     * Stream a stored Tech-Pack file with full CORS and inline headers.
+     * GET /api/v1/styles/stream-techpack/{filename}
+     */
+    public function streamTechPack(string $filename)
+    {
+        $path = storage_path('app/public/techpacks/' . $filename);
+
+        if (!file_exists($path)) {
+            abort(404, 'Tech-Pack document not found.');
+        }
+
+        $mime = mime_content_type($path) ?: 'application/octet-stream';
+
+        return response()->file($path, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Authorization, Content-Type, Accept',
+        ]);
+    }
+
+    /**
+     * Quick-add a new Colorway to an existing style on-the-fly.
+     * POST /api/v1/styles/{style}/add-color
+     */
+    public function addColor(Request $request, string|int $id): JsonResponse
+    {
+        $style = $this->resolveStyle($id);
+
+        $validated = $request->validate([
+            'color_name'  => 'required|string|max:100',
+            'color_code'  => 'nullable|string|max:50',
+            'pantone_ref' => 'nullable|string|max:50',
+            'hex_code'    => 'nullable|string|max:20',
+        ]);
+
+        $existing = $style->colors()
+            ->whereRaw('LOWER(color_name) = ?', [strtolower(trim($validated['color_name']))])
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Colorway already exists in this style.',
+                'data'    => $existing,
+            ]);
+        }
+
+        $colorCode = !empty($validated['color_code'])
+            ? trim($validated['color_code'])
+            : 'CLR-' . str_pad((string)($style->colors()->count() + 1), 2, '0', STR_PAD_LEFT);
+
+        $color = $style->colors()->create([
+            'color_name'  => trim($validated['color_name']),
+            'color_code'  => $colorCode,
+            'pantone_ref' => $validated['pantone_ref'] ?? null,
+            'hex_code'    => $validated['hex_code'] ?? null,
+            'is_active'   => true,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Colorway '{$color->color_name}' added to style successfully.",
+            'data'    => $color,
+        ], 201);
+    }
+
+    /**
+     * Quick-add a new Size to an existing style on-the-fly.
+     * POST /api/v1/styles/{style}/add-size
+     */
+    public function addSize(Request $request, string|int $id): JsonResponse
+    {
+        $style = $this->resolveStyle($id);
+
+        $validated = $request->validate([
+            'size_name'  => 'required|string|max:50',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $existing = $style->sizes()
+            ->whereRaw('LOWER(size_name) = ?', [strtolower(trim($validated['size_name']))])
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Size already exists in this style.',
+                'data'    => $existing,
+            ]);
+        }
+
+        $sortOrder = $validated['sort_order'] ?? ($style->sizes()->max('sort_order') + 1);
+
+        $size = $style->sizes()->create([
+            'size_name'  => trim($validated['size_name']),
+            'sort_order' => $sortOrder,
+            'is_active'  => true,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Size '{$size->size_name}' added to style successfully.",
+            'data'    => $size,
+        ], 201);
     }
 }

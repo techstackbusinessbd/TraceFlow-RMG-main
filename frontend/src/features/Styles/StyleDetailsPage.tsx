@@ -8,11 +8,15 @@ import {
   Building2,
   Calendar,
   Sparkles,
+  FileText,
+  Download,
+  Eye,
 } from "lucide-react";
 import { PageHeader } from "../../components/common/PageHeader";
 import { Button } from "../../components/common/Button";
 import { Badge } from "../../components/common/Badge";
 import { Toast } from "../../components/common/Toast";
+import { TechPackPreviewModal } from "../../components/common/TechPackPreviewModal";
 import { UI_TOKENS } from "../../config/designTokens";
 import { getStyleById, toggleStyleStatus, type WovenStyle } from "../../services/styleService";
 import { useAuthStore } from "../../store/authStore";
@@ -29,6 +33,7 @@ export const StyleDetailsPage: React.FC<StyleDetailsPageProps> = ({ styleId, onN
   const [style, setStyle] = useState<WovenStyle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ type: "success" | "error"; title: string; message: string } | null>(null);
+  const [isTechPackModalOpen, setIsTechPackModalOpen] = useState(false);
 
   const showToast = (type: "success" | "error", title: string, message: string) => {
     setToast({ type, title, message });
@@ -181,7 +186,15 @@ export const StyleDetailsPage: React.FC<StyleDetailsPageProps> = ({ styleId, onN
 
               <div className="space-y-1">
                 <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Industrial Wash Process</p>
-                <Badge variant="info">{style.wash_type}</Badge>
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  {style.wash_type ? (
+                    style.wash_type.split(",").map((wt, i) => (
+                      <Badge key={i} variant="info">{wt.trim()}</Badge>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-400">None / Raw</span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -317,8 +330,85 @@ export const StyleDetailsPage: React.FC<StyleDetailsPageProps> = ({ styleId, onN
               </div>
             </div>
           </div>
+
+          {/* Sidebar Card 3: Tech-Pack Specification Document */}
+          <div className={UI_TOKENS.card.base}>
+            <div className={UI_TOKENS.card.header}>
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#0066FF]" />
+                <h2 className={UI_TOKENS.card.title}>Tech-Pack Document</h2>
+              </div>
+              {style.techpack_file_url ? (
+                <Badge variant="success">Attached</Badge>
+              ) : (
+                <Badge variant="neutral">Not Attached</Badge>
+              )}
+            </div>
+
+            {style.techpack_file_url ? (
+              <div className="space-y-3">
+                <div className="p-3 bg-blue-50/50 rounded-lg border border-blue-100 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-blue-100 text-[#0066FF] flex items-center justify-center shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-900 truncate" title={style.techpack_file_name || "Tech-Pack Spec"}>
+                      {style.techpack_file_name || "Tech-Pack Spec"}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      {style.techpack_file_size
+                        ? `${(style.techpack_file_size / (1024 * 1024)).toFixed(2)} MB`
+                        : "Uploaded Document"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsTechPackModalOpen(true)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[#0066FF] text-white text-xs font-semibold hover:bg-blue-600 transition-colors shadow-xs cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Preview Tech-Pack
+                  </button>
+
+                  <a
+                    href={style.techpack_file_url}
+                    download={style.techpack_file_name || "techpack.pdf"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg border border-slate-300 hover:border-slate-400 bg-white text-slate-700 hover:text-slate-900 transition-colors shadow-2xs cursor-pointer"
+                    title="Direct Download"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-lg bg-slate-50 border border-dashed border-slate-200 text-center">
+                <FileText className="w-6 h-6 text-slate-300 mx-auto mb-1.5" />
+                <p className="text-xs font-medium text-slate-600">No Tech-Pack Attached</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Tech-Pack spec was not uploaded for this style (optional).
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Enterprise Tech-Pack PDF / Document Inspector Modal */}
+      {style?.techpack_file_url && (
+        <TechPackPreviewModal
+          isOpen={isTechPackModalOpen}
+          onClose={() => setIsTechPackModalOpen(false)}
+          fileUrl={style.techpack_file_url}
+          fileName={style.techpack_file_name || "Style_Tech_Pack"}
+          fileSize={style.techpack_file_size}
+          styleCode={style.code}
+        />
+      )}
     </div>
   );
 };

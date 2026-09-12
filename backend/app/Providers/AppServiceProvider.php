@@ -19,6 +19,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // 0. Ensure Windows TEMP environment variables are passed to PHP CLI server subprocess
+        if (class_exists(\Illuminate\Foundation\Console\ServeCommand::class)) {
+            \Illuminate\Foundation\Console\ServeCommand::$passthroughVariables = array_merge(
+                \Illuminate\Foundation\Console\ServeCommand::$passthroughVariables,
+                ['TEMP', 'TMP', 'SystemDrive', 'USERPROFILE']
+            );
+        }
+
         // 1. Super Admin Wildcard Bypass (Backend Architecture Rule)
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
             return ($user->hasRole('superadmin') || $user->hasRole('Super Admin')) ? true : null;

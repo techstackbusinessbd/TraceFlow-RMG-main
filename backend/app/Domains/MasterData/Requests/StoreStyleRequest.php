@@ -44,13 +44,17 @@ class StoreStyleRequest extends FormRequest
             'style_name'       => ['required', 'string', 'min:3', 'max:150'],
             'product_category' => ['required', 'string', 'max:100'],
             'garment_item'     => ['required', 'string', 'max:100'],
-            'fabric_type'      => ['required', 'string', 'max:100'],
+            'fabric_type'      => ['nullable', 'string', 'max:100'],
             'season'           => ['required', 'string', 'max:50'],
-            'base_smv'         => ['required', 'numeric', 'min:0.01', 'max:999.99'],
-            'wash_type'        => ['required', 'string', 'max:100'],
-            'description'      => ['nullable', 'string', 'max:1000'],
-            'status'           => ['required', 'string', 'in:Development,Sampling,Confirmed,Bulk_Approved,Discontinued'],
-            'is_active'        => ['boolean'],
+            'base_smv'         => ['nullable', 'numeric', 'min:0', 'max:999.99'],
+            'wash_type'        => ['nullable', 'string', 'max:500'],
+            'description'        => ['nullable', 'string', 'max:1000'],
+            'techpack_file_url'  => ['nullable', 'string', 'max:500'],
+            'techpack_file_name' => ['nullable', 'string', 'max:255'],
+            'techpack_file_size' => ['nullable', 'integer', 'min:0'],
+            'techpack_file'      => ['nullable', 'file', 'mimes:pdf,zip,rar,doc,docx,xls,xlsx,png,jpg,jpeg', 'max:25600'], // 25MB max
+            'status'             => ['required', 'string', 'in:Development,Sampling,Confirmed,Bulk_Approved,Discontinued'],
+            'is_active'          => ['boolean'],
 
             // Dynamic Colorways
             'colors'               => ['required', 'array', 'min:1'],

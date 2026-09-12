@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Route;
 | Zero-Trust Spatie permission middleware enforced on every route.
 */
 
+// Public media stream route for Tech-Pack viewer (with CORS enabled)
+Route::prefix('styles')->group(function () {
+    Route::get('/stream-techpack/{filename}', [StyleController::class, 'streamTechPack']);
+});
+
 Route::middleware('auth:sanctum')->prefix('styles')->group(function () {
     // Next system-generated style code preview
     Route::get('/next-code', [StyleController::class, 'nextCode'])
@@ -25,12 +30,20 @@ Route::middleware('auth:sanctum')->prefix('styles')->group(function () {
         ->middleware('permission:master_data.styles.profile.view');
     Route::post('/', [StyleController::class, 'store'])
         ->middleware('permission:master_data.styles.profile.create');
+    Route::post('/upload-techpack', [StyleController::class, 'uploadTechPack'])
+        ->middleware('permission:master_data.styles.profile.create');
     Route::get('/{style}', [StyleController::class, 'show'])
         ->middleware('permission:master_data.styles.profile.view');
     Route::put('/{style}', [StyleController::class, 'update'])
         ->middleware('permission:master_data.styles.profile.update');
     Route::delete('/{style}', [StyleController::class, 'destroy'])
         ->middleware('permission:master_data.styles.profile.delete');
+
+    // Quick add colorway & size on-the-fly
+    Route::post('/{style}/add-color', [StyleController::class, 'addColor'])
+        ->middleware('permission:master_data.styles.profile.update');
+    Route::post('/{style}/add-size', [StyleController::class, 'addSize'])
+        ->middleware('permission:master_data.styles.profile.update');
 
     // Status toggle (PATCH)
     Route::patch('/{style}/toggle-status', [StyleController::class, 'toggleStatus'])

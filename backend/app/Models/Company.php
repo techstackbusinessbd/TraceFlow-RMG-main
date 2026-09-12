@@ -56,4 +56,12 @@ class Company extends Model
     {
         return $this->hasMany(User::class)->where('is_active', true);
     }
+
+    /**
+     * Purchase Orders executed by this company.
+     */
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
 }

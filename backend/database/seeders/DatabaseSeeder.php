@@ -140,5 +140,20 @@ class DatabaseSeeder extends Seeder
         $this->command->info("   -> [3/3] User: standard user (username: standarduser | Role: standarduser | Company: Platform Owner | Manual Emp ID: 883015)");
 
         $this->command->info('🎉 TraceFlow RMG — System Boot Seeding (1 Company, 3 Roles & 3 Users) Completed Successfully!');
+
+        // 6. Seed Operating Company (International Trading Services Ltd)
+        $this->call(CompanySeeder::class);
+
+        // 7. Seed Operating Buying Agent (Li & Fung under ITSL)
+        $this->call(AgentSeeder::class);
+
+        // 8. Seed Buyer (American Eagle Outfitters) & Brands (AEO, aerie)
+        $this->call(BuyerSeeder::class);
+
+        // 9. Seed Size Scales & Colors Master Library (Product Categories)
+        $this->call(SizeScaleSeeder::class);
+
+        // 10. Seed 100% Woven Garment Styles (Product Categories & Items under AEO & ITSL)
+        $this->call(StyleSeeder::class);
     }
 }

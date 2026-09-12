@@ -60,8 +60,11 @@ $$\mathbf{Master\ Order\ No} = \mathbf{[CompanyCode]}-\mathbf{[YY]}-\mathbf{[Uni
 | `Brand ID` | UUID | না | নির্বাচিত বায়ারের নিবন্ধিত সাব-ব্র্যান্ডসমূহ (`buyer_brands`)। | Select Dropdown |
 | `Department ID` | UUID | না | নির্বাচিত বায়ারের প্রোডাকশন বিভাগসমূহ (`buyer_departments`)। | Select Dropdown |
 | `Style ID` | UUID | হ্যাঁ | সিলেক্টেড বায়ারের আন্ডারে নিবন্ধিত অ্যাক্টিভ স্টাইল (`styles`) থেকে ফিল্টার হবে। | Searchable Dropdown |
+| `Season Name` | String | হ্যাঁ | বায়ার ভিত্তিক ফ্যাশন কালেকশন (e.g. `Summer`, `Spring/Summer`, `Fall`, `Autumn/Winter`)। | Select Dropdown |
+| `Season Year` | String | হ্যাঁ | ডেলিভারি ও ক্যালেন্ডার বছর (e.g. `2025`, `2026`, `2027`, `2028`, `2029`, `2030`)। | Select Dropdown |
 | `Contract / Program Ref`| String | না | বায়ারের ইমেইল রেফারেন্স, সেলস কন্ট্রাক্ট (SC) বা প্রোগ্রাম কোড (Max: 100 chars)। | Text Input |
-| `Total Committed Quantity` | Integer | হ্যাঁ | সর্বমোট প্রতিশ্রুত পিস (যেমন `10000`)। Must be > 0। | Number Input |
+| `Total Committed Quantity` | Integer | হ্যাঁ | সর্বমোট প্রতিশ্রুত পরিমাণ (যেমন `10000`)। Must be > 0। | Number Input with Inline UOM |
+| `Order Quantity UOM` | Enum | হ্যাঁ | পরিমাপের একক: `Pcs` (Pieces - Default), `Dzn` (Dozens), `Set` (Sets), `Pair` (Pairs), `Pack` (Multi-packs)। | Select Dropdown (Inline) |
 | `Default Currency` | Enum | হ্যাঁ | `USD`, `EUR`, `GBP`, `BDT` (Default: USD)। | Select Dropdown |
 | `Unit Price (FOB)` | Decimal | হ্যাঁ | গড় প্রতি পিস দর (e.g. `4.50`)। | Number Input |
 | `Order Allocation Status` | Enum | হ্যাঁ | `Provisional` (কোনো PO আসেনি), `Partially_Confirmed` (আংশিক PO এসেছে), `Fully_Confirmed` (সম্পূর্ণ PO এসেছে), `In_Production`, `Completed`, `Cancelled`। | Status Badge |
@@ -78,7 +81,8 @@ $$\mathbf{Master\ Order\ No} = \mathbf{[CompanyCode]}-\mathbf{[YY]}-\mathbf{[Uni
 |---|---|---|---|---|
 | `Master Order ID` | UUID | হ্যাঁ | প্যারেন্ট মাস্টার অর্ডারের ফরেন কি (`orders.id`)। | Hidden / Contextual |
 | `Buyer PO Number` | String | হ্যাঁ | বায়ারের অফিসিয়াল PO শিট নম্বর (যেমন `PO-8801`)। বায়ার-ভিত্তিক ইউনিক। | Text Input |
-| `Season Name` | String | হ্যাঁ | বায়ার ও স্টাইলের সাথে সম্পর্কিত সিজন (যেমন `Summer 2026`)। | Select Dropdown |
+| `Season Name` | String | হ্যাঁ | মাস্টার অর্ডার থেকে ইনহেরিট হয় অথবা বায়ার ভিত্তিক সিজন কালেকশন (যেমন `Summer`)। | Select Dropdown |
+| `Season Year` | String | হ্যাঁ | ক্যালেন্ডার বছর (যেমন `2026`)। সিজন নেম ও ইয়ার মিলে কম্বাইন্ড সিজন গঠিত হয়। | Select Dropdown |
 | `PO Quantity` | Integer | হ্যাঁ | এই নির্দিষ্ট PO-র জন্য নির্ধারিত পিস (যেমন `5000`)। | Number Input |
 | `Ex-Factory Date` | Date | হ্যাঁ | ফ্যাক্টরি থেকে মাল বের হওয়ার শেষ তারিখ। | Date Picker |
 | `Buyer Delivery Date`| Date | হ্যাঁ | বায়ারের পোর্টে পৌঁছানোর তারিখ। | Date Picker |
@@ -131,6 +135,35 @@ $$\sum (\text{Matrix Cell Quantities}) \equiv \text{PO Quantity}$$
    - সাপ্লায়ার মিলের নাম ও বুকিং রেফারেন্স (যেমন `BK-MILL-9901`)।
 2. **Four-Stage Material Tracking:**
    $$\text{Required} \longrightarrow \text{Booked} \longrightarrow \text{In-House / Received} \longrightarrow \text{Issued to Floor}$$
+
+---
+
+### ৩.৫. সাব-মডিউল ৫: Central Unit of Measure (UOM) Architecture & Conversion Standard
+গার্মেন্টস ইআরপি সিস্টেমে বিভিন্ন বাণিজ্যিক ও প্রযুক্তিগত কার্যক্রমে ভিন্ন ভিন্ন একক (UOM) ব্যবহৃত হয়। এই ভিন্নতাকে কেন্দ্রীয়ভাবে সুশৃঙ্খল রাখতে সিস্টেম-ওয়াইড সেন্ট্রাল UOM ইঞ্জিন অনুসৃত হবে।
+
+#### ৩.৫.১. কেন্দ্রীয় UOM ক্যাটাগরি ও স্ট্যান্ডার্ড স্কেল:
+| UOM ক্যাটাগরি | অনুমোদিত ইউনিটসমূহ (Allowed Units) | মূল ভিত্তি একক (Base Unit) | প্রয়োগ ক্ষেত্র (Application Scope) |
+|---|---|---|---|
+| **`apparel`** | `Pcs` (Pieces), `Dzn` (Dozens), `Set` (Sets), `Pair` (Pairs), `Pack` (Multi-packs) | `Pcs` | অর্ডার মাস্টার, বায়ার PO, ফ্লোর প্রোডাকশন, কোয়ালিটি অডিট |
+| **`fabric`** | `Yds` (Yards), `Mtr` (Meters), `Kg` (Kilograms), `Lbs` (Pounds) | `Yds` / `Kg` | বাল্ক ফেব্রিক বুকিং, রিসিভিং, রোল ইন্সপেকশন, স্প্রেডিং |
+| **`accessories`** | `Gross` (Grs - 144 pcs), `Dzn` (12 pcs), `Cone`, `Roll`, `Thousand` (Ths), `Pcs` | `Pcs` | ট্রিমস বুকিং, ইয়ার্ন কোণ, জিপার, বাটন, লেবেল ইনভেন্টরি |
+| **`packing`** | `Carton` (Ctn), `Poly`, `CBM` (Cubic Meter), `Pallet` | `Carton` | ফিনিশিং, কমার্শিয়াল প্যাকিং লিস্ট, কার্গো বুকিং |
+
+#### ৩.৫.২. গাণিতিক কনভার্সন নীতি (Mathematical Conversion Rules):
+১. **Apparel Conversion to Base Pieces:**
+   $$\text{Base Pcs} = 
+   \begin{cases} 
+   \text{Quantity} \times 12, & \text{if UOM} = \text{'Dzn'} \\
+   \text{Quantity} \times 1, & \text{if UOM} = \text{'Pcs'} \\
+   \text{Quantity} \times (\text{Pieces per Set}), & \text{if UOM} = \text{'Set'}
+   \end{cases}$$
+২. **The Zero-Variance Rule for Matrix:**
+   ম্যাট্রিক্সের সমস্ত সেল সর্বদা শারীরিক **`Pcs` (Pieces)** এককে হিসাব করবে। বায়ার অর্ডারে ইউজার `1,000 Dzn` এন্ট্রি দিলে সিস্টেম ম্যাট্রিক্সে টার্গেট কোয়ান্টিটিকে স্বয়ংক্রিয়ভাবে $1,000 \times 12 = 12,000\text{ Pcs}$ হিসেবে সিঙ্ক করবে।
+
+#### ৩.৫.৩. ইউআই কম্পোনেন্ট স্ট্যান্ডার্ড (`<UomQuantityInput />`):
+সিস্টেমের যেকোনো ফর্মে পরিমাণ ও ইউনিট গ্রহণের ক্ষেত্রে অ্যাড-হক ইনপুট লেখা সম্পূর্ণ নিষিদ্ধ। বাধ্যতামূলকভাবে সেন্ট্রাল প্রিমিটিভ `<UomQuantityInput />` ব্যবহার করতে হবে:
+- **ভিজ্যুয়াল আর্কিটেকচার**: বামে সংখ্যাগত ইনপুট ফিল্ড এবং ডানে ইনলাইন ড্রপডাউন সিলেক্টর (`UI_TOKENS.inputGroup.*`)।
+- **লাইভ কনভার্সন ব্যাজ**: যদি নির্বাচিত ইউনিট বেস ইউনিট না হয় (যেমন `Dzn`), তবে নিচে স্বয়ংক্রিয়ভাবে সমতুল্য সংখ্যা রূপান্তর (e.g. `Equivalent: 12,000 Pcs`) প্রদর্শিত হবে।
 
 ---
 

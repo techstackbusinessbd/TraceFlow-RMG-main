@@ -63,6 +63,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       <AppLauncherModal
         isOpen={isLauncherOpen}
         initialSearchQuery={launcherSearchQuery}
+        activeSubmoduleGroupId={activeSubmoduleGroup}
+        currentModuleId={currentModuleId}
         onClose={() => {
           setIsLauncherOpen(false);
           setLauncherSearchQuery('');

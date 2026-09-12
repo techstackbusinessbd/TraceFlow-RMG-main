@@ -62,11 +62,14 @@ export interface WovenStyle {
   style_name: string;
   product_category: string;
   garment_item: string;
-  fabric_type: string;
+  fabric_type?: string | null;
   season: string;
-  base_smv: number | string;
-  wash_type: string;
+  base_smv?: number | string | null;
+  wash_type?: string | null;
   description?: string | null;
+  techpack_file_url?: string | null;
+  techpack_file_name?: string | null;
+  techpack_file_size?: number | null;
   status: "Development" | "Sampling" | "Confirmed" | "Bulk_Approved" | "Discontinued";
   is_active: boolean;
   company?: { id: number; code: string; name: string };
@@ -88,11 +91,14 @@ export interface StyleFormData {
   style_name: string;
   product_category: string;
   garment_item: string;
-  fabric_type: string;
+  fabric_type?: string | null;
   season: string;
-  base_smv: number | "";
-  wash_type: string;
+  base_smv?: number | "" | null;
+  wash_type?: string | null;
   description?: string;
+  techpack_file_url?: string | null;
+  techpack_file_name?: string | null;
+  techpack_file_size?: number | null;
   status: "Development" | "Sampling" | "Confirmed" | "Bulk_Approved" | "Discontinued";
   is_active: boolean;
   colors: StyleColorItem[];
@@ -224,6 +230,63 @@ export async function getStylesByBuyer(buyerId: number | string): Promise<{ succ
   const res = await fetch(`${API_BASE}/api/v1/styles/by-buyer/${buyerId}`, {
     method: "GET",
     headers: getHeaders(),
+  });
+  return handleResponse(res);
+}
+
+/**
+ * Upload an optional Tech-Pack document (PDF, Excel, Images, Archive)
+ */
+export async function uploadTechPackFile(file: File): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    file_url: string;
+    file_name: string;
+    file_size: number;
+  };
+}> {
+  const token = useAuthStore.getState().token;
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/api/v1/styles/upload-techpack`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  });
+  return handleResponse(res);
+}
+
+/**
+ * Quick-add a new Colorway to an existing style on-the-fly
+ */
+export async function quickAddStyleColor(
+  styleId: number | string,
+  payload: { color_name: string; color_code?: string; hex_code?: string }
+): Promise<{ success: boolean; message: string; data: StyleColorItem }> {
+  const res = await fetch(`${API_BASE}/api/v1/styles/${styleId}/add-color`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+}
+
+/**
+ * Quick-add a new Size scale to an existing style on-the-fly
+ */
+export async function quickAddStyleSize(
+  styleId: number | string,
+  payload: { size_name: string; sort_order?: number }
+): Promise<{ success: boolean; message: string; data: StyleSizeItem }> {
+  const res = await fetch(`${API_BASE}/api/v1/styles/${styleId}/add-size`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
   });
   return handleResponse(res);
 }

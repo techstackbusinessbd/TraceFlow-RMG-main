@@ -25,6 +25,7 @@ class MasterMetadataController extends Controller
                 'seasons' => config('rmg_master.seasons', []),
                 'size_scales' => config('rmg_master.size_scales', []),
                 'payment_terms' => config('rmg_master.payment_terms', []),
+                'uom_scales' => config('rmg_master.uom_scales', []),
                 'style_statuses' => config('rmg_master.style_statuses', []),
             ];
         });

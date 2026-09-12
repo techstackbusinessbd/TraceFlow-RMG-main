@@ -228,10 +228,12 @@ export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) 
               ? []
               : [
                   {
-                    icon: row.is_active
-                      ? <ToggleRight className="w-3.5 h-3.5" />
-                      : <ToggleLeft className="w-3.5 h-3.5" />,
-                    label: row.is_active ? "Deactivate" : "Activate",
+                    icon: row.is_active ? (
+                      <ToggleRight className="w-3.5 h-3.5 text-slate-500" />
+                    ) : (
+                      <ToggleLeft className="w-3.5 h-3.5 text-slate-400" />
+                    ),
+                    label: row.is_active ? "Deactivate Company" : "Activate Company",
                     variant: row.is_active ? "warning" : "default",
                     onClick: () => {
                       if (row.is_active && (row.active_users_count ?? 0) > 0 && !isSuperAdmin) {
@@ -246,7 +248,7 @@ export const CompanyListPage: React.FC<CompanyListPageProps> = ({ onNavigate }) 
                     },
                   },
                   {
-                    icon: <Trash2 className="w-3.5 h-3.5" />,
+                    icon: <Trash2 className="w-3.5 h-3.5 text-rose-600" />,
                     label: "Delete Company",
                     variant: "danger",
                     dividerBefore: true,

@@ -10,6 +10,7 @@ use App\Models\Company;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AgentController extends Controller
 {
@@ -140,12 +141,18 @@ class AgentController extends Controller
     /**
      * Resolve agent by UUID or fallback ID.
      */
-    private function resolveAgent(string|int $identifier): Agent
-    {
-        return Agent::where('uuid', $identifier)
-            ->orWhere('id', is_numeric($identifier) ? (int)$identifier : 0)
-            ->firstOrFail();
-    }
+     private function resolveAgent(string|int $identifier): Agent
+     {
+         if (is_numeric($identifier)) {
+             return Agent::where('id', (int) $identifier)->firstOrFail();
+         }
+
+         if (Str::isUuid((string) $identifier)) {
+             return Agent::where('uuid', (string) $identifier)->firstOrFail();
+         }
+
+         return Agent::where('code', (string) $identifier)->firstOrFail();
+     }
 
     /**
      * Display a specific Agent with its associated buyers.
@@ -153,10 +160,15 @@ class AgentController extends Controller
      */
     public function show(string|int $id): JsonResponse
     {
-        $agent = Agent::with(['company:id,code,name', 'buyers:id,uuid,company_id,agent_id,code,name,country,is_active'])
-            ->where('uuid', $id)
-            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
-            ->firstOrFail();
+        $query = Agent::with(['company:id,code,name', 'buyers:id,uuid,company_id,agent_id,code,name,country,is_active']);
+
+        if (is_numeric($id)) {
+            $agent = $query->where('id', (int) $id)->firstOrFail();
+        } elseif (Str::isUuid((string) $id)) {
+            $agent = $query->where('uuid', (string) $id)->firstOrFail();
+        } else {
+            $agent = $query->where('code', (string) $id)->firstOrFail();
+        }
 
         return response()->json([
             'status' => 'success',
@@ -173,7 +185,7 @@ class AgentController extends Controller
         $agent = $this->resolveAgent($id);
         $validated = $request->validated();
 
-        $agent->update([
+        $updateData = [
             'name'            => trim($validated['name']),
             'country'         => trim($validated['country']),
             'contact_person'  => $validated['contact_person'] ?? null,
@@ -182,7 +194,20 @@ class AgentController extends Controller
             'address'         => $validated['address'] ?? null,
             'commission_rate' => $validated['commission_rate'] ?? null,
             'is_active'       => $validated['is_active'] ?? $agent->is_active,
-        ]);
+        ];
+
+        // Only superadmin can reassign company_id
+        if (isset($validated['company_id']) && (int) $validated['company_id'] !== (int) $agent->company_id) {
+            $user = $request->user();
+            $isSuperAdmin = $user && ($user->hasRole('superadmin') || $user->roles()->where('name', 'superadmin')->exists());
+            if ($isSuperAdmin) {
+                $newCompany = Company::findOrFail($validated['company_id']);
+                $updateData['company_id'] = $newCompany->id;
+                $updateData['code'] = $this->generateNextAgentCode($newCompany->code);
+            }
+        }
+
+        $agent->update($updateData);
 
         $agent->load(['company:id,code,name', 'buyers']);
 
@@ -199,10 +224,15 @@ class AgentController extends Controller
      */
     public function destroy(string|int $id): JsonResponse
     {
-        $agent = Agent::withCount('buyers')
-            ->where('uuid', $id)
-            ->orWhere('id', is_numeric($id) ? (int)$id : 0)
-            ->firstOrFail();
+        $query = Agent::withCount('buyers');
+
+        if (is_numeric($id)) {
+            $agent = $query->where('id', (int) $id)->firstOrFail();
+        } elseif (Str::isUuid((string) $id)) {
+            $agent = $query->where('uuid', (string) $id)->firstOrFail();
+        } else {
+            $agent = $query->where('code', (string) $id)->firstOrFail();
+        }
 
         if ($agent->buyers_count > 0) {
             return response()->json([

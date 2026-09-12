@@ -17,6 +17,14 @@ import {
 import { UI_TOKENS } from '../../config/designTokens';
 import { useAuthStore } from '../../store/authStore';
 
+import { navigationService, type NavModule } from '../../services/navigationService';
+import {
+  Calendar,
+  BarChart3,
+  Boxes,
+  FolderTree,
+} from 'lucide-react';
+
 export interface SubMenuItem {
   id: string;
   label: string;
@@ -54,9 +62,23 @@ interface NavigationRailProps {
   onClearSubmoduleGroup?: () => void;
 }
 
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  ShieldCheck,
+  Database,
+  Shirt,
+  Calendar,
+  Scissors,
+  Boxes,
+  CheckCircle2,
+  Layers,
+  Truck,
+  FolderTree,
+  BarChart3,
+};
+
 /**
  * Authentic Microsoft Power Automate Portal Left Navigation
- * Strictly permission-gated: menus without user permission do not render.
+ * 100% Dynamic from Centralized Single Source of Truth (`/api/v1/navigation/catalog`)
  */
 export const NavigationRail: React.FC<NavigationRailProps> = ({
   currentModuleId = 'master-buyers',
@@ -73,6 +95,17 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
   const collapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
   const toggleRail = onToggleCollapse || (() => setInternalCollapsed(!internalCollapsed));
 
+  const [catalog, setCatalog] = useState<NavModule[]>(() => navigationService.getImmediateCatalog());
+
+  // Load centralized navigation catalog from backend single source of truth
+  React.useEffect(() => {
+    navigationService.getCatalog(false).then((data) => {
+      if (data && data.length > 0) {
+        setCatalog(data);
+      }
+    });
+  }, []);
+
   // Quick Links Permissions
   const canViewHome = canAccessWidget(
     ['dashboard.view', 'executive.dashboard.view'],
@@ -83,379 +116,89 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
     ['superadmin', 'admin', 'standarduser', 'merchandiser']
   );
 
-  const categories: NavCategory[] = [
-    {
-      id: 'system-admin',
-      title: 'System Admin',
-      icon: ShieldCheck,
-      requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser', 'production_manager', 'floor_supervisor', 'store_manager', 'commercial_manager'],
-      items: [
-        {
-          id: 'user-profile-group',
-          label: 'User Account & Profile',
-          requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser', 'production_manager', 'floor_supervisor', 'store_manager', 'commercial_manager'],
-          subItems: [
-            {
-              id: 'profile',
-              label: 'My Profile',
-            },
-            {
-              id: 'profile-password',
-              label: 'Change Password',
-            },
-          ],
-        },
-        {
-          id: 'user-directory-group',
-          label: 'User Directory',
-          requiredRoles: ['superadmin', 'admin'],
-          subItems: [
-            {
-              id: 'admin-users',
-              label: 'User',
-              requiredPermissions: ['system_admin.users.account.view', 'system_admin.users.view'],
-              requiredRoles: ['superadmin', 'admin'],
-            },
-            {
-              id: 'admin-roles',
-              label: 'Role Matrix',
-              requiredPermissions: ['system_admin.roles.matrix.view', 'system_admin.roles.view'],
-              requiredRoles: ['superadmin', 'admin'],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'master-data',
-      title: 'Master Data',
-      icon: Database,
-      requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser', 'commercial_manager'],
-      items: [
-        {
-          id: 'org-setup-group',
-          label: 'Organization Setup',
-          requiredRoles: ['superadmin', 'admin', 'standarduser'],
-          subItems: [
-            {
-              id: 'master-companies',
-              label: 'Company',
-              requiredPermissions: ['system_admin.companies.profile.view'],
-              requiredRoles: ['superadmin', 'admin'],
-            },
-            {
-              id: 'master-units',
-              label: 'Factory Floors & Line',
-              requiredPermissions: ['master_data.lines.setup.view'],
-              requiredRoles: ['superadmin', 'admin', 'production_manager', 'floor_supervisor', 'standarduser'],
-            },
-          ],
-        },
-        {
-          id: 'merchandising-master-group',
-          label: 'Merchandising Master',
-          requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
-          subItems: [
-            {
-              id: 'master-buyers',
-              label: 'Buyer Directory',
-              requiredPermissions: ['master_data.buyers.profile.view'],
-              requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
-            },
-            {
-              id: 'master-agents',
-              label: 'Buying Agent',
-              requiredPermissions: ['master_data.agents.profile.view'],
-              requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
-            },
-            {
-              id: 'master-styles',
-              label: 'Style Library',
-              requiredPermissions: ['master_data.styles.profile.view', 'merchandising.styles.view'],
-              requiredRoles: ['superadmin', 'admin', 'standarduser', 'merchandiser'],
-            },
-          ],
-        },
-        {
-          id: 'sourcing-master-group',
-          label: 'Sourcing & Supply',
-          requiredRoles: ['superadmin', 'admin', 'commercial_manager'],
-          subItems: [
-            {
-              id: 'master-suppliers',
-              label: 'Suppliers Directory',
-              requiredPermissions: ['master_data.suppliers.view', 'suppliers.view'],
-              requiredRoles: ['superadmin', 'admin', 'commercial_manager'],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'merchandising',
-      title: 'Merchandising Operations',
-      icon: Shirt,
-      requiredPermissions: ['merchandising.*'],
-      requiredRoles: ['superadmin', 'admin', 'merchandiser'],
-      items: [
-        {
-          id: 'product-dev-group',
-          label: 'Product Development',
-          requiredRoles: ['superadmin', 'admin', 'merchandiser'],
-          subItems: [
-            {
-              id: 'inquiries',
-              label: 'Buyer Inquiries',
-              requiredPermissions: ['merchandising.inquiries.view', 'inquiries.view'],
-              requiredRoles: ['superadmin', 'admin', 'merchandiser'],
-            },
-            {
-              id: 'styles-costing',
-              label: 'Styles & Costing BOM',
-              requiredPermissions: ['merchandising.styles.view', 'styles.view'],
-              requiredRoles: ['superadmin', 'admin', 'merchandiser'],
-            },
-            {
-              id: 'techpacks',
-              label: 'Tech-Pack Archives',
-              requiredPermissions: ['merchandising.techpacks.view', 'techpacks.view'],
-              requiredRoles: ['superadmin', 'admin', 'merchandiser', 'cad_engineer'],
-            },
-          ],
-        },
-        {
-          id: 'commercial-orders',
-          label: 'Commercial Orders',
-          requiredRoles: ['superadmin', 'admin', 'merchandiser'],
-          subItems: [
-            {
-              id: 'order-pos',
-              label: 'Customer Purchase Orders',
-              requiredPermissions: ['merchandising.orders.view', 'orders.pos.view'],
-              requiredRoles: ['superadmin', 'admin', 'merchandiser'],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'materials',
-      title: 'Supply Chain & Inventory',
-      icon: Layers,
-      requiredPermissions: ['warehouse.*', 'materials.*', 'inventory.*'],
-      requiredRoles: ['superadmin', 'admin', 'store_manager', 'fabric_inspector'],
-      items: [
-        {
-          id: 'warehouse-group',
-          label: 'Fabric & Store Flows',
-          requiredPermissions: ['warehouse.*', 'materials.*', 'inventory.*'],
-          requiredRoles: ['superadmin', 'admin', 'store_manager', 'fabric_inspector'],
-          subItems: [
-            {
-              id: 'warehouse-rolls',
-              label: 'Fabric Roll Inventory',
-              requiredPermissions: ['warehouse.rolls.view', 'inventory.rolls.view'],
-              requiredRoles: ['superadmin', 'admin', 'store_manager', 'fabric_inspector'],
-            },
-            {
-              id: 'roll-grn',
-              label: 'GRN Receiving & Scanning',
-              requiredPermissions: ['warehouse.grn.view', 'inventory.grn.view'],
-              requiredRoles: ['superadmin', 'admin', 'store_manager', 'gate_officer'],
-            },
-            {
-              id: 'shade-lots',
-              label: 'Shade & Lot Segregation',
-              requiredPermissions: ['warehouse.shade_lots.view', 'inventory.shade.view'],
-              requiredRoles: ['superadmin', 'admin', 'store_manager', 'lab_technician'],
-            },
-            {
-              id: 'trims-warehouse',
-              label: 'Trims & Accessories',
-              requiredPermissions: ['warehouse.trims.view', 'inventory.trims.view'],
-              requiredRoles: ['superadmin', 'admin', 'store_manager', 'trims_incharge'],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'shopfloor',
-      title: 'Manufacturing & Floor',
-      icon: Scissors,
-      requiredPermissions: ['shopfloor.*', 'cutting.*', 'sewing.*', 'master_data.lines.*'],
-      requiredRoles: ['superadmin', 'admin', 'cutting_manager', 'floor_supervisor', 'production_manager'],
-      items: [
-        {
-          id: 'cutting-group',
-          label: 'CAD & Cutting Runs',
-          requiredPermissions: ['cutting.*', 'shopfloor.cutting.*'],
-          requiredRoles: ['superadmin', 'admin', 'cutting_manager'],
-          subItems: [
-            {
-              id: 'cad-markers',
-              label: 'Marker Planning & Ratio',
-              requiredPermissions: ['cutting.cad.view', 'cutting.markers.view'],
-              requiredRoles: ['superadmin', 'admin', 'cutting_manager', 'cad_engineer'],
-            },
-            {
-              id: 'spreading-tables',
-              label: 'Spreading & Plies',
-              requiredPermissions: ['cutting.spreading.view'],
-              requiredRoles: ['superadmin', 'admin', 'cutting_manager'],
-            },
-            {
-              id: 'cutting-bundles',
-              label: 'Bundle Tickets & Barcodes',
-              requiredPermissions: ['cutting.bundles.view'],
-              requiredRoles: ['superadmin', 'admin', 'cutting_manager'],
-            },
-          ],
-        },
-        {
-          id: 'sewing-group',
-          label: 'Sewing Production',
-          requiredPermissions: ['sewing.*', 'master_data.lines.setup.view'],
-          requiredRoles: ['superadmin', 'admin', 'floor_supervisor', 'production_manager'],
-          subItems: [
-            {
-              id: 'sewing-lines',
-              label: 'Line Loading & Flow',
-              requiredPermissions: ['sewing.lines.view', 'master_data.lines.setup.view'],
-              requiredRoles: ['superadmin', 'admin', 'floor_supervisor', 'production_manager'],
-            },
-            {
-              id: 'hourly-production',
-              label: 'Hourly Output Tracking',
-              requiredPermissions: ['sewing.tracking.view', 'sewing.hourly.view'],
-              requiredRoles: ['superadmin', 'admin', 'floor_supervisor', 'production_manager'],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'quality',
-      title: 'Quality & Compliance',
-      icon: CheckCircle2,
-      requiredPermissions: ['quality.*', 'qc.*'],
-      requiredRoles: ['superadmin', 'admin', 'qc_auditor', 'qc_manager'],
-      items: [
-        {
-          id: 'qc-group',
-          label: 'Quality Control Audits',
-          requiredPermissions: ['quality.*', 'qc.*'],
-          requiredRoles: ['superadmin', 'admin', 'qc_auditor', 'qc_manager'],
-          subItems: [
-            {
-              id: 'qc-inspection',
-              label: '4-Point Fabric Inspection',
-              requiredPermissions: ['quality.inspections.view', 'qc.fabric.view'],
-              requiredRoles: ['superadmin', 'admin', 'qc_auditor', 'qc_manager'],
-            },
-            {
-              id: 'cutting-qc',
-              label: 'Cut Panel Audit',
-              requiredPermissions: ['quality.cutting.view', 'qc.panels.view'],
-              requiredRoles: ['superadmin', 'admin', 'qc_auditor', 'qc_manager'],
-            },
-            {
-              id: 'endline-qc',
-              label: 'End-Line Defect Traffic',
-              requiredPermissions: ['quality.endline.view', 'qc.traffic.view'],
-              requiredRoles: ['superadmin', 'admin', 'qc_auditor', 'qc_manager'],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'shipping',
-      title: 'Commercial & Export',
-      icon: Truck,
-      requiredPermissions: ['shipping.*', 'commercial.*'],
-      requiredRoles: ['superadmin', 'admin', 'commercial_manager', 'export_officer'],
-      items: [
-        {
-          id: 'commercial-group',
-          label: 'Finishing & Dispatch',
-          requiredPermissions: ['shipping.*', 'commercial.*'],
-          requiredRoles: ['superadmin', 'admin', 'finishing_manager', 'commercial_manager'],
-          subItems: [
-            {
-              id: 'finishing-packing',
-              label: 'Carton Packing & Weighing',
-              requiredPermissions: ['finishing.packing.view', 'commercial.packing.view'],
-              requiredRoles: ['superadmin', 'admin', 'finishing_manager'],
-            },
-            {
-              id: 'export-shipment',
-              label: 'Commercial Dispatch',
-              requiredPermissions: ['shipping.export.view', 'commercial.dispatch.view'],
-              requiredRoles: ['superadmin', 'admin', 'commercial_manager', 'export_officer'],
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  // Convert centralized dynamic catalog into NavCategory structure
+  const categories: NavCategory[] = React.useMemo(() => {
+    return catalog.map((mod) => ({
+      id: mod.id,
+      title: mod.title,
+      icon: ICON_MAP[mod.icon] || FolderOpen,
+      items: mod.submodules.map((sub) => ({
+        id: sub.id,
+        label: sub.name,
+        badge: sub.badge,
+        subItems: (sub.clusters?.flatMap((c) => c.menus) || []).map((m) => ({
+          id: m.id,
+          label: m.label,
+          path: m.path,
+          requiredPermissions: m.required_permissions,
+          requiredRoles: m.required_roles,
+        })),
+      })),
+    }));
+  }, [catalog]);
 
-  // Strictly filter categories, items, and submenus by permission
+  // Strictly filter categories, items, and submenus by permission, and by activeSubmoduleGroup if focused
   const visibleCategories = hideCategories
     ? []
     : categories
-        .filter((cat) => {
-          if (!activeCategory) return true;
-          return cat.id === activeCategory;
-        })
         .map((cat) => {
-      // If category has category-level restriction and user lacks access, hide
-      if (!canAccessWidget(cat.requiredPermissions, cat.requiredRoles)) {
-        return null;
-      }
-
-      // Filter items within category
-      const visibleItems = cat.items
-        .filter((item) => {
-          if (!activeSubmoduleGroup) return true;
-          return item.id === activeSubmoduleGroup;
-        })
-        .map((item) => {
-          // If item has subItems, filter subItems
-          if (item.subItems && item.subItems.length > 0) {
-            const visibleSubItems = item.subItems.filter((sub) =>
-              canAccessWidget(sub.requiredPermissions, sub.requiredRoles)
-            );
-            // If none of the subItems are accessible, hide parent item
-            if (visibleSubItems.length === 0) return null;
-            return {
-              ...item,
-              subItems: visibleSubItems,
-            };
+          // If category has category-level restriction and user lacks access, hide
+          if (!canAccessWidget(cat.requiredPermissions, cat.requiredRoles)) {
+            return null;
           }
 
-          // Single item without subItems
-          const isItemPermitted = canAccessWidget(item.requiredPermissions, item.requiredRoles);
-          return isItemPermitted ? item : null;
+          // If activeSubmoduleGroup is active, check if this category contains that submodule group
+          if (activeSubmoduleGroup) {
+            const hasFocusedGroup = cat.items.some((item) => item.id === activeSubmoduleGroup);
+            if (!hasFocusedGroup) return null;
+          }
+
+          // Map and filter items within category strictly by user permission
+          const visibleItems = cat.items
+            .map((item) => {
+              // If activeSubmoduleGroup is active, show ONLY this active submodule item and its submenus
+              if (activeSubmoduleGroup && item.id !== activeSubmoduleGroup) {
+                return null;
+              }
+
+              // If item has subItems, filter subItems
+              if (item.subItems && item.subItems.length > 0) {
+                const visibleSubItems = item.subItems.filter((sub) =>
+                  canAccessWidget(sub.requiredPermissions, sub.requiredRoles)
+                );
+                // If none of the subItems are accessible, hide parent item
+                if (visibleSubItems.length === 0) return null;
+                return {
+                  ...item,
+                  subItems: visibleSubItems,
+                };
+              }
+
+              // Single item without subItems
+              const isItemPermitted = canAccessWidget(item.requiredPermissions, item.requiredRoles);
+              return isItemPermitted ? item : null;
+            })
+            .filter(Boolean) as NavItem[];
+
+          // If category has no visible items left, hide entire category
+          if (visibleItems.length === 0) return null;
+
+          return {
+            ...cat,
+            items: visibleItems,
+          };
         })
-        .filter(Boolean) as NavItem[];
+        .filter(Boolean) as NavCategory[];
 
-      // If category has no visible items left, hide entire category
-      if (visibleItems.length === 0) return null;
-
-      return {
-        ...cat,
-        items: visibleItems,
-      };
-    })
-    .filter(Boolean) as NavCategory[];
-
-  // Helper to find which category and parent contain the current module
-  const findActiveCategoryAndParent = (modId: string) => {
+  // Helper to find which category and parent contain the current module or active submodule group
+  const findActiveCategoryAndParent = (modId: string, activeGroup?: string | null) => {
     for (const cat of visibleCategories) {
       for (const item of cat.items) {
+        if (activeGroup && item.id === activeGroup) {
+          return { catId: cat.id, parentId: item.id };
+        }
         if (item.id === modId) {
-          return { catId: cat.id, parentId: null };
+          return { catId: cat.id, parentId: item.subItems && item.subItems.length > 0 ? item.id : null };
         }
         if (item.subItems) {
           for (const sub of item.subItems) {
@@ -466,42 +209,54 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
         }
       }
     }
+    if (visibleCategories.length > 0) {
+      return { catId: visibleCategories[0].id, parentId: visibleCategories[0].items[0]?.id || null };
+    }
     return { catId: 'master-data', parentId: 'org-setup-group' };
   };
 
-  const initialActive = findActiveCategoryAndParent(currentModuleId);
+  const initialActive = findActiveCategoryAndParent(currentModuleId, activeSubmoduleGroup);
 
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-    [initialActive.catId]: true,
+  // Smart Accordion Rail: The active module's category & parent group are expanded by default.
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(() => {
+    const defaultOpen: Record<string, boolean> = {};
+    if (initialActive.catId) {
+      defaultOpen[initialActive.catId] = true;
+    }
+    return defaultOpen;
   });
 
-  // Default all submodule groups to open so all submenus are visibly displayed in the sidebar
-  const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({
-    'user-profile-group': true,
-    'user-directory-group': true,
-    'org-setup-group': true,
-    'merchandising-master-group': true,
-    'sourcing-master-group': true,
-    'product-dev-group': true,
-    'commercial-orders': true,
-    'warehouse-group': true,
-    'cutting-ops': true,
-    'sewing-lines-group': true,
-    'quality-audit-group': true,
-    'commercial-group': true,
-    ...(initialActive.parentId ? { [initialActive.parentId]: true } : {}),
+  const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>(() => {
+    const defaultParents: Record<string, boolean> = {};
+    if (initialActive.parentId) {
+      defaultParents[initialActive.parentId] = true;
+    }
+    return defaultParents;
   });
 
-  // Ensure active category and active parent group remain visible
+  // Ensure active category, active parent group, or App Launcher selected submodule group remain visible & expanded
   React.useEffect(() => {
-    const active = findActiveCategoryAndParent(currentModuleId);
+    if (visibleCategories.length === 0) return;
+
+    const active = findActiveCategoryAndParent(currentModuleId, activeSubmoduleGroup);
     if (active.catId) {
-      setOpenCategories((prev) => ({ ...prev, [active.catId]: true }));
+      setOpenCategories((prev) => ({ ...prev, [active.catId!]: true }));
     }
     if (active.parentId) {
-      setExpandedParents((prev) => ({ ...prev, [active.parentId]: true }));
+      setExpandedParents((prev) => ({ ...prev, [active.parentId!]: true }));
     }
-  }, [currentModuleId]);
+
+    if (activeSubmoduleGroup) {
+      setExpandedParents((prev) => ({ ...prev, [activeSubmoduleGroup]: true }));
+      // Also ensure category containing this submodule group is open
+      const parentCat = visibleCategories.find((cat) =>
+        cat.items.some((item) => item.id === activeSubmoduleGroup)
+      );
+      if (parentCat) {
+        setOpenCategories((prev) => ({ ...prev, [parentCat.id]: true }));
+      }
+    }
+  }, [currentModuleId, activeSubmoduleGroup, visibleCategories]);
 
   const toggleCategory = (catId: string) => {
     setOpenCategories((prev) => ({
@@ -526,8 +281,8 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
     >
       {/* Navigation Groups Container */}
       <div className={UI_TOKENS.powerNav.itemsContainer}>
-        {/* Core Quick Links (Power Automate Style) */}
-        {!collapsed && (canViewHome || canViewMasterRecords) && (
+        {/* Core Quick Links (Power Automate Style) - Hidden when active submodule is isolated */}
+        {!collapsed && !activeSubmoduleGroup && (canViewHome || canViewMasterRecords) && (
           <div className={UI_TOKENS.powerNav.quickSection}>
             {canViewHome && (
               <button
@@ -561,20 +316,22 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
         )}
 
         {/* Focused Submodule Group Indicator (if selected from App Launcher) */}
-        {!collapsed && activeSubmoduleGroup && onClearSubmoduleGroup && (
+        {!collapsed && activeSubmoduleGroup && (
           <div className={UI_TOKENS.powerNav.focusBanner}>
             <span className={UI_TOKENS.powerNav.focusBannerText}>
               <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse shrink-0" />
               <span>Filtered Submodule</span>
             </span>
-            <button
-              type="button"
-              onClick={onClearSubmoduleGroup}
-              className={UI_TOKENS.powerNav.focusBannerClearBtn}
-              title="Show all submodules of this module"
-            >
-              Show All
-            </button>
+            {onClearSubmoduleGroup && (
+              <button
+                type="button"
+                onClick={onClearSubmoduleGroup}
+                className={UI_TOKENS.powerNav.focusBannerClearBtn}
+                title="Show all submodules of this module"
+              >
+                Show All
+              </button>
+            )}
           </div>
         )}
 
