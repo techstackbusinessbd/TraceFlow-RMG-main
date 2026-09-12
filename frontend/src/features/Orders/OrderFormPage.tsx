@@ -23,6 +23,7 @@ import {
   Plus,
   X,
   Globe,
+  ArrowRight,
 } from "lucide-react";
 import { PageHeader } from "../../components/common/PageHeader";
 import { Button } from "../../components/common/Button";
@@ -163,6 +164,9 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
 
   // Order Quantity Unit of Measure (UOM) state: Pcs, Dzn, Set, Pair, Pack
   const [orderUom, setOrderUom] = useState<"Pcs" | "Dzn" | "Set" | "Pair" | "Pack">("Pcs");
+
+  // Tab-based Navigation: "header" (PO Header & Production Context) vs "breakdown" (PO Breakdown & Ratio Matrix)
+  const [activeOrderFormTab, setActiveOrderFormTab] = useState<"header" | "breakdown">("header");
 
   // UI status
   const [isLoading, setIsLoading] = useState(false);
@@ -1120,12 +1124,79 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
 
       {/* Main Form Container */}
       <form onSubmit={handleSubmit} noValidate>
+        {/* Enterprise In-Page Tab Navigation (SRS 3.1 & 3.2 Workflow Separation) */}
+        <div className="mb-4 bg-white border border-slate-200 rounded-lg p-1.5 shadow-2xs flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setActiveOrderFormTab("header")}
+              className={`px-3.5 py-2 rounded-md text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeOrderFormTab === "header"
+                  ? "bg-[#0066FF] text-white shadow-2xs"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>1. Order & PO Header</span>
+              {formData.buyer_id && formData.style_id && formData.total_order_qty ? (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                  activeOrderFormTab === "header" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
+                }`}>
+                  ✓ Ready
+                </span>
+              ) : (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                  activeOrderFormTab === "header" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-800"
+                }`}>
+                  Draft
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveOrderFormTab("breakdown")}
+              className={`px-3.5 py-2 rounded-md text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                activeOrderFormTab === "breakdown"
+                  ? "bg-[#0066FF] text-white shadow-2xs"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              <span>2. PO Breakdown & Ratio Matrix</span>
+              {matrixBreakdownTotal > 0 ? (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-semibold ${
+                  activeOrderFormTab === "breakdown" ? "bg-white/20 text-white" : "bg-blue-100 text-blue-700"
+                }`}>
+                  {matrixBreakdownTotal.toLocaleString()} pcs
+                </span>
+              ) : (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                  activeOrderFormTab === "breakdown" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                }`}>
+                  Pending
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 px-2 text-[11px] text-slate-500 font-medium">
+            <span>Current Focus:</span>
+            <strong className="text-slate-800">
+              {activeOrderFormTab === "header" ? "Master Contract & Commercial Terms" : "Color-Size Breakdown & PO Allocation"}
+            </strong>
+          </div>
+        </div>
+
         {/* Golden 2/3 and 1/3 Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left 2/3 Main Canvas */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Part 1: Order Master & Style Affiliation (Conforming strictly to SRS 3.1) */}
-            <div className={UI_TOKENS.card.base}>
+            {/* Tab 1: Order Master, Style Affiliation & PO Header */}
+            {activeOrderFormTab === "header" && (
+              <>
+                {/* Part 1: Order Master & Style Affiliation (Conforming strictly to SRS 3.1) */}
+                <div className={UI_TOKENS.card.base}>
               <div className={UI_TOKENS.card.header}>
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-[#EFF6FC] border border-[#C7E0F4] text-[#0066FF] flex items-center justify-center font-bold text-xs shadow-2xs">
@@ -1853,8 +1924,73 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                     />
                   </FormField>
                 </div>
+
+                {/* Tab 1 Navigation Action: Go to Step 2 */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                  <div className="text-[11.5px] text-slate-500">
+                    Header details configured. Proceed to color-size distribution matrix.
+                  </div>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => {
+                      if (activeTab === null) setActiveTab("manual");
+                      setActiveOrderFormTab("breakdown");
+                    }}
+                    icon={<ArrowRight className="w-3.5 h-3.5" />}
+                  >
+                    Next: PO Breakdown & Ratio Matrix
+                  </Button>
+                </div>
               </div>
             )}
+          </>
+        )}
+
+        {/* Tab 2: PO Breakdown & Ratio Matrix (Conforming to SRS 3.2 & 3.6) */}
+        {activeOrderFormTab === "breakdown" && (
+          <>
+            {/* Header Context Summary Banner when on Tab 2 */}
+            <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#EFF6FC] border border-[#C7E0F4] text-[#0066FF] flex items-center justify-center font-bold text-xs shrink-0">
+                  <ShoppingBag className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 flex items-center gap-2">
+                    <span>{selectedStyle ? selectedStyle.buyer_style_no : "Style Not Selected"}</span>
+                    {formData.buyer_po_number && (
+                      <>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-blue-600 font-mono">PO: {formData.buyer_po_number}</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
+                    <span>Job Target: <strong>{targetTotalQty > 0 ? `${targetTotalQty.toLocaleString()} pcs` : "Not set"}</strong></span>
+                    <span>•</span>
+                    <span>Matrix Total: <strong className={matrixBreakdownTotal > 0 ? "text-[#0066FF]" : "text-slate-500"}>{matrixBreakdownTotal.toLocaleString()} pcs</strong></span>
+                    {formData.delivery_destination && (
+                      <>
+                        <span>•</span>
+                        <span>Dest: <strong>{formData.delivery_destination}</strong></span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setActiveOrderFormTab("header")}
+                  icon={<ArrowLeft className="w-3.5 h-3.5" />}
+                >
+                  Edit Header Details
+                </Button>
+              </div>
+            </div>
 
             {/* Section: Ratio Breakdown / Import Workspace (Shown only after choosing an entry mode) */}
             {activeTab !== null && (
@@ -2771,6 +2907,26 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
               )}
             </div>
             )}
+
+            {/* Tab 2 Footer Navigation Row */}
+            <div className="p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between gap-3 shadow-2xs">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setActiveOrderFormTab("header")}
+                icon={<ArrowLeft className="w-3.5 h-3.5" />}
+              >
+                Back to Order & PO Header
+              </Button>
+
+              <div className="text-right">
+                <span className="text-[11.5px] text-slate-500 mr-2">
+                  Matrix Breakdown Total: <strong className="text-slate-900 font-mono">{matrixBreakdownTotal.toLocaleString()} pcs</strong>
+                </span>
+              </div>
+            </div>
+          </>
+        )}
           </div>
 
           {/* Right 1/3 Sidebar */}
