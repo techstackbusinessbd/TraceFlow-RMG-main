@@ -256,28 +256,45 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
       const matching: SizeScale[] = [];
       const others: SizeScale[] = [];
 
+      const isKidsTarget =
+        selectedCategory.includes("kid") ||
+        selectedCategory.includes("baby") ||
+        selectedCategory.includes("infant") ||
+        selectedCategory.includes("toddler") ||
+        selectedCategory.includes("junior") ||
+        selectedItem.includes("kid") ||
+        selectedItem.includes("baby") ||
+        selectedItem.includes("toddler") ||
+        selectedItem.includes("infant");
+
       const isDenimTarget =
-        selectedCategory.includes("denim") ||
-        selectedItem.includes("denim") ||
-        selectedItem.includes("jean") ||
-        selectedItem.includes("5-pocket");
+        !isKidsTarget &&
+        (selectedCategory.includes("denim") ||
+          selectedItem.includes("denim") ||
+          selectedItem.includes("jean") ||
+          selectedItem.includes("5-pocket"));
 
       const isTopsTarget =
-        selectedCategory.includes("top") ||
-        selectedCategory.includes("shirt") ||
-        selectedItem.includes("shirt") ||
-        selectedItem.includes("blouse") ||
-        selectedItem.includes("tunic");
+        !isKidsTarget &&
+        (selectedCategory.includes("top") ||
+          selectedCategory.includes("shirt") ||
+          selectedItem.includes("shirt") ||
+          selectedItem.includes("blouse") ||
+          selectedItem.includes("tunic"));
 
       const isJacketsTarget =
-        selectedCategory.includes("jacket") ||
-        selectedCategory.includes("outerwear") ||
-        selectedItem.includes("jacket") ||
-        selectedItem.includes("blazer") ||
-        selectedItem.includes("coat") ||
-        selectedItem.includes("parka");
+        !isKidsTarget &&
+        (selectedCategory.includes("jacket") ||
+          selectedCategory.includes("outerwear") ||
+          selectedCategory.includes("suit") ||
+          selectedItem.includes("jacket") ||
+          selectedItem.includes("blazer") ||
+          selectedItem.includes("suit") ||
+          selectedItem.includes("coat") ||
+          selectedItem.includes("parka"));
 
       const isBottomsTarget =
+        !isKidsTarget &&
         !isDenimTarget &&
         (selectedCategory.includes("bottom") ||
           selectedCategory.includes("pant") ||
@@ -295,7 +312,21 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
         const scaleName = (scale.name || "").toLowerCase();
         const isDualInseamScale = scaleName.includes("inseam") || scaleName.includes("×") || scaleName.includes("x");
 
-        if (isDenimTarget) {
+        if (isKidsTarget) {
+          if (
+            scaleName.includes("baby") ||
+            scaleName.includes("infant") ||
+            scaleName.includes("toddler") ||
+            scaleName.includes("kid") ||
+            scaleName.includes("junior") ||
+            scaleName.includes("height") ||
+            scaleCat.includes("universal")
+          ) {
+            matching.push(scale);
+          } else {
+            others.push(scale);
+          }
+        } else if (isDenimTarget) {
           // Denim target prioritizes denim inseam scale
           if (scaleCat.includes("denim") || scaleName.includes("denim")) {
             matching.push(scale);
@@ -318,7 +349,7 @@ export const StyleFormPage: React.FC<StyleFormPageProps> = ({ mode, styleId, onN
             others.push(scale);
           }
         } else if (isJacketsTarget) {
-          if (scaleCat.includes("jacket") || scaleCat.includes("outerwear") || scaleName.includes("jacket")) {
+          if (scaleCat.includes("jacket") || scaleCat.includes("outerwear") || scaleName.includes("jacket") || scaleName.includes("suit")) {
             matching.push(scale);
           } else {
             others.push(scale);
