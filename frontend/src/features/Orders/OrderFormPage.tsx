@@ -375,15 +375,20 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
     }));
   };
 
-  // Compute breakdown total from matrix
-  const matrixBreakdownTotal = useMemo(() => {
+  // Helper to calculate total for a specific matrix
+  const getMatrixTotal = (m: Record<number, Record<number, number>>) => {
     let sum = 0;
-    Object.values(matrix).forEach((row) => {
-      Object.values(row).forEach((qty) => {
-        sum += Number(qty) || 0;
+    Object.values(m || {}).forEach((row) => {
+      Object.values(row || {}).forEach((q) => {
+        sum += Number(q) || 0;
       });
     });
     return sum;
+  };
+
+  // Compute breakdown total from matrix
+  const matrixBreakdownTotal = useMemo(() => {
+    return getMatrixTotal(matrix);
   }, [matrix]);
 
   // Color row totals
@@ -415,6 +420,23 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
   const targetTotalQty = Number(formData.total_order_qty) || 0;
   const qtyVariance = targetTotalQty - matrixBreakdownTotal;
   const isZeroBalance = targetTotalQty > 0 && qtyVariance === 0;
+
+  // Multi-PO Combined metrics across all manual PO tabs (adhering strictly to SRS 3.6.2 & 3.6.3)
+  const combinedAllPosTotal = useMemo(() => {
+    if (manualPos.length <= 1) {
+      return matrixBreakdownTotal;
+    }
+    return manualPos.reduce((sum, item, idx) => {
+      if (idx === activeManualPoIndex) {
+        return sum + matrixBreakdownTotal;
+      }
+      return sum + getMatrixTotal(item.matrix);
+    }, 0);
+  }, [manualPos, activeManualPoIndex, matrixBreakdownTotal]);
+
+  // Master Order committed unassigned balance
+  const unassignedMasterBalance = targetTotalQty - combinedAllPosTotal;
+  const isMasterOrderBalanced = targetTotalQty > 0 && unassignedMasterBalance === 0;
 
   // Auto calculate total order value
   const computedTotalValue = useMemo(() => {
@@ -632,17 +654,6 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
       setIsUploadingDoc(false);
       if (docInputRef.current) docInputRef.current.value = "";
     }
-  };
-
-  // Helper to calculate total for a specific matrix
-  const getMatrixTotal = (m: Record<number, Record<number, number>>) => {
-    let sum = 0;
-    Object.values(m || {}).forEach((row) => {
-      Object.values(row || {}).forEach((q) => {
-        sum += Number(q) || 0;
-      });
-    });
-    return sum;
   };
 
   // Add another PO in Manual Mode (Multi PO / Multi Destination)
@@ -1525,8 +1536,12 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                   </div>
                 )}
 
-                {/* KPI Strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-3 bg-slate-50/70 border border-slate-200/80 rounded-lg text-xs">
+                {/* KPI Strip (Conforming to SRS 3.2 & 3.6 Live Multi-PO Breakdown Balance) */}
+                <div className={`grid gap-3 mb-4 p-3 rounded-lg text-xs border ${
+                  manualPos.length > 1
+                    ? "grid-cols-2 sm:grid-cols-5 bg-blue-50/30 border-blue-200/70"
+                    : "grid-cols-2 sm:grid-cols-4 bg-slate-50/70 border-slate-200/80"
+                }`}>
                   <div>
                     <span className="text-[11px] text-slate-500 font-medium block">Total Contract Value</span>
                     <p className="text-sm font-bold font-mono text-emerald-600 mt-0.5">
@@ -1534,23 +1549,53 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                     </p>
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-500 font-medium block">Target Order Qty</span>
+                    <span className="text-[11px] text-slate-500 font-medium block">
+                      {manualPos.length > 1 ? "Job Committed Qty" : "Target Order Qty"}
+                    </span>
                     <p className="text-sm font-bold font-mono text-slate-800 mt-0.5">
                       {targetTotalQty > 0 ? `${targetTotalQty.toLocaleString()} pcs` : "—"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-500 font-medium block">Matrix Breakdown Total</span>
+                    <span className="text-[11px] text-slate-500 font-medium block">
+                      {manualPos.length > 1 ? `Active PO Breakdown` : "Matrix Breakdown Total"}
+                    </span>
                     <p className={`text-sm font-bold font-mono mt-0.5 ${
-                      isZeroBalance ? "text-emerald-600" : matrixBreakdownTotal > 0 ? "text-rose-600" : "text-slate-400"
+                      matrixBreakdownTotal > 0 ? "text-[#0066FF]" : "text-slate-400"
                     }`}>
                       {matrixBreakdownTotal.toLocaleString()} pcs
                     </p>
                   </div>
+                  {manualPos.length > 1 && (
+                    <div>
+                      <span className="text-[11px] text-slate-500 font-medium block">Combined All POs</span>
+                      <p className={`text-sm font-bold font-mono mt-0.5 ${
+                        isMasterOrderBalanced ? "text-emerald-600" : "text-indigo-600"
+                      }`}>
+                        {combinedAllPosTotal.toLocaleString()} pcs
+                      </p>
+                    </div>
+                  )}
                   <div>
-                    <span className="text-[11px] text-slate-500 font-medium block">Balance Status</span>
+                    <span className="text-[11px] text-slate-500 font-medium block">
+                      {manualPos.length > 1 ? "Unassigned Balance" : "Balance Status"}
+                    </span>
                     <div className="mt-0.5">
-                      {isZeroBalance ? (
+                      {manualPos.length > 1 ? (
+                        isMasterOrderBalanced ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                            <Check className="w-3.5 h-3.5" /> 100% Matched
+                          </span>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
+                            unassignedMasterBalance < 0 ? "text-rose-700 font-bold" : "text-amber-700"
+                          }`}>
+                            {unassignedMasterBalance > 0
+                              ? `+${unassignedMasterBalance.toLocaleString()} pcs Left`
+                              : `${unassignedMasterBalance.toLocaleString()} pcs Over`}
+                          </span>
+                        )
+                      ) : isZeroBalance ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
                           <Check className="w-3.5 h-3.5" /> 100% Balanced
                         </span>
@@ -1755,11 +1800,19 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                   </div>
                   <div>
                     <h2 className={UI_TOKENS.card.title}>
-                      {activeTab === "manual" ? "Part 3: PO Breakdown & Color-Size Ratio Matrix" : "Smart PO Import & Extraction Review"}
+                      {activeTab === "manual"
+                        ? manualPos.length > 1
+                          ? `Part 3: Ratio Matrix for Active PO (${formData.buyer_po_number || `PO #${activeManualPoIndex + 1}`}${
+                              formData.delivery_destination ? ` — ${formData.delivery_destination}` : ""
+                            })`
+                          : "Part 3: PO Breakdown & Color-Size Ratio Matrix"
+                        : "Smart PO Import & Extraction Review"}
                     </h2>
                     <p className="text-[11px] text-slate-500 mt-0.5">
                       {activeTab === "manual"
-                        ? "Colorways (Y) and size scale (X) physical manufacturing quantity distribution."
+                        ? manualPos.length > 1
+                          ? `Color-size distribution for ${formData.buyer_po_number || `PO #${activeManualPoIndex + 1}`}. Tab breakdown is tracked independently.`
+                          : "Colorways (Y) and size scale (X) physical manufacturing quantity distribution."
                         : "Upload buyer purchase order sheet to auto-fill commercial terms and breakdown matrix."}
                     </p>
                   </div>
@@ -2320,9 +2373,58 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                       </div>
                     </div>
 
-                    {/* Mathematical Zero-Balance Status Alert for Manual Mode */}
+                    {/* Mathematical Zero-Balance Status Alert for Manual Mode (Conforming to SRS 3.2 & 3.6) */}
                     <div>
-                      {targetTotalQty === 0 ? (
+                      {manualPos.length > 1 ? (
+                        /* Multi-PO Mode Live Balance Alert */
+                        <div className={`p-3 rounded-md border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                          isMasterOrderBalanced
+                            ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                            : unassignedMasterBalance < 0
+                            ? "bg-rose-50 border-rose-200 text-rose-800"
+                            : "bg-blue-50 border-blue-200 text-blue-900"
+                        }`}>
+                          <div className="flex items-center gap-2">
+                            {isMasterOrderBalanced ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            ) : unassignedMasterBalance < 0 ? (
+                              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                            ) : (
+                              <Layers className="w-4 h-4 text-[#0066FF] shrink-0" />
+                            )}
+                            <div>
+                              <span className="font-semibold">
+                                {isMasterOrderBalanced
+                                  ? "All POs 100% Balanced with Committed Job Volume!"
+                                  : unassignedMasterBalance < 0
+                                  ? `Over-Allocation Detected: Combined POs exceed Job Qty by ${Math.abs(unassignedMasterBalance).toLocaleString()} pcs!`
+                                  : `Multi-PO Split in Progress: ${unassignedMasterBalance.toLocaleString()} pcs unassigned remaining.`}
+                              </span>
+                              <span className="block text-[11px] opacity-80 font-mono mt-0.5">
+                                Active PO: <strong>{matrixBreakdownTotal.toLocaleString()} pcs</strong> | Combined {manualPos.length} POs:{" "}
+                                <strong>{combinedAllPosTotal.toLocaleString()} pcs</strong> / Committed:{" "}
+                                <strong>{targetTotalQty.toLocaleString()} pcs</strong>
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {targetTotalQty === 0 && combinedAllPosTotal > 0 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    total_order_qty: combinedAllPosTotal,
+                                  }))
+                                }
+                                className="px-2.5 py-1 text-xs font-semibold bg-[#0066FF] text-white rounded hover:bg-[#0052cc] transition-colors cursor-pointer"
+                              >
+                                Set Job Qty to {combinedAllPosTotal.toLocaleString()} pcs
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ) : targetTotalQty === 0 ? (
                         <div className="p-3 rounded-md bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <Calculator className="w-4 h-4 text-slate-400" />
