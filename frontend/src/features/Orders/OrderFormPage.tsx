@@ -141,6 +141,15 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const docInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Active matrix row (color) and column (size) IDs selected by the user for the 2D breakdown
+  // (Empty by default on new order create so user adds what they need from Style or custom)
+  const [activeMatrixColorIds, setActiveMatrixColorIds] = useState<number[]>([]);
+  const [activeMatrixSizeIds, setActiveMatrixSizeIds] = useState<number[]>([]);
+
+  // Dropdown popover state for adding existing style colors/sizes
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [isSizePickerOpen, setIsSizePickerOpen] = useState(false);
+
   // Quick-Add Color & Size state (Manual 2D Matrix On-the-Fly)
   const [isAddingColor, setIsAddingColor] = useState(false);
   const [newColorName, setNewColorName] = useState("");
@@ -329,13 +338,19 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
 
           // Populate 2D matrix
           const initialMatrix: Record<number, Record<number, number>> = {};
+          const editColorIds: number[] = [];
+          const editSizeIds: number[] = [];
           (ord.breakdowns || []).forEach((b) => {
             if (!initialMatrix[b.style_color_id]) {
               initialMatrix[b.style_color_id] = {};
             }
             initialMatrix[b.style_color_id][b.style_size_id] = b.order_qty;
+            if (!editColorIds.includes(b.style_color_id)) editColorIds.push(b.style_color_id);
+            if (!editSizeIds.includes(b.style_size_id)) editSizeIds.push(b.style_size_id);
           });
           setMatrix(initialMatrix);
+          setActiveMatrixColorIds(editColorIds);
+          setActiveMatrixSizeIds(editSizeIds);
           setActiveTab("manual");
           if (ord.style) {
             setSelectedStyle(ord.style as unknown as WovenStyle);
@@ -357,11 +372,19 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
         if (!formData.buyer_id && match.buyer_id) {
           setFormData((prev) => ({ ...prev, buyer_id: match.buyer_id }));
         }
+        // In create mode, do not auto-populate matrix colors or sizes — user adds them by clicking
+        if (mode === "create") {
+          setActiveMatrixColorIds([]);
+          setActiveMatrixSizeIds([]);
+          setMatrix({});
+        }
       }
     } else {
       setSelectedStyle(null);
+      setActiveMatrixColorIds([]);
+      setActiveMatrixSizeIds([]);
     }
-  }, [formData.style_id, styles, formData.buyer_id]);
+  }, [formData.style_id, styles, formData.buyer_id, mode]);
 
   // Handle matrix quantity changes
   const handleMatrixChange = (colorId: number, sizeId: number, val: string) => {
@@ -391,22 +414,44 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
     return getMatrixTotal(matrix);
   }, [matrix]);
 
+  // Selected style's active matrix colors (chosen by user or populated on edit/file parse)
+  const activeMatrixColors = useMemo(() => {
+    if (!selectedStyle?.colors) return [];
+    return selectedStyle.colors.filter((c) => activeMatrixColorIds.includes(c.id!));
+  }, [selectedStyle?.colors, activeMatrixColorIds]);
+
+  // Selected style's active matrix sizes (chosen by user or populated on edit/file parse)
+  const activeMatrixSizes = useMemo(() => {
+    if (!selectedStyle?.sizes) return [];
+    return selectedStyle.sizes.filter((s) => activeMatrixSizeIds.includes(s.id!));
+  }, [selectedStyle?.sizes, activeMatrixSizeIds]);
+
+  // Available style colors not yet added to matrix
+  const availableStyleColorsToAdd = useMemo(() => {
+    if (!selectedStyle?.colors) return [];
+    return selectedStyle.colors.filter((c) => !activeMatrixColorIds.includes(c.id!));
+  }, [selectedStyle?.colors, activeMatrixColorIds]);
+
+  // Available style sizes not yet added to matrix
+  const availableStyleSizesToAdd = useMemo(() => {
+    if (!selectedStyle?.sizes) return [];
+    return selectedStyle.sizes.filter((s) => !activeMatrixSizeIds.includes(s.id!));
+  }, [selectedStyle?.sizes, activeMatrixSizeIds]);
+
   // Color row totals
   const colorTotals = useMemo(() => {
     const totals: Record<number, number> = {};
-    if (!selectedStyle?.colors) return totals;
-    selectedStyle.colors.forEach((c) => {
+    activeMatrixColors.forEach((c) => {
       const row = matrix[c.id!] || {};
       totals[c.id!] = Object.values(row).reduce((acc, q) => acc + (Number(q) || 0), 0);
     });
     return totals;
-  }, [matrix, selectedStyle]);
+  }, [matrix, activeMatrixColors]);
 
   // Size column totals
   const sizeTotals = useMemo(() => {
     const totals: Record<number, number> = {};
-    if (!selectedStyle?.sizes) return totals;
-    selectedStyle.sizes.forEach((s) => {
+    activeMatrixSizes.forEach((s) => {
       let colSum = 0;
       Object.values(matrix).forEach((row) => {
         colSum += Number(row[s.id!]) || 0;
@@ -414,7 +459,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
       totals[s.id!] = colSum;
     });
     return totals;
-  }, [matrix, selectedStyle]);
+  }, [matrix, activeMatrixSizes]);
 
   // Total PO Quantity from input
   const targetTotalQty = Number(formData.total_order_qty) || 0;
@@ -491,6 +536,10 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
       setNewColorName("");
       setNewColorCode("");
       setIsAddingColor(false);
+      // Auto-activate the newly added color into the matrix
+      if (addedColor.id && !activeMatrixColorIds.includes(addedColor.id)) {
+        setActiveMatrixColorIds((prev) => [...prev, addedColor.id!]);
+      }
       showToast("success", "Colorway Added", `Colorway '${addedColor.color_name}' added to style and matrix.`);
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
@@ -535,6 +584,10 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
 
       setNewSizeName("");
       setIsAddingSize(false);
+      // Auto-activate the newly added size into the matrix
+      if (addedSize.id && !activeMatrixSizeIds.includes(addedSize.id)) {
+        setActiveMatrixSizeIds((prev) => [...prev, addedSize.id!]);
+      }
       showToast("success", "Size Added", `Size '${addedSize.size_name}' added to style scale.`);
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
@@ -605,6 +658,19 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
 
       if (result.matrix && Object.keys(result.matrix).length > 0) {
         setMatrix(result.matrix);
+        // Automatically activate colors and sizes from parsed file
+        const parsedColorIds: number[] = [];
+        const parsedSizeIds: number[] = [];
+        Object.entries(result.matrix).forEach(([cIdStr, sizesObj]) => {
+          const cId = Number(cIdStr);
+          if (!parsedColorIds.includes(cId)) parsedColorIds.push(cId);
+          Object.keys(sizesObj).forEach((sIdStr) => {
+            const sId = Number(sIdStr);
+            if (!parsedSizeIds.includes(sId)) parsedSizeIds.push(sId);
+          });
+        });
+        if (parsedColorIds.length > 0) setActiveMatrixColorIds(parsedColorIds);
+        if (parsedSizeIds.length > 0) setActiveMatrixSizeIds(parsedSizeIds);
       }
 
       const addedSummary: string[] = [];
@@ -2063,8 +2129,12 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-slate-800">Ratio Matrix Builder:</span>
-                          <Badge variant="info">{(selectedStyle.colors || []).length} Colors</Badge>
-                          <Badge variant="neutral">{(selectedStyle.sizes || []).length} Sizes</Badge>
+                          <Badge variant="info">
+                            {activeMatrixColors.length} of {(selectedStyle.colors || []).length} Colors Active
+                          </Badge>
+                          <Badge variant="neutral">
+                            {activeMatrixSizes.length} of {(selectedStyle.sizes || []).length} Sizes Active
+                          </Badge>
                           {manualPos.length > 1 && (
                             <Badge variant="success">
                               {manualPos.length} Purchase Orders ({manualPos.map(p => p.destination_country || "Pending").filter(Boolean).length} Destinations)
@@ -2084,31 +2154,146 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                             + Add Another PO / Destination
                           </Button>
 
-                          {/* Add Colorway Button */}
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => {
-                              setIsAddingColor(true);
-                              setIsAddingSize(false);
-                            }}
-                            icon={<Plus className="w-3.5 h-3.5 text-blue-600" />}
-                          >
-                            Add Colorway
-                          </Button>
+                          {/* Add Colorway Dropdown Trigger */}
+                          <div className="relative">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => {
+                                setIsColorPickerOpen((prev) => !prev);
+                                setIsSizePickerOpen(false);
+                                setIsAddingColor(false);
+                                setIsAddingSize(false);
+                              }}
+                              icon={<Plus className="w-3.5 h-3.5 text-blue-600" />}
+                            >
+                              Add Colorway
+                            </Button>
 
-                          {/* Add Size Button */}
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => {
-                              setIsAddingSize(true);
-                              setIsAddingColor(false);
-                            }}
-                            icon={<Plus className="w-3.5 h-3.5 text-indigo-600" />}
-                          >
-                            Add Size Scale
-                          </Button>
+                            {/* Add Colorway Popover */}
+                            {isColorPickerOpen && (
+                              <div className="absolute right-0 top-full mt-1.5 w-64 bg-white border border-slate-200 rounded-lg shadow-xl py-2 z-40 text-xs">
+                                <div className="px-3 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                                  <span>Available Style Colors</span>
+                                  <span className="text-[10px] text-slate-400 font-normal">click to add</span>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto py-1">
+                                  {availableStyleColorsToAdd.length === 0 ? (
+                                    <div className="px-3 py-2 text-slate-500 text-[11.5px] italic text-center">
+                                      {(selectedStyle.colors || []).length === 0
+                                        ? "No colors in style profile."
+                                        : "All style colors added to matrix."}
+                                    </div>
+                                  ) : (
+                                    availableStyleColorsToAdd.map((c) => (
+                                      <button
+                                        key={c.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveMatrixColorIds((prev) => [...prev, c.id!]);
+                                          setIsColorPickerOpen(false);
+                                        }}
+                                        className="w-full px-3 py-1.5 flex items-center gap-2 hover:bg-blue-50 text-left transition-colors cursor-pointer"
+                                      >
+                                        <span
+                                          className="w-3 h-3 rounded-full border border-slate-300 shrink-0 shadow-2xs"
+                                          style={{
+                                            backgroundColor: c.color_code.startsWith("#") ? c.color_code : "#64748b",
+                                          }}
+                                        />
+                                        <span className="font-medium text-slate-800 truncate">{c.color_name}</span>
+                                        {c.color_code && (
+                                          <span className="text-[10px] text-slate-400 font-mono ml-auto">
+                                            {c.color_code}
+                                          </span>
+                                        )}
+                                      </button>
+                                    ))
+                                  )}
+                                </div>
+                                <div className="border-t border-slate-100 px-2 pt-1.5 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setIsColorPickerOpen(false);
+                                      setIsAddingColor(true);
+                                      setIsAddingSize(false);
+                                    }}
+                                    className="w-full py-1 px-2 text-center text-[#0066FF] hover:bg-blue-50 font-semibold rounded transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    <span>Create Custom Colorway</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Add Size Dropdown Trigger */}
+                          <div className="relative">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => {
+                                setIsSizePickerOpen((prev) => !prev);
+                                setIsColorPickerOpen(false);
+                                setIsAddingSize(false);
+                                setIsAddingColor(false);
+                              }}
+                              icon={<Plus className="w-3.5 h-3.5 text-indigo-600" />}
+                            >
+                              Add Size Scale
+                            </Button>
+
+                            {/* Add Size Scale Popover */}
+                            {isSizePickerOpen && (
+                              <div className="absolute right-0 top-full mt-1.5 w-60 bg-white border border-slate-200 rounded-lg shadow-xl py-2 z-40 text-xs">
+                                <div className="px-3 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                                  <span>Available Style Sizes</span>
+                                  <span className="text-[10px] text-slate-400 font-normal">click to add</span>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto py-1">
+                                  {availableStyleSizesToAdd.length === 0 ? (
+                                    <div className="px-3 py-2 text-slate-500 text-[11.5px] italic text-center">
+                                      {(selectedStyle.sizes || []).length === 0
+                                        ? "No sizes in style scale."
+                                        : "All style sizes added to matrix."}
+                                    </div>
+                                  ) : (
+                                    <div className="p-1.5 grid grid-cols-2 gap-1">
+                                      {availableStyleSizesToAdd.map((s) => (
+                                        <button
+                                          key={s.id}
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveMatrixSizeIds((prev) => [...prev, s.id!]);
+                                            setIsSizePickerOpen(false);
+                                          }}
+                                          className="px-2 py-1.5 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 rounded text-center font-mono font-semibold text-slate-800 transition-colors cursor-pointer text-xs"
+                                        >
+                                          {s.size_name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="border-t border-slate-100 px-2 pt-1.5 mt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setIsSizePickerOpen(false);
+                                      setIsAddingSize(true);
+                                      setIsAddingColor(false);
+                                    }}
+                                    className="w-full py-1 px-2 text-center text-[#0066FF] hover:bg-blue-50 font-semibold rounded transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    <span>Create Custom Size</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -2292,86 +2477,175 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                     )}
 
                     {/* 2D Matrix Table for Manual Input */}
-                    <div className="border border-slate-200 rounded-lg overflow-hidden shadow-2xs">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs text-left border-collapse">
-                          <thead className="bg-[#F8FAFC] border-b border-slate-200 text-slate-700 font-semibold uppercase tracking-wider text-[11px]">
-                            <tr>
-                              <th className="py-2.5 px-3 border-r border-slate-200 min-w-[170px]">
-                                Colorway (Y-Axis)
-                              </th>
-                              {(selectedStyle.sizes || []).map((s) => (
-                                <th
-                                  key={s.id}
-                                  className="py-2.5 px-2 text-center border-r border-slate-200 min-w-[70px]"
-                                >
-                                  {s.size_name}
+                    {activeMatrixColors.length === 0 || activeMatrixSizes.length === 0 ? (
+                      <div className="py-10 px-4 text-center border-2 border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+                        <div className="w-9 h-9 rounded-full bg-blue-50 text-[#0066FF] flex items-center justify-center mx-auto mb-2 shadow-2xs">
+                          <Calculator className="w-4 h-4" />
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-800">
+                          {activeMatrixColors.length === 0 && activeMatrixSizes.length === 0
+                            ? "Matrix is Empty — Add Colorways & Sizes to Start"
+                            : activeMatrixColors.length === 0
+                            ? "Please Add At Least One Colorway"
+                            : "Please Add At Least One Size Scale"}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 max-w-sm mx-auto mt-1">
+                          Click <strong>"Add Colorway"</strong> to select shade rows and <strong>"Add Size Scale"</strong> to select size columns.
+                        </p>
+                        <div className="flex items-center justify-center gap-2 mt-3">
+                          {activeMatrixColors.length === 0 && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => {
+                                setIsColorPickerOpen(true);
+                                setIsSizePickerOpen(false);
+                              }}
+                              icon={<Plus className="w-3.5 h-3.5 text-blue-600" />}
+                            >
+                              Add Colorway
+                            </Button>
+                          )}
+                          {activeMatrixSizes.length === 0 && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => {
+                                setIsSizePickerOpen(true);
+                                setIsColorPickerOpen(false);
+                              }}
+                              icon={<Plus className="w-3.5 h-3.5 text-indigo-600" />}
+                            >
+                              Add Size Scale
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border border-slate-200 rounded-lg overflow-hidden shadow-2xs">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs text-left border-collapse">
+                            <thead className="bg-[#F8FAFC] border-b border-slate-200 text-slate-700 font-semibold uppercase tracking-wider text-[11px]">
+                              <tr>
+                                <th className="py-2.5 px-3 border-r border-slate-200 min-w-[180px]">
+                                  Colorway (Y-Axis)
                                 </th>
+                                {activeMatrixSizes.map((s) => (
+                                  <th
+                                    key={s.id}
+                                    className="py-2.5 px-2 text-center border-r border-slate-200 min-w-[76px] relative group/th"
+                                  >
+                                    <div className="flex items-center justify-center gap-1">
+                                      <span>{s.size_name}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveMatrixSizeIds((prev) => prev.filter((id) => id !== s.id));
+                                          // Clear removed size from matrix
+                                          setMatrix((prev) => {
+                                            const updated = { ...prev };
+                                            Object.keys(updated).forEach((cIdStr) => {
+                                              const cId = Number(cIdStr);
+                                              if (updated[cId]) {
+                                                const row = { ...updated[cId] };
+                                                delete row[s.id!];
+                                                updated[cId] = row;
+                                              }
+                                            });
+                                            return updated;
+                                          });
+                                        }}
+                                        className="opacity-0 group-hover/th:opacity-100 text-slate-400 hover:text-rose-600 p-0.5 rounded cursor-pointer transition-opacity"
+                                        title={`Remove size ${s.size_name} from matrix`}
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  </th>
+                                ))}
+                                <th className="py-2.5 px-3 text-right bg-slate-100/70 min-w-[90px]">
+                                  Color Total
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 bg-white">
+                              {activeMatrixColors.map((c) => (
+                                <tr key={c.id} className="hover:bg-[#F8FAFC] transition-colors group/tr">
+                                  <td className="py-2 px-3 font-medium text-slate-800 border-r border-slate-100">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span
+                                          className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0 shadow-2xs"
+                                          style={{
+                                            backgroundColor:
+                                              c.color_code.startsWith("#") ? c.color_code : "#64748b",
+                                          }}
+                                        />
+                                        <span className="truncate">{c.color_name}</span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveMatrixColorIds((prev) => prev.filter((id) => id !== c.id));
+                                          // Clear removed color from matrix
+                                          setMatrix((prev) => {
+                                            const updated = { ...prev };
+                                            delete updated[c.id!];
+                                            return updated;
+                                          });
+                                        }}
+                                        className="opacity-0 group-hover/tr:opacity-100 text-slate-400 hover:text-rose-600 p-0.5 rounded cursor-pointer transition-opacity"
+                                        title={`Remove ${c.color_name} from matrix`}
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                  {activeMatrixSizes.map((s) => {
+                                    const val = matrix[c.id!]?.[s.id!] ?? "";
+                                    return (
+                                      <td key={s.id} className="py-1 px-1.5 text-center border-r border-slate-100">
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          value={val}
+                                          onChange={(e) =>
+                                            handleMatrixChange(c.id!, s.id!, e.target.value)
+                                          }
+                                          placeholder="0"
+                                          className="w-full h-8 text-center font-mono text-xs rounded border border-slate-200 bg-white text-slate-900 focus:ring-1 focus:ring-[#0066FF] focus:border-[#0066FF] transition-colors"
+                                        />
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="py-2 px-3 text-right font-mono font-bold text-slate-800 bg-slate-50/50">
+                                    {Number(colorTotals[c.id!] || 0).toLocaleString()}
+                                  </td>
+                                </tr>
                               ))}
-                              <th className="py-2.5 px-3 text-right bg-slate-100/70 min-w-[90px]">
-                                Color Total
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 bg-white">
-                            {(selectedStyle.colors || []).map((c) => (
-                              <tr key={c.id} className="hover:bg-[#F8FAFC] transition-colors">
-                                <td className="py-2 px-3 font-medium text-slate-800 border-r border-slate-100">
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0 shadow-2xs"
-                                      style={{
-                                        backgroundColor:
-                                          c.color_code.startsWith("#") ? c.color_code : "#64748b",
-                                      }}
-                                    />
-                                    <span className="truncate">{c.color_name}</span>
-                                  </div>
+                            </tbody>
+                            <tfoot className="bg-[#F8FAFC] font-bold border-t-2 border-slate-200">
+                              <tr>
+                                <td className="py-2.5 px-3 text-slate-700 border-r border-slate-200">
+                                  Size Total (Pcs)
                                 </td>
-                                {(selectedStyle.sizes || []).map((s) => {
-                                  const val = matrix[c.id!]?.[s.id!] ?? "";
-                                  return (
-                                    <td key={s.id} className="py-1 px-1.5 text-center border-r border-slate-100">
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        value={val}
-                                        onChange={(e) =>
-                                          handleMatrixChange(c.id!, s.id!, e.target.value)
-                                        }
-                                        placeholder="0"
-                                        className="w-full h-8 text-center font-mono text-xs rounded border border-slate-200 bg-white text-slate-900 focus:ring-1 focus:ring-[#0066FF] focus:border-[#0066FF] transition-colors"
-                                      />
-                                    </td>
-                                  );
-                                })}
-                                <td className="py-2 px-3 text-right font-mono font-bold text-slate-800 bg-slate-50/50">
-                                  {Number(colorTotals[c.id!] || 0).toLocaleString()}
+                                {activeMatrixSizes.map((s) => (
+                                  <td
+                                    key={s.id}
+                                    className="py-2.5 px-2 text-center font-mono text-slate-800 border-r border-slate-200"
+                                  >
+                                    {Number(sizeTotals[s.id!] || 0).toLocaleString()}
+                                  </td>
+                                ))}
+                                <td className="py-2.5 px-3 text-right font-mono text-sm bg-[#EFF6FC] text-[#0066FF]">
+                                  {matrixBreakdownTotal.toLocaleString()}
                                 </td>
                               </tr>
-                            ))}
-                          </tbody>
-                          <tfoot className="bg-[#F8FAFC] font-bold border-t-2 border-slate-200">
-                            <tr>
-                              <td className="py-2.5 px-3 text-slate-700 border-r border-slate-200">
-                                Size Total (Pcs)
-                              </td>
-                              {(selectedStyle.sizes || []).map((s) => (
-                                <td
-                                  key={s.id}
-                                  className="py-2.5 px-2 text-center font-mono text-slate-800 border-r border-slate-200"
-                                >
-                                  {Number(sizeTotals[s.id!] || 0).toLocaleString()}
-                                </td>
-                              ))}
-                              <td className="py-2.5 px-3 text-right font-mono text-sm bg-[#EFF6FC] text-[#0066FF]">
-                                {matrixBreakdownTotal.toLocaleString()}
-                              </td>
-                            </tr>
-                          </tfoot>
-                        </table>
+                            </tfoot>
+                          </table>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Mathematical Zero-Balance Status Alert for Manual Mode (Conforming to SRS 3.2 & 3.6) */}
                     <div>
