@@ -18,8 +18,8 @@ Your job is to assume the required engineering roles to build this system.
 - **Strict Platform Owner Exclusion Standard (STRICT & FINAL)**: The "Platform Owner" system entity (code: `PLT` or name: `Platform Owner`) is strictly an administrative tenant reserved exclusively for system provisioning and Super Admin infrastructure management. It MUST NEVER appear in any operational dropdowns, company selectors, style affiliations, buyer/agent associations, order forms, or operational unit lists. All operational company dropdowns and query selectors across the system MUST automatically exclude `code: 'PLT'` / `is_platform_owner`.
 
 - **Git Branching & Release Standard (3-Tier Enterprise Triad)**:
-  1. `develop`: All daily development, active engineering commits, and feature implementations MUST go to `develop` branch.
-  2. `staging`: Feature-complete, production-ready release candidates MUST be promoted to `staging` for UAT, factory stakeholder validation, and pre-production testing prior to live deployment.
+  1. `develop`: All daily development, active engineering commits, and feature implementations MUST go to `develop` branch (Default Push Target).
+  2. `staging`: Feature-complete, production-ready release candidates MUST ONLY be promoted/pushed to `staging` when explicitly instructed by the USER/Product Owner. Automatic promotion without user request is prohibited.
   3. `main`: Strictly reserved for final, approved 100% live factory floor production releases (via tagged semantic versions e.g. `v1.0.0`). Direct commits to `main` are strictly prohibited. Refer to `docs/01_Business_Analyst/SRS/SRS_Enterprise_Git_Branching_and_Release_Management.md`.
 
 ## UI/UX Engineering Rules
