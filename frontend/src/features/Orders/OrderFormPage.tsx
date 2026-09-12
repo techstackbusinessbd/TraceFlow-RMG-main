@@ -33,7 +33,6 @@ import { Toast } from "../../components/common/Toast";
 import { Toggle } from "../../components/common/Toggle";
 import { Badge } from "../../components/common/Badge";
 import { TechPackPreviewModal } from "../../components/common/TechPackPreviewModal";
-import { UomQuantityInput } from "../../components/common/UomQuantityInput";
 import { UI_TOKENS } from "../../config/designTokens";
 import {
   createPurchaseOrder,
@@ -70,6 +69,7 @@ export interface ManualPoItem {
   factory_delivery_date: string;
   buyer_delivery_date: string;
   order_qty: number | "";
+  status?: "Draft" | "Confirmed" | "In_Production" | "Shipped" | "Cancelled" | "Closed";
   matrix: Record<number, Record<number, number>>;
 }
 
@@ -139,6 +139,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
   // Manual Multi-PO state (Allows adding multiple POs/destinations manually in 2D Matrix mode)
   const [manualPos, setManualPos] = useState<ManualPoItem[]>([]);
   const [activeManualPoIndex, setActiveManualPoIndex] = useState<number>(0);
+  const [poStatus, setPoStatus] = useState<PurchaseOrderFormData["status"]>("Confirmed");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const docInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -327,6 +328,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
             is_active: ord.is_active,
             breakdowns: ord.breakdowns || [],
           });
+          setPoStatus(ord.status);
 
           // Parse existing season_name into seasonName and seasonYear
           if (ord.season_name) {
@@ -741,6 +743,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
           factory_delivery_date: formData.factory_delivery_date || "",
           buyer_delivery_date: formData.buyer_delivery_date || "",
           order_qty: formData.total_order_qty || (matrixBreakdownTotal > 0 ? matrixBreakdownTotal : ""),
+          status: poStatus,
           matrix: { ...matrix },
         },
       ];
@@ -754,6 +757,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
         factory_delivery_date: formData.factory_delivery_date || "",
         buyer_delivery_date: formData.buyer_delivery_date || "",
         order_qty: formData.total_order_qty,
+        status: poStatus,
         matrix: { ...matrix },
       };
     }
@@ -767,6 +771,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
       factory_delivery_date: formData.factory_delivery_date || "",
       buyer_delivery_date: formData.buyer_delivery_date || "",
       order_qty: "",
+      status: formData.status || "Confirmed",
       matrix: {},
     };
 
@@ -781,6 +786,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
       delivery_destination: "",
       total_order_qty: "",
     }));
+    setPoStatus(newPoItem.status || "Confirmed");
     setMatrix({});
     showToast("success", "New PO Tab Added", `PO #${newPoItem.buyer_po_number} tab created for destination breakdown.`);
   };
@@ -800,6 +806,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
         factory_delivery_date: formData.factory_delivery_date || "",
         buyer_delivery_date: formData.buyer_delivery_date || "",
         order_qty: formData.total_order_qty,
+        status: poStatus,
         matrix: { ...matrix },
       };
       setManualPos(updated);
@@ -817,6 +824,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
         buyer_delivery_date: targetPo.buyer_delivery_date || prev.buyer_delivery_date,
         total_order_qty: targetPo.order_qty,
       }));
+      setPoStatus(targetPo.status || "Confirmed");
       setMatrix(targetPo.matrix || {});
     }
   };
@@ -848,6 +856,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
         buyer_delivery_date: target.buyer_delivery_date || prev.buyer_delivery_date,
         total_order_qty: target.order_qty,
       }));
+      setPoStatus(target.status || "Confirmed");
       setMatrix(target.matrix || {});
     }
     showToast("info", "PO Tab Removed", "Removed purchase order tab.");
@@ -919,6 +928,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
           factory_delivery_date: formData.factory_delivery_date || "",
           buyer_delivery_date: formData.buyer_delivery_date || "",
           order_qty: formData.total_order_qty || matrixBreakdownTotal,
+          status: poStatus,
           matrix: { ...matrix },
         };
 
@@ -962,7 +972,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
             po_file_name: formData.po_document_name,
             po_file_size: formData.po_document_size,
             entry_mode: "Manual_Matrix" as const,
-            status: formData.status || "Confirmed",
+            status: mPo.status || formData.status || "Confirmed",
             is_active: formData.is_active,
             breakdowns,
           };
@@ -1122,7 +1132,87 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
         }
       />
 
-      {/* Main Form Container */}
+      {/* Initial Step Entry Gateway (SRS 4.0 Standard: Choose between Smart PO Import vs Blank Master Order) */}
+      {mode === "create" && activeTab === null ? (
+        <div className="max-w-4xl mx-auto py-8 space-y-6">
+          <div className="text-center space-y-2">
+            <Badge variant="purple" icon={<Sparkles className="w-3.5 h-3.5" />}>
+              Order Entry Gateway
+            </Badge>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              Select Purchase Order Initiation Method
+            </h2>
+            <p className="text-xs text-slate-500 max-w-lg mx-auto">
+              Choose how you would like to construct this order. You can auto-extract from buyer sheets or start with a clean manual 2D ratio matrix.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+            {/* Gateway Option 1: Smart PO Import */}
+            <div
+              onClick={() => {
+                setActiveTab("import");
+                setActiveOrderFormTab("breakdown");
+              }}
+              className="group p-6 bg-white border border-slate-200 hover:border-[#0066FF] rounded-xl shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-5"
+            >
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#0066FF] border border-blue-100 flex items-center justify-center font-bold shadow-2xs group-hover:bg-[#0066FF] group-hover:text-white transition-colors">
+                  <FileSpreadsheet className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-[#0066FF] transition-colors">
+                      Smart PO Import (Recommended)
+                    </h3>
+                    <Badge variant="info">Fastest</Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Upload official buyer purchase order sheets (.xlsx, .xls, .csv, or .pdf). The parsing engine auto-extracts PO numbers, destination countries, delivery dates, colorways, sizes, and ratio matrices.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0066FF]">
+                <span>Upload PO Sheet & Extract</span>
+                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* Gateway Option 2: Blank Master Order */}
+            <div
+              onClick={() => {
+                setActiveTab("manual");
+                setActiveOrderFormTab("header");
+              }}
+              className="group p-6 bg-white border border-slate-200 hover:border-[#0066FF] rounded-xl shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-5"
+            >
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-bold shadow-2xs group-hover:bg-[#0066FF] group-hover:text-white transition-colors">
+                  <Calculator className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-[#0066FF] transition-colors">
+                      Blank Master Order
+                    </h3>
+                    <Badge variant="neutral">Manual 2D Matrix</Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Build order manually from scratch. Define master commercial terms, milestone dates, and enter manufacturing quantities into an interactive 2D color-size ratio matrix.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-700 group-hover:text-[#0066FF]">
+                <span>Open Blank Order Form</span>
+                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+      /* Main Form Container */
       <form onSubmit={handleSubmit} noValidate>
         {/* Enterprise In-Page Tab Navigation (SRS 3.1 & 3.2 Workflow Separation) */}
         <div className="mb-4 bg-white border border-slate-200 rounded-lg p-1.5 shadow-2xs flex flex-wrap items-center justify-between gap-2">
@@ -1453,20 +1543,33 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                         : `Contract volume across all POs.`
                     }
                   >
-                    <UomQuantityInput
-                      value={formData.total_order_qty}
-                      uom={orderUom}
-                      category="apparel"
-                      onChangeQuantity={(qty) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          total_order_qty: qty === "" ? "" : Number(qty),
-                        }))
-                      }
-                      onChangeUom={(u) => setOrderUom(u as any)}
-                      isError={Boolean(errors.total_order_qty)}
-                      placeholder="e.g. 10000"
-                    />
+                    <div className="flex items-center gap-1.5">
+                      <TextInput
+                        type="number"
+                        min="1"
+                        value={formData.total_order_qty}
+                        isError={Boolean(errors.total_order_qty)}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            total_order_qty: e.target.value === "" ? "" : Number(e.target.value),
+                          }))
+                        }
+                        placeholder="e.g. 10000"
+                        className="flex-1"
+                      />
+                      <select
+                        value={orderUom}
+                        onChange={(e) => setOrderUom(e.target.value as "Pcs" | "Dzn" | "Set" | "Pair" | "Pack")}
+                        className={`w-24 ${UI_TOKENS.input.select} text-xs font-semibold`}
+                      >
+                        <option value="Pcs">Pcs</option>
+                        <option value="Dzn">Dzn</option>
+                        <option value="Set">Set</option>
+                        <option value="Pair">Pair</option>
+                        <option value="Pack">Pack</option>
+                      </select>
+                    </div>
                   </FormField>
                 </div>
               </div>
@@ -1506,81 +1609,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
               )}
             </div>
 
-            {/* Entry Mode Selector Cards (Manual 2D Matrix vs Excel / PDF Import) */}
-            <div className="p-4 bg-white border border-slate-200 rounded-lg shadow-2xs space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                    <Layers className="w-4 h-4 text-[#0066FF]" />
-                    Select Order Entry Method
-                  </h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Choose how you want to input order breakdown, pricing, and quantities.
-                  </p>
-                </div>
-                {activeTab !== null && (
-                  <span className="text-[11px] text-slate-500">
-                    Active Mode: <strong className="text-[#0066FF]">{activeTab === "manual" ? "Manual 2D Matrix" : "Excel / PDF Import"}</strong>
-                  </span>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Option 1: Manual 2D Matrix */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("manual")}
-                  className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 ${
-                    activeTab === "manual"
-                      ? "border-[#0066FF] bg-blue-50/40 ring-1 ring-[#0066FF] shadow-xs"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60"
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${
-                    activeTab === "manual" ? "bg-[#0066FF] text-white" : "bg-slate-100 text-slate-600"
-                  }`}>
-                    <Calculator className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      Manual 2D Matrix
-                      {activeTab === "manual" && <Check className="w-3.5 h-3.5 text-[#0066FF]" />}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                      Manually enter commercial terms, FOB pricing, milestone dates, and colorway-by-size ratio matrix.
-                    </p>
-                  </div>
-                </button>
-
-                {/* Option 2: Excel / PDF Import */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("import")}
-                  className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex items-start gap-3 ${
-                    activeTab === "import"
-                      ? "border-[#0066FF] bg-blue-50/40 ring-1 ring-[#0066FF] shadow-xs"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60"
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${
-                    activeTab === "import" ? "bg-[#0066FF] text-white" : "bg-emerald-50 text-emerald-600"
-                  }`}>
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      Excel / PDF Import
-                      {activeTab === "import" && <Check className="w-3.5 h-3.5 text-[#0066FF]" />}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                      Upload buyer purchase order sheet (.xlsx / .pdf). Auto-extracts quantities, multi-POs, dates, and builds breakdown matrix.
-                    </p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Mode A Only: Part 2: PO Header, Commercial & Timeline */}
+            {/* Part 2: PO Header, Commercial & Timeline */}
             {activeTab === "manual" && (
               <div className={UI_TOKENS.card.base}>
                 <div className={UI_TOKENS.card.header}>
@@ -1599,79 +1628,8 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                         {leadTimeDays} Days Lead Time
                       </Badge>
                     )}
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={handleAddManualPo}
-                      icon={<Plus className="w-3.5 h-3.5 text-[#0066FF]" />}
-                      title="Add another PO / destination under this Master Order"
-                    >
-                      + Add Another PO
-                    </Button>
                   </div>
                 </div>
-
-                {/* Multiple PO Tabs Bar in Part 2 (When 2 or more POs exist) */}
-                {manualPos.length > 1 && (
-                  <div className="mb-4 p-2.5 bg-blue-50/50 border border-blue-200/80 rounded-lg space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Globe className="w-3.5 h-3.5 text-[#0066FF]" />
-                        Multiple POs under Job ({manualPos.length} Purchase Orders):
-                      </span>
-                      <span className="text-[11px] text-slate-600 font-medium">
-                        Viewing: <strong className="text-[#0066FF]">PO #{activeManualPoIndex + 1} of {manualPos.length}</strong>
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                      {manualPos.map((mItem, idx) => {
-                        const tabTotal = idx === activeManualPoIndex ? matrixBreakdownTotal : getMatrixTotal(mItem.matrix);
-                        return (
-                          <div
-                            key={mItem.id || idx}
-                            className={`inline-flex items-center rounded-md text-xs font-semibold whitespace-nowrap transition-all border shadow-2xs ${
-                              activeManualPoIndex === idx
-                                ? "bg-[#0066FF] text-white border-[#0066FF]"
-                                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-                            }`}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => handleSwitchManualPo(idx)}
-                              className="px-3 py-1.5 cursor-pointer flex items-center gap-1.5"
-                            >
-                              <span>{mItem.buyer_po_number || `PO #${idx + 1}`}</span>
-                              {mItem.destination_country && (
-                                <span className={`text-[10px] px-1.5 py-0.2 rounded font-normal ${
-                                  activeManualPoIndex === idx ? "bg-white/25 text-white" : "bg-slate-100 text-slate-600"
-                                }`}>
-                                  {mItem.destination_country}
-                                </span>
-                              )}
-                              <span className={`font-mono text-[10.5px] ${
-                                activeManualPoIndex === idx ? "text-blue-100" : "text-slate-500"
-                              }`}>
-                                [{tabTotal.toLocaleString()} pcs]
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={(e) => handleRemoveManualPo(idx, e)}
-                              className={`pr-2 pl-0.5 hover:opacity-100 cursor-pointer ${
-                                activeManualPoIndex === idx ? "text-blue-100 hover:text-white" : "text-slate-400 hover:text-rose-600"
-                              }`}
-                              title="Delete this PO"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
 
                 {/* KPI Strip (Conforming to SRS 3.2 & 3.6 Live Multi-PO Breakdown Balance) */}
                 <div className={`grid gap-3 mb-4 p-3 rounded-lg text-xs border ${
@@ -2433,22 +2391,54 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                         </div>
                       </div>
 
-                      {/* Manual Multi-PO Tabs Bar (Shown when multiple POs are added) */}
+                      {/* Manual Multi-PO Tabs Bar & PO Status Bar */}
                       {manualPos.length > 1 && (
-                        <div className="pt-2 border-t border-slate-200/80 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                        <div className="pt-2.5 border-t border-slate-200/80 space-y-2.5">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
                               <Globe className="w-3.5 h-3.5 text-[#0066FF]" />
                               Purchase Order & Destination Tabs:
                             </span>
-                            <span className="text-[10.5px] text-slate-500">
-                              Active: <strong>Tab {activeManualPoIndex + 1} of {manualPos.length}</strong>
-                            </span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10.5px] text-slate-500">
+                                Active: <strong>PO #{activeManualPoIndex + 1} of {manualPos.length}</strong>
+                              </span>
+                              {/* Individual PO Status Selector */}
+                              <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded border border-slate-200 shadow-2xs">
+                                <span className="text-[10.5px] font-semibold text-slate-600">PO Status:</span>
+                                <select
+                                  value={poStatus}
+                                  onChange={(e) => {
+                                    const nextSt = e.target.value as PurchaseOrderFormData["status"];
+                                    setPoStatus(nextSt);
+                                    setManualPos((prev) => {
+                                      const updated = [...prev];
+                                      if (updated[activeManualPoIndex]) {
+                                        updated[activeManualPoIndex] = {
+                                          ...updated[activeManualPoIndex],
+                                          status: nextSt,
+                                        };
+                                      }
+                                      return updated;
+                                    });
+                                  }}
+                                  className="text-xs font-semibold py-0.5 px-1.5 border border-slate-200 rounded bg-slate-50 text-slate-800 focus:ring-1 focus:ring-[#0066FF] cursor-pointer"
+                                >
+                                  <option value="Draft">Draft</option>
+                                  <option value="Confirmed">Confirmed</option>
+                                  <option value="In_Production">In Production</option>
+                                  <option value="Shipped">Shipped</option>
+                                  <option value="Cancelled">Cancelled</option>
+                                  <option value="Closed">Closed</option>
+                                </select>
+                              </div>
+                            </div>
                           </div>
 
                           <div className="flex items-center gap-2 overflow-x-auto pb-1">
                             {manualPos.map((mItem, idx) => {
                               const tabTotal = idx === activeManualPoIndex ? matrixBreakdownTotal : getMatrixTotal(mItem.matrix);
+                              const itemStatus = idx === activeManualPoIndex ? poStatus : mItem.status || "Confirmed";
                               return (
                                 <div
                                   key={mItem.id || idx}
@@ -2471,6 +2461,17 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                                         {mItem.destination_country}
                                       </span>
                                     )}
+                                    <span className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-medium ${
+                                      activeManualPoIndex === idx
+                                        ? "bg-white/25 text-white"
+                                        : itemStatus === "Draft"
+                                        ? "bg-amber-100 text-amber-800"
+                                        : itemStatus === "Cancelled"
+                                        ? "bg-rose-100 text-rose-800"
+                                        : "bg-emerald-100 text-emerald-800"
+                                    }`}>
+                                      {itemStatus}
+                                    </span>
                                     <span className={`font-mono text-[10.5px] ${
                                       activeManualPoIndex === idx ? "text-blue-100" : "text-slate-500"
                                     }`}>
@@ -3137,6 +3138,7 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
           </div>
         </div>
       </form>
+      )}
 
       {/* Document Preview Modal */}
       {isPreviewOpen && formData.po_document_url && (

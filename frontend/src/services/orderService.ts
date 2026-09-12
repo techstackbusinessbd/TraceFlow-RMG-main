@@ -174,6 +174,7 @@ export interface MultiPoGroupItem {
   currency?: string;
   season_name?: string;
   order_qty: number;
+  status?: "Draft" | "Confirmed" | "In_Production" | "Shipped" | "Cancelled" | "Closed";
   breakdowns: Array<{
     style_color_id: number;
     style_size_id: number;

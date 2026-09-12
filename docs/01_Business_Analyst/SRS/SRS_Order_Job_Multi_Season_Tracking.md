@@ -1,17 +1,21 @@
 # Software Requirements Specification (SRS)
+
 ## Module 03: RMG Master Order, Buyer PO & AI-Powered Matrix Management
+
 **Document Version:** 2.0 (Enterprise Comprehensive Edition)  
 **Target Audience:** Product Owner, Solution Architect, Backend Engineers, Frontend Engineers, QA Engineers  
-**Language Standard:** Bengali (Bangla) Requirements & Architectural Manifesto  
+**Language Standard:** Bengali (Bangla) Requirements & Architectural Manifesto
 
 ---
 
 ## ১. নির্বাহী সারসংক্ষেপ (Executive Summary)
+
 প্রচলিত সাধারণ ইআরপিতে সরাসরি বায়ার পিও (Buyer PO) এন্ট্রি করা হয়। কিন্তু বাংলাদেশের বাস্তব গার্মেন্টস ম্যানুফ্যাকচারিং প্রেক্ষাপটে বায়ার প্রথমে একটি **মোট ভলিউম/ক্যাপাসিটি (যেমন: ১০,০০০ পিস)** নিশ্চিত করে কিন্তু কোনো অফিসিয়াল বায়ার পিও (PO) প্রদান করে না। বায়ার সাধারণত বাল্ক ফেব্রিক ও ইয়ার্ন বুকিং কনফার্ম করতে বলে এবং পরবর্তীতে ডেলিভারি সিজন ভেদে (যেমন: Summer-এ ৫,০০০ পিস, Fall-এ ৫,০০০ পিস) পার্ট পার্ট করে পৃথক PO এবং নিজস্ব ফরম্যাটের কালার-সাইজ ব্রেকডাউন ইস্যু করে।
 
 তদুপরি, বিভিন্ন আন্তর্জাতিক বায়ার (H&M, Zara, Target, Levi's) তাদের নিজস্ব ভিন্ন ভিন্ন ফরম্যাটে (PDF, Excel, Scan কপি) PO শিট প্রদান করে, যার ফলে ম্যানুয়ালি ডেটা এন্ট্রি করতে প্রচুর সময় নষ্ট হয় এবং কোটি টাকার ভুল হওয়ার ঝুঁকি থাকে।
 
 এই বাস্তবতাকে শতভাগ ডিজিটাল ও নির্ভুলভাবে পরিচালনা করতে **TraceFlow RMG** সিস্টেমে **২-স্তর বিশিষ্ট অর্ডার ম্যানেজমেন্ট (Two-Tier Order Architecture)** এবং **AI-Powered Intelligent PO Parser** বাস্তবায়ন করা হবে:
+
 1. **Tier-1: Master Order (`[CompanyCode]-[YY]-[UniqueNumber]`, যেমন: `TFL-26-0001`)** — ফ্যাক্টরির ইন্টারনাল মাস্টার ফাইল যা বায়ারের মোট প্রতিশ্রুত ভলিউম (১০,০০০ পিস) এবং সেন্ট্রাল মেটেরিয়াল/ফেব্রিক বুকিংকে ধারণ করে।
 2. **Tier-2: Buyer Purchase Order / PO Received (`PO-XXXX` under Master Order)** — বায়ার যখন পরবর্তীতে সিজন ধরে নির্দিষ্ট PO ও ডেলিভারি ডেট প্রদান করে। এখানে বায়ারের অফিশিয়াল PO ফাইল (PDF/Excel) আপলোডের অপশন থাকবে এবং আধুনিক **AI Document Extraction Engine** যেকোনো বায়ারের ফাইল থেকে কালার ও সাইজ ম্যাট্রিক্স স্বয়ংক্রিয়ভাবে এক্সট্রাক্ট করে স্ক্রিনে ফিলআপ করে দেবে।
 
@@ -23,16 +27,16 @@
 graph TD
     Buyer([Buyer: American Eagle / Zara]) -->|Confirms 10,000 Pcs Commitment| MasterOrder[1. Master Order: TFL-26-0001]
     MasterOrder -->|Bulk Procurement| MaterialBooking[Bulk Fabric & Trims Booking]
-    
+
     MasterOrder -->|Part 1: Summer Season| PO1[2. Purchase Order: PO-8801 | 5,000 Pcs]
     MasterOrder -->|Part 2: Fall Season| PO2[2. Purchase Order: PO-8802 | 5,000 Pcs]
-    
+
     PO1 -->|Official PO PDF/Excel Upload| AIPool1[AI PO Parser Engine]
     AIPool1 --> Matrix1[Color-Size Ratio Matrix: Summer 5,000 Pcs]
-    
+
     PO2 -->|Official PO PDF/Excel Upload| AIPool2[AI PO Parser Engine]
     AIPool2 --> Matrix2[Color-Size Ratio Matrix: Fall 5,000 Pcs]
-    
+
     Matrix1 --> Cutting1[Cutting Release & Bundle QR Tags]
     Matrix2 --> Cutting2[Cutting Release & Bundle QR Tags]
 ```
@@ -42,60 +46,63 @@ graph TD
 ## ৩. বিস্তারিত ফাংশনাল রিকোয়ারমেন্টস (Functional Requirements)
 
 ### ৩.১. সাব-মডিউল ১: Master Order Management (`orders` / `master_orders`)
+
 বায়ার যখন প্রাথমিক মোট ভলিউম নিশ্চিত করে (PO ছাড়া বা প্রাথমিক কন্ট্রাক্টে), তখন সিস্টেমে মাস্টার অর্ডার তৈরি হবে।
 
 #### Master Order কোড নামকরণ স্ট্যান্ডার্ড (Strict System Auto-Generated Formula):
+
 $$\mathbf{Master\ Order\ No} = \mathbf{[CompanyCode]}-\mathbf{[YY]}-\mathbf{[UniqueNumber]}$$
+
 - **`CompanyCode`**: গ্রুপের যে সিস্টার কোম্পানিতে বায়ার অর্ডার বরাদ্দ করেছে তার ইউনিক কোড (যেমন: `TFL` বা `EGL` - যা `companies.code` থেকে আসবে)।
 - **`YY`**: অর্ডারের চলতি ইংরেজি বছরের শেষ দুই ডিজিট (যেমন: ২০২৬ সালের জন্য `26`)।
 - **`UniqueNumber`**: ৪-ডিজিটের অটো-ইনক্রিমেন্টেড সিকোয়েন্সিয়াল ইউনিক সিরিয়াল (যেমন: `0001`, `0002`... সংশ্লিষ্ট কোম্পানি ও বছর ভেদে ইউনিক)।
 - **পূর্ণাঙ্গ উদাহরণ:** `TFL-26-0001`, `EGL-26-0002`
 
 #### ফিল্ড লেভেল স্পেসিফিকেশন:
-| ফিল্ডের নাম | ডেটা টাইপ | বাধ্যতামূলক? | ভ্যালিডেশন রুলস ও আচরণ | ইউআই কম্পোনেন্ট |
-|---|---|---|---|---|
-| `Master Order No` | String | সিস্টেম অটো (হ্যাঁ) | অপরিবর্তনীয়, ইউনিক, অটো-জেনারেটেড (`[CompanyCode]-[YY]-[Seq]`, যেমন `TFL-26-0001`)। ইউজার ম্যানুয়াল টাইপিং নিষিদ্ধ। | Disabled Input with "System Auto" Badge |
-| `Company ID` | UUID | হ্যাঁ | গ্রুপের অনুমোদিত সিস্টার কোম্পানি (`companies`)। এর কোড দিয়ে জব নং তৈরি হবে। | Select Dropdown |
-| `Buyer ID` | UUID | হ্যাঁ | মাস্টার বায়ার লাইব্রেরি (`buyers`) থেকে আসবে। | Searchable Dropdown |
-| `Brand ID` | UUID | না | নির্বাচিত বায়ারের নিবন্ধিত সাব-ব্র্যান্ডসমূহ (`buyer_brands`)। | Select Dropdown |
-| `Department ID` | UUID | না | নির্বাচিত বায়ারের প্রোডাকশন বিভাগসমূহ (`buyer_departments`)। | Select Dropdown |
-| `Style ID` | UUID | হ্যাঁ | সিলেক্টেড বায়ারের আন্ডারে নিবন্ধিত অ্যাক্টিভ স্টাইল (`styles`) থেকে ফিল্টার হবে। | Searchable Dropdown |
-| `Season Name` | String | হ্যাঁ | বায়ার ভিত্তিক ফ্যাশন কালেকশন (e.g. `Summer`, `Spring/Summer`, `Fall`, `Autumn/Winter`)। | Select Dropdown |
-| `Season Year` | String | হ্যাঁ | ডেলিভারি ও ক্যালেন্ডার বছর (e.g. `2025`, `2026`, `2027`, `2028`, `2029`, `2030`)। | Select Dropdown |
-| `Contract / Program Ref`| String | না | বায়ারের ইমেইল রেফারেন্স, সেলস কন্ট্রাক্ট (SC) বা প্রোগ্রাম কোড (Max: 100 chars)। | Text Input |
-| `Total Committed Quantity` | Integer | হ্যাঁ | সর্বমোট প্রতিশ্রুত পরিমাণ (যেমন `10000`)। Must be > 0। | Number Input with Inline UOM |
-| `Order Quantity UOM` | Enum | হ্যাঁ | পরিমাপের একক: `Pcs` (Pieces - Default), `Dzn` (Dozens), `Set` (Sets), `Pair` (Pairs), `Pack` (Multi-packs)। | Select Dropdown (Inline) |
-| `Default Currency` | Enum | হ্যাঁ | `USD`, `EUR`, `GBP`, `BDT` (Default: USD)। | Select Dropdown |
-| `Unit Price (FOB)` | Decimal | হ্যাঁ | গড় প্রতি পিস দর (e.g. `4.50`)। | Number Input |
-| `Order Allocation Status` | Enum | হ্যাঁ | `Provisional` (কোনো PO আসেনি), `Partially_Confirmed` (আংশিক PO এসেছে), `Fully_Confirmed` (সম্পূর্ণ PO এসেছে), `In_Production`, `Completed`, `Cancelled`। | Status Badge |
-| `Target Delivery Month` | String | না | সম্ভাব্য ডেলিভারি সময়কাল (e.g. `May - Sep 2026`)। | Text Input |
-| `Remarks / Special Notes`| Text | না | বাণিজ্যিক ও টেকনিক্যাল শর্তাবলী। | Textarea |
+
+| ফিল্ডের নাম                | ডেটা টাইপ | বাধ্যতামূলক?        | ভ্যালিডেশন রুলস ও আচরণ                                                                                                                                   | ইউআই কম্পোনেন্ট                         |
+| -------------------------- | --------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `Master Order No`          | String    | সিস্টেম অটো (হ্যাঁ) | অপরিবর্তনীয়, ইউনিক, অটো-জেনারেটেড (`[CompanyCode]-[YY]-[Seq]`, যেমন `TFL-26-0001`)। ইউজার ম্যানুয়াল টাইপিং নিষিদ্ধ।                                    | Disabled Input with "System Auto" Badge |
+| `Company ID`               | UUID      | হ্যাঁ               | গ্রুপের অনুমোদিত সিস্টার কোম্পানি (`companies`)। এর কোড দিয়ে জব নং তৈরি হবে।                                                                            | Select Dropdown                         |
+| `Buyer ID`                 | UUID      | হ্যাঁ               | মাস্টার বায়ার লাইব্রেরি (`buyers`) থেকে আসবে।                                                                                                           | Searchable Dropdown                     |
+| `Brand ID`                 | UUID      | না                  | নির্বাচিত বায়ারের নিবন্ধিত সাব-ব্র্যান্ডসমূহ (`buyer_brands`)।                                                                                          | Select Dropdown                         |
+| `Department ID`            | UUID      | না                  | নির্বাচিত বায়ারের প্রোডাকশন বিভাগসমূহ (`buyer_departments`)।                                                                                            | Select Dropdown                         |
+| `Style ID`                 | UUID      | হ্যাঁ               | সিলেক্টেড বায়ারের আন্ডারে নিবন্ধিত অ্যাক্টিভ স্টাইল (`styles`) থেকে ফিল্টার হবে।                                                                        | Searchable Dropdown                     |
+| `Contract / Program Ref`   | String    | না                  | বায়ারের ইমেইল রেফারেন্স, সেলস কন্ট্রাক্ট (SC) বা প্রোগ্রাম কোড (Max: 100 chars)।                                                                        | Text Input                              |
+| `Total Committed Quantity` | Integer   | হ্যাঁ               | সর্বমোট প্রতিশ্রুত পিস (যেমন `10000`)। Must be > 0।                                                                                                      | Number Input                            |
+| `Default Currency`         | Enum      | হ্যাঁ               | `USD`, `EUR`, `GBP`, `BDT` (Default: USD)।                                                                                                               | Select Dropdown                         |
+| `Unit Price (FOB)`         | Decimal   | হ্যাঁ               | গড় প্রতি পিস দর (e.g. `4.50`)।                                                                                                                          | Number Input                            |
+| `Order Allocation Status`  | Enum      | হ্যাঁ               | `Provisional` (কোনো PO আসেনি), `Partially_Confirmed` (আংশিক PO এসেছে), `Fully_Confirmed` (সম্পূর্ণ PO এসেছে), `In_Production`, `Completed`, `Cancelled`। | Status Badge                            |
+| `Target Delivery Month`    | String    | না                  | সম্ভাব্য ডেলিভারি সময়কাল (e.g. `May - Sep 2026`)।                                                                                                       | Text Input                              |
+| `Remarks / Special Notes`  | Text      | না                  | বাণিজ্যিক ও টেকনিক্যাল শর্তাবলী।                                                                                                                         | Textarea                                |
 
 ---
 
 ### ৩.২. সাব-মডিউল ২: Buyer Purchase Order (PO Received & Splitting)
+
 বায়ার যখন সিজন অনুযায়ী নির্দিষ্ট PO ও ডেলিভারি ডেট প্রদান করবে, তখন এই সেকশনে প্রতিটি PO এন্ট্রি বা স্প্লিট হবে।
 
 #### ফিল্ড লেভেল স্পেসিফিকেশন:
-| ফিল্ডের নাম | ডেটা টাইপ | বাধ্যতামূলক? | ভ্যালিডেশন রুলস | ইউআই কম্পোনেন্ট |
-|---|---|---|---|---|
-| `Master Order ID` | UUID | হ্যাঁ | প্যারেন্ট মাস্টার অর্ডারের ফরেন কি (`orders.id`)। | Hidden / Contextual |
-| `Buyer PO Number` | String | হ্যাঁ | বায়ারের অফিসিয়াল PO শিট নম্বর (যেমন `PO-8801`)। বায়ার-ভিত্তিক ইউনিক। | Text Input |
-| `Season Name` | String | হ্যাঁ | মাস্টার অর্ডার থেকে ইনহেরিট হয় অথবা বায়ার ভিত্তিক সিজন কালেকশন (যেমন `Summer`)। | Select Dropdown |
-| `Season Year` | String | হ্যাঁ | ক্যালেন্ডার বছর (যেমন `2026`)। সিজন নেম ও ইয়ার মিলে কম্বাইন্ড সিজন গঠিত হয়। | Select Dropdown |
-| `PO Quantity` | Integer | হ্যাঁ | এই নির্দিষ্ট PO-র জন্য নির্ধারিত পিস (যেমন `5000`)। | Number Input |
-| `Ex-Factory Date` | Date | হ্যাঁ | ফ্যাক্টরি থেকে মাল বের হওয়ার শেষ তারিখ। | Date Picker |
-| `Buyer Delivery Date`| Date | হ্যাঁ | বায়ারের পোর্টে পৌঁছানোর তারিখ। | Date Picker |
-| `Shipment Mode` | Enum | হ্যাঁ | `Sea`, `Air`, `Sea-Air`, `Road` (Default: Sea)। | Select Dropdown |
-| `Destination Port` | String | না | Discharge Port (e.g. Hamburg, New York, Felixstowe)। | Text Input |
-| `PO Document File URL` | String/File | না | বায়ারের পাঠানো আসল PO ফাইল (`.pdf`, `.xlsx`, `.xls`, `.csv`)। | File Upload Dropzone |
-| `PO Status` | Enum | হ্যাঁ | `Draft`, `PO_Received`, `Cutting_Ready`, `In_Sewing`, `Shipped`। | Status Badge |
+
+| ফিল্ডের নাম            | ডেটা টাইপ   | বাধ্যতামূলক? | ভ্যালিডেশন রুলস                                                         | ইউআই কম্পোনেন্ট      |
+| ---------------------- | ----------- | ------------ | ----------------------------------------------------------------------- | -------------------- |
+| `Master Order ID`      | UUID        | হ্যাঁ        | প্যারেন্ট মাস্টার অর্ডারের ফরেন কি (`orders.id`)।                       | Hidden / Contextual  |
+| `Buyer PO Number`      | String      | হ্যাঁ        | বায়ারের অফিসিয়াল PO শিট নম্বর (যেমন `PO-8801`)। বায়ার-ভিত্তিক ইউনিক। | Text Input           |
+| `Season Name`          | String      | হ্যাঁ        | বায়ার ও স্টাইলের সাথে সম্পর্কিত সিজন (যেমন `Summer 2026`)।             | Select Dropdown      |
+| `PO Quantity`          | Integer     | হ্যাঁ        | এই নির্দিষ্ট PO-র জন্য নির্ধারিত পিস (যেমন `5000`)।                     | Number Input         |
+| `Ex-Factory Date`      | Date        | হ্যাঁ        | ফ্যাক্টরি থেকে মাল বের হওয়ার শেষ তারিখ।                                | Date Picker          |
+| `Buyer Delivery Date`  | Date        | হ্যাঁ        | বায়ারের পোর্টে পৌঁছানোর তারিখ।                                         | Date Picker          |
+| `Shipment Mode`        | Enum        | হ্যাঁ        | `Sea`, `Air`, `Sea-Air`, `Road` (Default: Sea)।                         | Select Dropdown      |
+| `Destination Port`     | String      | না           | Discharge Port (e.g. Hamburg, New York, Felixstowe)।                    | Text Input           |
+| `PO Document File URL` | String/File | না           | বায়ারের পাঠানো আসল PO ফাইল (`.pdf`, `.xlsx`, `.xls`, `.csv`)।          | File Upload Dropzone |
+| `PO Status`            | Enum        | হ্যাঁ        | `Draft`, `PO_Received`, `Cutting_Ready`, `In_Sewing`, `Shipped`।        | Status Badge         |
 
 #### গাণিতিক সমতা ও সুরক্ষা নীতি (Mathematical Integrity Constraints):
-1. **Rule 1 (PO Quantities vs Master Order):** 
+
+1. **Rule 1 (PO Quantities vs Master Order):**
    $$\sum (\text{Buyer PO Quantities}) \le \text{Total Master Order Quantity}$$
    যদি কোনো মার্চেন্ডাইজার মোট ১০,০০০ পিসের বিপরীতে প্রথম PO-তে ৬,০০০ এবং দ্বিতীয় PO-তে ৫,০০০ (মোট ১১,০০০) ইনপুট দেয়, তবে সিস্টেম সাথে সাথে `422 Unprocessable Entity` এরর দেবে:
-   *"Total PO quantity (11,000 Pcs) cannot exceed Master Order committed quantity (10,000 Pcs)."*
+   _"Total PO quantity (11,000 Pcs) cannot exceed Master Order committed quantity (10,000 Pcs)."_
 2. **Rule 2 (Live Unassigned PO Balance):**
    সিস্টেমে সর্বদাই একটি লাইভ রিড-অনলি কাউন্টার থাকবে:
    $$\text{Unassigned PO Balance} = \text{Master Order Qty} - \sum (\text{Confirmed PO Quantities})$$
@@ -103,9 +110,11 @@ $$\mathbf{Master\ Order\ No} = \mathbf{[CompanyCode]}-\mathbf{[YY]}-\mathbf{[Uni
 ---
 
 ### ৩.৩. সাব-মডিউল ৩: AI-Powered PO Parser & Color-Size Ratio Matrix
+
 বায়ারদের PO ফাইলে সাইজ ও কালার ব্রেকডাউন ভিন্ন ভিন্ন ফরম্যাটে থাকে। এই জটিলতাকে স্বয়ংক্রিয় করতে **AI Document Extraction Engine** সংযুক্ত থাকবে।
 
 #### ৩.৩.১. AI Extraction Workflow:
+
 1. **File Upload:** মার্চেন্ডাইজার বায়ারের পাঠানো আসল PO ফাইল (PDF বা Excel) আপলোড করবে।
 2. **AI Document Analysis:** AI ডকুমেন্টটি স্ক্যান করে নিম্নলিখিত ডেটাসমূহ স্বয়ংক্রিয়ভাবে এক্সট্রাক্ট করবে:
    - `buyer_po_number`
@@ -122,13 +131,16 @@ $$\mathbf{Master\ Order\ No} = \mathbf{[CompanyCode]}-\mathbf{[YY]}-\mathbf{[Uni
    - মার্চেন্ডাইজার ২ সেকেন্ডে মিলিয়ে দেখে কোনো সংখ্যা এডিট করতে চাইলে এডিট করে **"Approve & Confirm PO"** বাটনে চাপবে।
 
 #### ৩.৩.২. ম্যাট্রিক্সের গাণিতিক অখণ্ডতা রুল (The Golden Matrix Rule):
+
 $$\sum (\text{Matrix Cell Quantities}) \equiv \text{PO Quantity}$$
 যদি বায়ার PO কোয়ান্টিটি হয় ৫,০০০ পিস, তবে ম্যাট্রিক্সের ভেতরের সমস্ত কালার ও সাইজ সেলের যোগফল অবিকল **৫,০০০** হতে হবে। ১ পিস কম বা বেশি হলে সিস্টেম অনুমোদন ব্লক করে দেবে এবং অমিল সংখ্যা হাইলাইট করবে।
 
 ---
 
 ### ৩.৪. সাব-মডিউল ৪: Material & Bulk Booking Linkage
+
 বায়ার PO না দিলেও Master Order-এর অধীনে বাল্ক ফেব্রিক ও এক্সেসরিজ বুকিং পরিচালিত হবে:
+
 1. **Bulk Fabric Booking:**
    - প্রতি ডজনে ফেব্রিক কনজাম্পশন (যেমন `1.65 Yds/Pc` বা `2.40 Kg/Dzn`)।
    - ১০,০০০ পিসের জন্য মোট প্রয়োজনীয় ফেব্রিক = ১৬,৫০০ গজ।
@@ -138,81 +150,16 @@ $$\sum (\text{Matrix Cell Quantities}) \equiv \text{PO Quantity}$$
 
 ---
 
-### ৩.৫. সাব-মডিউল ৫: Central Unit of Measure (UOM) Architecture & Conversion Standard
-গার্মেন্টস ইআরপি সিস্টেমে বিভিন্ন বাণিজ্যিক ও প্রযুক্তিগত কার্যক্রমে ভিন্ন ভিন্ন একক (UOM) ব্যবহৃত হয়। এই ভিন্নতাকে কেন্দ্রীয়ভাবে সুশৃঙ্খল রাখতে সিস্টেম-ওয়াইড সেন্ট্রাল UOM ইঞ্জিন অনুসৃত হবে।
-
-#### ৩.৫.১. কেন্দ্রীয় UOM ক্যাটাগরি ও স্ট্যান্ডার্ড স্কেল:
-| UOM ক্যাটাগরি | অনুমোদিত ইউনিটসমূহ (Allowed Units) | মূল ভিত্তি একক (Base Unit) | প্রয়োগ ক্ষেত্র (Application Scope) |
-|---|---|---|---|
-| **`apparel`** | `Pcs` (Pieces), `Dzn` (Dozens), `Set` (Sets), `Pair` (Pairs), `Pack` (Multi-packs) | `Pcs` | অর্ডার মাস্টার, বায়ার PO, ফ্লোর প্রোডাকশন, কোয়ালিটি অডিট |
-| **`fabric`** | `Yds` (Yards), `Mtr` (Meters), `Kg` (Kilograms), `Lbs` (Pounds) | `Yds` / `Kg` | বাল্ক ফেব্রিক বুকিং, রিসিভিং, রোল ইন্সপেকশন, স্প্রেডিং |
-| **`accessories`** | `Gross` (Grs - 144 pcs), `Dzn` (12 pcs), `Cone`, `Roll`, `Thousand` (Ths), `Pcs` | `Pcs` | ট্রিমস বুকিং, ইয়ার্ন কোণ, জিপার, বাটন, লেবেল ইনভেন্টরি |
-| **`packing`** | `Carton` (Ctn), `Poly`, `CBM` (Cubic Meter), `Pallet` | `Carton` | ফিনিশিং, কমার্শিয়াল প্যাকিং লিস্ট, কার্গো বুকিং |
-
-#### ৩.৫.২. গাণিতিক কনভার্সন নীতি (Mathematical Conversion Rules):
-১. **Apparel Conversion to Base Pieces:**
-   $$\text{Base Pcs} = 
-   \begin{cases} 
-   \text{Quantity} \times 12, & \text{if UOM} = \text{'Dzn'} \\
-   \text{Quantity} \times 1, & \text{if UOM} = \text{'Pcs'} \\
-   \text{Quantity} \times (\text{Pieces per Set}), & \text{if UOM} = \text{'Set'}
-   \end{cases}$$
-২. **The Zero-Variance Rule for Matrix:**
-   ম্যাট্রিক্সের সমস্ত সেল সর্বদা শারীরিক **`Pcs` (Pieces)** এককে হিসাব করবে। বায়ার অর্ডারে ইউজার `1,000 Dzn` এন্ট্রি দিলে সিস্টেম ম্যাট্রিক্সে টার্গেট কোয়ান্টিটিকে স্বয়ংক্রিয়ভাবে $1,000 \times 12 = 12,000\text{ Pcs}$ হিসেবে সিঙ্ক করবে।
-
-#### ৩.৫.৩. ইউআই কম্পোনেন্ট স্ট্যান্ডার্ড (`<UomQuantityInput />`):
-সিস্টেমের যেকোনো ফর্মে পরিমাণ ও ইউনিট গ্রহণের ক্ষেত্রে অ্যাড-হক ইনপুট লেখা সম্পূর্ণ নিষিদ্ধ। বাধ্যতামূলকভাবে সেন্ট্রাল প্রিমিটিভ `<UomQuantityInput />` ব্যবহার করতে হবে:
-- **ভিজ্যুয়াল আর্কিটেকচার**: বামে সংখ্যাগত ইনপুট ফিল্ড এবং ডানে ইনলাইন ড্রপডাউন সিলেক্টর (`UI_TOKENS.inputGroup.*`)।
-- **লাইভ কনভার্সন ব্যাজ**: যদি নির্বাচিত ইউনিট বেস ইউনিট না হয় (যেমন `Dzn`), তবে নিচে স্বয়ংক্রিয়ভাবে সমতুল্য সংখ্যা রূপান্তর (e.g. `Equivalent: 12,000 Pcs`) প্রদর্শিত হবে।
-
----
-
-### ৩.৬. সাব-মডিউল ৬: Multi-PO & Multi-Destination Interactive Tabbed Matrix Standard (Non-Modal Enterprise Standard)
-
-গার্মেন্টস শিল্পে বায়াররা একটি মাস্টার স্টাইল অর্ডারের বিপরীতে প্রায়শই বিভিন্ন দেশ বা আঞ্চলিক ওয়্যারহাউজের জন্য একাধিক ডেলিভারি লট ও পার্ট PO ইস্যু করে (যেমন: `PO-8801` জার্মানির জন্য ২০,০০০ পিস, `PO-8802` যুক্তরাজ্যের জন্য ১৫,০০০ পিস, এবং `PO-8803` স্পেনের জন্য ১৫,০০০ পিস)।
-
-#### ৩.৬.১. কেন পপআপ/মোডাল কঠোরভাবে নিষিদ্ধ? (Architectural Rationale: Why Popups Are Prohibited)
-1. **কালার-সাইজ ম্যাট্রিক্সের স্ক্রিন স্পেস সীমাবদ্ধতা:** একটি মাঝারি ওভেন অর্ডারে ৫০ থেকে ১০০টি সেল থাকে (৫টি কালার $\times$ ১০টি সাইজ)। ছোট পপআপ বা উইন্ডোতে স্ক্রল করে এত বড় ম্যাট্রিক্সে নির্ভুল ডেটা এন্ট্রি দেওয়া অবাস্তব।
-2. **ডকুমেন্ট সাইড-বাই-সাইড দেখার অক্ষমতা:** পপআপ ওপেন হলে মূল স্ক্রিন ব্লার বা অবরুদ্ধ হয়ে যায়, ফলে মার্চেন্ডাইজার বায়ারের আসল PO ফাইলের সাথে স্ক্রিনের ডেটা মিলিয়ে দেখতে পারে না।
-3. **অনাকাঙ্ক্ষিত ডেটা লসের ঝুঁকি:** ব্যাকড্রপ বা ভুল ক্লিকের কারণে পপআপ বন্ধ হয়ে গিয়ে অপারেটরের ২০ মিনিটের টাইপ করা রেশিও ডেটা হারিয়ে যাওয়ার ঝুঁকি থাকে।
-4. **গ্লোবাল নো-মডাল কমপ্লায়েন্স:** `AGENTS.md` নীতিমালায় সমস্ত ডেটা এন্ট্রি ও এডিটের জন্য ফুল ডেডিকেটেড পেজ বাধ্যতামূলক।
-
-#### ৩.৬.২. এন্টারপ্রাইজ মাল্টি-PO ট্যাব সুইচিং আর্কিটেকচার (Interactive Tabbed Split Structure):
-```
-+---------------------------------------------------------------------------------------------------------------+
-| Part 2: PO Header, Commercial & Delivery                                   [+ Add Another PO / Split Lot]     |
-+---------------------------------------------------------------------------------------------------------------+
-|  Multiple POs under Job:                                                                                      |
-|  [★ PO #1: PO-8801-GER (20,000 pcs) ×]   [PO #2: PO-8802-UK (15,000 pcs) ×]   [PO #3: PO-8803-ESP (15,000) ×] |
-+---------------------------------------------------------------------------------------------------------------+
-|  Active PO Settings (PO #1):                                                                                  |
-|  - Buyer PO Number: PO-8801-GER        - Destination: Hamburg Port, Germany                                  |
-|  - Ex-Factory Date: 10/15/2026         - Buyer In-Store: 11/20/2026                                           |
-+---------------------------------------------------------------------------------------------------------------+
-|  Part 3: Color-Size Ratio Matrix for Active PO (PO-8801-GER):                                                 |
-|  - Active PO Breakdown Total: 20,000 Pcs (Matched)                                                            |
-|  - Combined All POs Total: 50,000 Pcs | Master Target: 50,000 Pcs | Unassigned Balance: 0 Pcs                 |
-+---------------------------------------------------------------------------------------------------------------+
-```
-
-#### ৩.৬.৩. অপারেশনাল নিয়মাবলি (Operational Rules):
-1. **স্বতন্ত্র মেটাডাটা ও স্বতন্ত্র ম্যাট্রিক্স:** প্রতিটি PO ট্যাবের নিজস্ব `Buyer PO Number`, `Ex-Factory Date`, `Buyer Delivery Date`, `Destination Port/Country` এবং নিজস্ব ২ডি কালার-সাইজ ম্যাট্রিক্স গ্রিড থাকবে।
-2. **রিয়েল-টাইম লাইভ সিঙ্ক ও ব্যালেন্স অখণ্ডতা:**
-   - যখনই ইউজার একটি ট্যাবের ম্যাট্রিক্সে সংখ্যা পরিবর্তন করবে, সাথে সাথে কার্ডের হেডারে সংশ্লিষ্ট ট্যাবের সামারি `[20,000 pcs]` আপডেট হবে।
-   - সবকটি ট্যাবের সামগ্রিক যোগফল $\sum (\text{All PO Breakdowns})$ মাস্টার অর্ডারের কমিটেড কোয়ান্টিটির সাথে লাইভ অডিট হবে।
-3. **এক ক্লিকে মাল্টি-PO বাল্ক সেভ:**
-   - একাধিক PO যোগ করা থাকলে হেডার বাটন স্বয়ংক্রিয়ভাবে `"Save All (N Orders)"` ফরম্যাটে রূপান্তরিত হবে এবং সিঙ্গেল ডেটাবেজ ট্রানজ্যাকশনে সমস্ত PO ও তাদের ম্যাট্রিক্স সুরক্ষিতভাবে ইনসার্ট করবে।
-
----
-
 ## ৪. ইউজার ইন্টারফেস ও স্ক্রিন কাঠামো (UI/UX Engineering Standards)
+
 গ্লোবাল প্রজেক্ট রুলস (`AGENTS.md`) কঠোরভাবে অনুসৃত হবে:
+
 1. **Strict No Modals Rule:** মোডাল বা পপআপ সম্পূর্ণ নিষিদ্ধ। সমস্ত ফর্ম, ম্যাট্রিক্স এন্ট্রি ও এডিট ফুল ডেডিকেটেড পেজে হবে।
 2. **Mandatory Golden List Page Standard (3-Tier Layout):**
    - **Page 1: Master Orders Directory (`/orders/master`)**:
-     - *Tier 1:* PageHeader (`Master Orders Directory`, কাউন্টার ব্যাজ e.g. `12 Orders`, "Create Master Order" সলিড বাটন)।
-     - *Tier 2:* FilterToolbar (Search by Job No / Contract / Buyer, Buyer filter, Status filter, Sort by Job No, Per-page dropdown 10, 15, 25, 50)।
-     - *Tier 3:* Standard DataTable (Master Order No, Buyer & Style, Total Qty, Confirmed PO Qty, Unassigned Balance, Order Status, Actions: View Details, Add PO)।
+     - _Tier 1:_ PageHeader (`Master Orders Directory`, কাউন্টার ব্যাজ e.g. `12 Orders`, "Create Master Order" সলিড বাটন)।
+     - _Tier 2:_ FilterToolbar (Search by Job No / Contract / Buyer, Buyer filter, Status filter, Sort by Job No, Per-page dropdown 10, 15, 25, 50)।
+     - _Tier 3:_ Standard DataTable (Master Order No, Buyer & Style, Total Qty, Confirmed PO Qty, Unassigned Balance, Order Status, Actions: View Details, Add PO)।
    - **Page 2: Buyer Purchase Orders Directory (`/orders/purchase-orders`)**:
      - সমস্ত বায়ার PO-সমূহের তালিকা (Buyer PO No, Master Order Ref, Season, Ex-Factory Date, PO Qty, Production Stage Status, Actions)।
 3. **Dedicated PO Creation & AI Matrix Page (`/orders/master/:id/add-po`)**:
@@ -300,4 +247,5 @@ $$\sum (\text{Matrix Cell Quantities}) \equiv \text{PO Quantity}$$
 - [ ] **AC-06 (AI Matrix Extraction):** বায়ার PO আপলোড করে "Extract with AI" বাটনে চাপলে AI স্বয়ংক্রিয়ভাবে কালার ও সাইজ টেবিল শনাক্ত করে ম্যাট্রিক্স গ্রিড পূরণ করবে এবং মার্চেন্ডাইজারকে প্রিভিউ দেখাবে।
 
 ---
-*(End of SRS Document)*
+
+_(End of SRS Document)_
