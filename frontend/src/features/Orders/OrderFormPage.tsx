@@ -1445,12 +1445,85 @@ export const OrderFormPage: React.FC<OrderFormPageProps> = ({
                       <p className="text-[11px] text-slate-500 mt-0.5">PO number, destination country, FOB pricing, and critical milestone dates.</p>
                     </div>
                   </div>
-                  {leadTimeDays !== null && (
-                    <Badge variant="purple" icon={<Clock className="w-3 h-3" />}>
-                      {leadTimeDays} Days Lead Time
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {leadTimeDays !== null && (
+                      <Badge variant="purple" icon={<Clock className="w-3 h-3" />}>
+                        {leadTimeDays} Days Lead Time
+                      </Badge>
+                    )}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleAddManualPo}
+                      icon={<Plus className="w-3.5 h-3.5 text-[#0066FF]" />}
+                      title="Add another PO / destination under this Master Order"
+                    >
+                      + Add Another PO
+                    </Button>
+                  </div>
                 </div>
+
+                {/* Multiple PO Tabs Bar in Part 2 (When 2 or more POs exist) */}
+                {manualPos.length > 1 && (
+                  <div className="mb-4 p-2.5 bg-blue-50/50 border border-blue-200/80 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-[#0066FF]" />
+                        Multiple POs under Job ({manualPos.length} Purchase Orders):
+                      </span>
+                      <span className="text-[11px] text-slate-600 font-medium">
+                        Viewing: <strong className="text-[#0066FF]">PO #{activeManualPoIndex + 1} of {manualPos.length}</strong>
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                      {manualPos.map((mItem, idx) => {
+                        const tabTotal = idx === activeManualPoIndex ? matrixBreakdownTotal : getMatrixTotal(mItem.matrix);
+                        return (
+                          <div
+                            key={mItem.id || idx}
+                            className={`inline-flex items-center rounded-md text-xs font-semibold whitespace-nowrap transition-all border shadow-2xs ${
+                              activeManualPoIndex === idx
+                                ? "bg-[#0066FF] text-white border-[#0066FF]"
+                                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleSwitchManualPo(idx)}
+                              className="px-3 py-1.5 cursor-pointer flex items-center gap-1.5"
+                            >
+                              <span>{mItem.buyer_po_number || `PO #${idx + 1}`}</span>
+                              {mItem.destination_country && (
+                                <span className={`text-[10px] px-1.5 py-0.2 rounded font-normal ${
+                                  activeManualPoIndex === idx ? "bg-white/25 text-white" : "bg-slate-100 text-slate-600"
+                                }`}>
+                                  {mItem.destination_country}
+                                </span>
+                              )}
+                              <span className={`font-mono text-[10.5px] ${
+                                activeManualPoIndex === idx ? "text-blue-100" : "text-slate-500"
+                              }`}>
+                                [{tabTotal.toLocaleString()} pcs]
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => handleRemoveManualPo(idx, e)}
+                              className={`pr-2 pl-0.5 hover:opacity-100 cursor-pointer ${
+                                activeManualPoIndex === idx ? "text-blue-100 hover:text-white" : "text-slate-400 hover:text-rose-600"
+                              }`}
+                              title="Delete this PO"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* KPI Strip */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-3 bg-slate-50/70 border border-slate-200/80 rounded-lg text-xs">
